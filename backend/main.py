@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core.config import settings
 from core.database import Base, engine
+from utils.logger import logger
 from models import (
     AiInsight,
     BillingRecord,
@@ -51,7 +52,10 @@ app.include_router(business_ops_router)
 
 @app.on_event("startup")
 def startup() -> None:
-    Base.metadata.create_all(bind=engine)
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as exc:
+        logger.warning("Startup DB initialization failed: %s", exc)
 
 @app.get("/")
 def root():
