@@ -7,6 +7,7 @@ from models.founder import FounderMetric
 from models.investor_demo import InvestorMetric
 from models.mail import Message
 from models.scheduling import Shift
+from models.telehealth import TelehealthMessage, TelehealthParticipant, TelehealthSession
 from models.user import User, UserRole
 
 __all__ = [
@@ -21,6 +22,9 @@ __all__ = [
     "InvestorMetric",
     "Message",
     "Shift",
+    "TelehealthMessage",
+    "TelehealthParticipant",
+    "TelehealthSession",
     "User",
     "UserRole",
 ]

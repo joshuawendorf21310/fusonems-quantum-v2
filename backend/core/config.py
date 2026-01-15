@@ -14,12 +14,16 @@ class Settings(BaseSettings):
     TELNYX_NUMBER: str = Field("", env="TELNYX_NUMBER")
     TELNYX_CONNECTION_ID: str = Field("", env="TELNYX_CONNECTION_ID")
     TELNYX_MESSAGING_PROFILE_ID: str = Field("", env="TELNYX_MESSAGING_PROFILE_ID")
-    LOB_API_KEY: str = Field("", env="LOB_API_KEY")
+    LOB_API_KEY: str = Field("", env="test_70d390fbc9629f40ff55bcb47369fde2b18")
     OFFICEALLY_FTP_HOST: str = Field("", env="OFFICEALLY_FTP_HOST")
     OFFICEALLY_FTP_USER: str = Field("", env="OFFICEALLY_FTP_USER")
     OFFICEALLY_FTP_PASSWORD: str = Field("", env="OFFICEALLY_FTP_PASSWORD")
     OFFICEALLY_FTP_PORT: int = Field(21, env="OFFICEALLY_FTP_PORT")
     STORAGE_ENCRYPTION_KEY: str = Field("change-me", env="STORAGE_ENCRYPTION_KEY")
+    TELEHEALTH_DATABASE_URL: str = Field("", env="TELEHEALTH_DATABASE_URL")
+    TELEHEALTH_API_KEY: str = Field("", env="TELEHEALTH_API_KEY")
+    OPENID_CLIENT_ID: str = Field("", env="OPENID_CLIENT_ID")
+    OPENID_SECRET: str = Field("", env="OPENID_SECRET")
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

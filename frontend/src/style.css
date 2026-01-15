@@ -499,7 +499,9 @@ select {
 }
 
 .form-panel input,
-.form-panel select {
+.form-panel select,
+.panel input,
+.panel select {
   width: 100%;
   padding: 10px 12px;
   border-radius: 12px;
@@ -553,6 +555,15 @@ select {
 .status-text {
   margin-top: 16px;
   color: var(--orange-300);
+}
+
+.code-block {
+  background: rgba(10, 12, 16, 0.8);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 12px;
+  font-size: 0.75rem;
+  overflow-x: auto;
 }
 
 @keyframes pulse {

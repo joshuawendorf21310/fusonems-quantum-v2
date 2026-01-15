@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core.config import settings
-from core.database import Base, engine
+from core.database import Base, TelehealthBase, engine, telehealth_engine
 from utils.logger import logger
 from models import (
     AiInsight,
@@ -28,6 +28,7 @@ from services.founder.founder_router import router as founder_router
 from services.investor_demo.investor_demo_router import router as investor_demo_router
 from services.mail.mail_router import router as mail_router
 from services.lob_webhook import router as lob_router
+from services.telehealth.telehealth_router import router as telehealth_router
 from services.schedule.schedule_router import router as schedule_router
 
 app = FastAPI(title="FusonEMS Quantum Platform", version="2.0")
@@ -45,6 +46,7 @@ app.include_router(schedule_router)
 app.include_router(billing_router)
 app.include_router(mail_router)
 app.include_router(lob_router)
+app.include_router(telehealth_router)
 app.include_router(ai_console_router)
 app.include_router(founder_router)
 app.include_router(investor_demo_router)
@@ -58,6 +60,10 @@ def startup() -> None:
         Base.metadata.create_all(bind=engine)
     except Exception as exc:
         logger.warning("Startup DB initialization failed: %s", exc)
+    try:
+        TelehealthBase.metadata.create_all(bind=telehealth_engine)
+    except Exception as exc:
+        logger.warning("Telehealth DB initialization failed: %s", exc)
 
 @app.get("/")
 def root():

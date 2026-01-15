@@ -39,6 +39,18 @@ services:
       - key: LOB_API_KEY
         scope: RUN_TIME
         type: SECRET
+      - key: TELEHEALTH_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: TELEHEALTH_DATABASE_URL
+        scope: RUN_TIME
+        type: SECRET
+      - key: OPENID_CLIENT_ID
+        scope: RUN_TIME
+        type: SECRET
+      - key: OPENID_SECRET
+        scope: RUN_TIME
+        type: SECRET
       - key: OFFICEALLY_FTP_HOST
         scope: RUN_TIME
         type: SECRET
