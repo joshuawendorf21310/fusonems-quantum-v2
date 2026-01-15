@@ -1,0 +1,38 @@
+version: '3.9'
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: securepass
+      POSTGRES_DB: fusonems
+    ports:
+      - "5432:5432"
+    volumes:
+      - fusonems_db:/var/lib/postgresql/data
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      DATABASE_URL: postgresql://admin:securepass@db:5432/fusonems
+      ALLOWED_ORIGINS: http://localhost:5173
+      JWT_SECRET_KEY: change-me
+    ports:
+      - "8000:8080"
+    depends_on:
+      - db
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      VITE_API_URL: http://localhost:8000
+    ports:
+      - "5173:8080"
+    depends_on:
+      - backend
+
+volumes:
+  fusonems_db:

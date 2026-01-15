@@ -1,27 +1,33 @@
 import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
 
 export default defineConfig({
+  plugins: [react()],
   server: {
-    host: '0.0.0.0',   // ✅ allows external access (for DigitalOcean)
-    port: 8080,         // ✅ DigitalOcean health checks use this
-    strictPort: true,   // ✅ avoids port switching
+    host: '0.0.0.0',
+    port: 8080,
+    strictPort: true,
+    allowedHosts: true,
+    proxy: {
+      '/api': {
+        target: process.env.VITE_API_URL || 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   preview: {
     host: '0.0.0.0',
     port: 8080,
     strictPort: true,
+    allowedHosts: true,
   },
   build: {
-    outDir: 'dist',     // Output directory
+    outDir: 'dist',
   },
-  // ✅ Proxy API calls to backend (edit URL if needed)
-  server: {
-    proxy: {
-      '/api': {
-        target: 'https://fusonems-quantum-v2-backend.ondigitalocean.app',
-        changeOrigin: true,
-        secure: true,
-      },
-    },
+  test: {
+    environment: 'jsdom',
+    setupFiles: './src/setupTests.js',
+    globals: true,
   },
 })

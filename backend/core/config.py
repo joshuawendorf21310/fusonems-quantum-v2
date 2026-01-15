@@ -4,6 +4,18 @@ from pydantic import Field
 class Settings(BaseSettings):
     PROJECT_NAME: str = Field("FusonEMS Quantum", env="PROJECT_NAME")
     DATABASE_URL: str = Field("postgresql://admin:securepass@localhost:5432/fusonems", env="DATABASE_URL")
+    ALLOWED_ORIGINS: str = Field("http://localhost:5173", env="ALLOWED_ORIGINS")
+    JWT_SECRET_KEY: str = Field("change-me", env="JWT_SECRET_KEY")
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(60, env="ACCESS_TOKEN_EXPIRE_MINUTES")
+    ENV: str = Field("development", env="ENV")
+    DB_POOL_SIZE: int = Field(5, env="DB_POOL_SIZE")
+    DB_MAX_OVERFLOW: int = Field(10, env="DB_MAX_OVERFLOW")
+    TELNYX_API_KEY: str = Field("", env="TELNYX_API_KEY")
+    OFFICEALLY_FTP_HOST: str = Field("", env="OFFICEALLY_FTP_HOST")
+    OFFICEALLY_FTP_USER: str = Field("", env="OFFICEALLY_FTP_USER")
+    OFFICEALLY_FTP_PASSWORD: str = Field("", env="OFFICEALLY_FTP_PASSWORD")
+    OFFICEALLY_FTP_PORT: int = Field(21, env="OFFICEALLY_FTP_PORT")
+    STORAGE_ENCRYPTION_KEY: str = Field("change-me", env="STORAGE_ENCRYPTION_KEY")
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
