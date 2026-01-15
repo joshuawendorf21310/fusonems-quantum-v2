@@ -23,6 +23,7 @@ from services.billing.billing_router import router as billing_router
 from services.business_ops.business_ops_router import router as business_ops_router
 from services.cad.cad_router import router as cad_router
 from services.cad.tracking_router import router as tracking_router
+from services.compliance.compliance_router import router as compliance_router
 from services.epcr.epcr_router import router as epcr_router
 from services.founder.founder_router import router as founder_router
 from services.investor_demo.investor_demo_router import router as investor_demo_router
@@ -30,6 +31,8 @@ from services.mail.mail_router import router as mail_router
 from services.lob_webhook import router as lob_router
 from services.telehealth.telehealth_router import router as telehealth_router
 from services.schedule.schedule_router import router as schedule_router
+from services.automation.automation_router import router as automation_router
+from services.validation.validation_router import router as validation_router
 
 app = FastAPI(title="FusonEMS Quantum Platform", version="2.0")
 app.add_middleware(
@@ -47,6 +50,9 @@ app.include_router(billing_router)
 app.include_router(mail_router)
 app.include_router(lob_router)
 app.include_router(telehealth_router)
+app.include_router(automation_router)
+app.include_router(validation_router)
+app.include_router(compliance_router)
 app.include_router(ai_console_router)
 app.include_router(founder_router)
 app.include_router(investor_demo_router)

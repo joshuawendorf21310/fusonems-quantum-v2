@@ -9,6 +9,7 @@ const navItems = [
   { to: '/billing', label: 'Billing Ops', hint: 'Claims & reconciliation' },
   { to: '/communications', label: 'Communications', hint: 'Telnyx voice/SMS' },
   { to: '/telehealth', label: 'Telehealth', hint: 'CareFusion video visits' },
+  { to: '/automation', label: 'Automation', hint: 'Validation & compliance' },
   { to: '/ai-console', label: 'AI Console', hint: 'Predictions & guidance' },
   { to: '/reporting', label: 'Reporting', hint: 'Compliance & QA' },
   { to: '/founder', label: 'Founder', hint: 'Enterprise controls' },
