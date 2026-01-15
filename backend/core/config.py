@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     TELNYX_NUMBER: str = Field("", env="TELNYX_NUMBER")
     TELNYX_CONNECTION_ID: str = Field("", env="TELNYX_CONNECTION_ID")
     TELNYX_MESSAGING_PROFILE_ID: str = Field("", env="TELNYX_MESSAGING_PROFILE_ID")
+    LOB_API_KEY: str = Field("", env="LOB_API_KEY")
     OFFICEALLY_FTP_HOST: str = Field("", env="OFFICEALLY_FTP_HOST")
     OFFICEALLY_FTP_USER: str = Field("", env="OFFICEALLY_FTP_USER")
     OFFICEALLY_FTP_PASSWORD: str = Field("", env="OFFICEALLY_FTP_PASSWORD")

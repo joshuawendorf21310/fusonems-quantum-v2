@@ -36,6 +36,9 @@ services:
       - key: TELNYX_MESSAGING_PROFILE_ID
         scope: RUN_TIME
         type: SECRET
+      - key: LOB_API_KEY
+        scope: RUN_TIME
+        type: SECRET
       - key: OFFICEALLY_FTP_HOST
         scope: RUN_TIME
         type: SECRET

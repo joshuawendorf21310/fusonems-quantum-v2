@@ -27,6 +27,7 @@ from services.epcr.epcr_router import router as epcr_router
 from services.founder.founder_router import router as founder_router
 from services.investor_demo.investor_demo_router import router as investor_demo_router
 from services.mail.mail_router import router as mail_router
+from services.lob_webhook import router as lob_router
 from services.schedule.schedule_router import router as schedule_router
 
 app = FastAPI(title="FusonEMS Quantum Platform", version="2.0")
@@ -43,6 +44,7 @@ app.include_router(epcr_router)
 app.include_router(schedule_router)
 app.include_router(billing_router)
 app.include_router(mail_router)
+app.include_router(lob_router)
 app.include_router(ai_console_router)
 app.include_router(founder_router)
 app.include_router(investor_demo_router)
