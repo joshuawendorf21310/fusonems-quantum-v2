@@ -425,6 +425,25 @@ select {
   letter-spacing: 0.15em;
 }
 
+.provider-hero {
+  width: min(1100px, 90%);
+  padding: 24px 32px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 0 auto;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7);
+}
+
+.provider-hero h1 {
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 2.6rem);
+  letter-spacing: 0.15em;
+}
 .auth-panel {
   width: min(460px, 100%);
   background: rgba(0, 0, 0, 0.85);
@@ -514,6 +533,81 @@ select {
 .ghost-button {
   border-color: rgba(255, 255, 255, 0.3);
   color: #fff;
+}
+
+.provider-grid {
+  margin-top: 32px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+}
+
+.portal-card {
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 28px;
+  background: rgba(5, 5, 5, 0.9);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 320px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.6);
+}
+
+.portal-card.orange {
+  border-color: rgba(255, 166, 0, 0.7);
+}
+
+.portal-card.blue {
+  border-color: rgba(0, 170, 255, 0.6);
+}
+
+.portal-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+}
+
+.portal-card h3 {
+  font-size: 1.5rem;
+  letter-spacing: 0.12em;
+}
+
+.portal-sub {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.portal-card ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.portal-cta {
+  margin-top: auto;
+  padding: 12px 18px;
+  border-radius: 10px;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  border: none;
+  background: linear-gradient(135deg, var(--orange), var(--red));
+  color: #010101;
+  font-weight: 700;
 }
 @media (max-width: 1024px) {
   .landing-nav {

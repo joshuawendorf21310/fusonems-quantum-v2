@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import Dashboard from './Dashboard.jsx'
 import Landing from './pages/Landing.jsx'
+import ProviderPortal from './pages/ProviderPortal.jsx'
 import CadManagement from './pages/CadManagement.jsx'
 import UnitTracking from './pages/UnitTracking.jsx'
 import PatientCare from './pages/PatientCare.jsx'
@@ -85,6 +86,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/landing" element={<Landing />} />
+            <Route path="/provider-portal" element={<ProviderPortal />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route

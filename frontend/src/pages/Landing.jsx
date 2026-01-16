@@ -23,6 +23,9 @@ export default function Landing() {
               <Link className="ghost-button" to="/register">
                 Deploy Agency
               </Link>
+              <Link className="ghost-button" to="/provider-portal">
+                Provider Portal
+              </Link>
             </div>
           </div>
         </section>
