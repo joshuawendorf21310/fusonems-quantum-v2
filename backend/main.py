@@ -171,13 +171,13 @@ app.include_router(business_ops_router)
 @app.on_event("startup")
 def startup() -> None:
     register_event_handlers()
-    validate_settings_runtime(settings)
     try:
         db_host = urlparse(settings.DATABASE_URL).hostname or "unknown"
     except Exception:
         db_host = "unknown"
     logger.warning("DATABASE_URL host: %s", db_host)
     print(f"DATABASE_URL host: {db_host}")
+    validate_settings_runtime(settings)
     try:
         Base.metadata.create_all(bind=engine)
     except Exception as exc:
