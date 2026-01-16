@@ -6,6 +6,7 @@ MODULE_DEPENDENCIES = {
     "TELEHEALTH": [],
     "HEMS": ["COMMS"],
     "COMMS": [],
+    "EMAIL": ["COMMS", "DOCUMENT_STUDIO"],
     "SCHEDULING": [],
     "INVENTORY": [],
     "AUTOMATION": [],
@@ -19,6 +20,20 @@ MODULE_DEPENDENCIES = {
     "TRAINING": [],
     "EXPORTS": [],
     "REPAIR": [],
+    "DOCUMENT_STUDIO": ["EXPORTS", "VALIDATION"],
+    "WORKFLOWS": [],
+    "BUILDERS": ["VALIDATION", "WORKFLOWS"],
+    "SEARCH": [],
+    "JOBS": [],
+    "ANALYTICS": [],
+    "FEATURE_FLAGS": [],
+    "QA": ["COMPLIANCE", "EPCR"],
+    "NARCOTICS": ["INVENTORY"],
+    "MEDICATION": ["EPCR", "NARCOTICS"],
+    "INVENTORY": [],
+    "FLEET": ["INVENTORY"],
+    "LEGAL_PORTAL": ["COMPLIANCE"],
+    "PATIENT_PORTAL": ["BILLING"],
 }
 
 MODULE_KEYS = list(MODULE_DEPENDENCIES.keys())

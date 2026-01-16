@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAppData } from '../context/AppContext.jsx'
+import { useAppData } from '../context/useAppData.js'
 import SectionHeader from '../components/SectionHeader.jsx'
 import DataTable from '../components/DataTable.jsx'
 import StatusBadge from '../components/StatusBadge.jsx'

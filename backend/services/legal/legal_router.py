@@ -67,10 +67,10 @@ def create_hold(
             resource="legal_hold",
             classification=hold.classification,
             after_state=model_snapshot(hold),
-            event_type="RECORD_WRITTEN",
+            event_type="legal_hold.created",
             event_payload={"hold_id": hold.id},
         )
-    return hold
+    return model_snapshot(hold)
 
 
 @router.get("")
@@ -115,7 +115,7 @@ def release_hold(
             classification=hold.classification,
             before_state=before,
             after_state=model_snapshot(hold),
-            event_type="RECORD_WRITTEN",
+            event_type="legal_hold.released",
             event_payload={"hold_id": hold.id},
         )
     return {"status": "released", "hold_id": hold.id}
@@ -149,10 +149,10 @@ def create_addendum(
             resource="addendum",
             classification=addendum.classification,
             after_state=model_snapshot(addendum),
-            event_type="RECORD_WRITTEN",
+            event_type="legal_hold.addendum.created",
             event_payload={"addendum_id": addendum.id},
         )
-    return addendum
+    return model_snapshot(addendum)
 
 
 @router.get("/addenda")
@@ -200,10 +200,10 @@ def create_override(
             resource="override_request",
             classification=override.classification,
             after_state=model_snapshot(override),
-            event_type="RECORD_WRITTEN",
+            event_type="legal_hold.override.created",
             event_payload={"override_id": override.id},
         )
-    return override
+    return model_snapshot(override)
 
 
 @router.post("/overrides/{override_id}/approve")
@@ -233,7 +233,7 @@ def approve_override(
             classification=override.classification,
             before_state=before,
             after_state=model_snapshot(override),
-            event_type="RECORD_WRITTEN",
+            event_type="legal_hold.override.approved",
             event_payload={"override_id": override.id},
         )
     return {"status": "approved", "override_id": override.id}

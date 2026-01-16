@@ -107,7 +107,7 @@ def create_message(
         resource="mail_message",
         classification=message.classification,
         after_state=model_snapshot(message),
-        event_type="RECORD_WRITTEN",
+        event_type="mail.message.created",
         event_payload={"message_id": message.id},
     )
     return message

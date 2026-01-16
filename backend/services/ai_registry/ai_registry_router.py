@@ -8,7 +8,7 @@ from core.security import require_roles
 from models.ai_registry import AiOutputRegistry
 from models.user import User, UserRole
 from utils.ai_registry import register_ai_output
-from utils.tenancy import scoped_query
+from utils.tenancy import get_scoped_record, scoped_query
 from utils.write_ops import audit_and_event, model_snapshot
 
 router = APIRouter(
@@ -61,7 +61,7 @@ def create_output(
         resource="ai_output",
         classification=record.classification,
         after_state=model_snapshot(record),
-        event_type="RECORD_WRITTEN",
+        event_type="ai_registry.output.created",
         event_payload={"ai_output_id": record.id},
     )
     return model_snapshot(record)
@@ -86,11 +86,14 @@ def review_output(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.medical_director)),
 ):
-    record = scoped_query(
-        db, AiOutputRegistry, user.org_id, request.state.training_mode
-    ).filter(AiOutputRegistry.id == output_id).first()
-    if not record:
-        return {"status": "not_found"}
+    record = get_scoped_record(
+        db,
+        request,
+        AiOutputRegistry,
+        output_id,
+        user,
+        resource_label="ai_output",
+    )
     before = model_snapshot(record)
     record.acceptance_state = payload.acceptance_state
     db.commit()
@@ -103,7 +106,7 @@ def review_output(
         classification=record.classification,
         before_state=before,
         after_state=model_snapshot(record),
-        event_type="RECORD_WRITTEN",
+        event_type="ai_registry.output.reviewed",
         event_payload={"ai_output_id": record.id},
     )
     return {"status": "updated", "output_id": record.id}
@@ -116,11 +119,14 @@ def replay_output(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles()),
 ):
-    record = scoped_query(
-        db, AiOutputRegistry, user.org_id, request.state.training_mode
-    ).filter(AiOutputRegistry.id == output_id).first()
-    if not record:
-        return {"status": "not_found"}
+    record = get_scoped_record(
+        db,
+        request,
+        AiOutputRegistry,
+        output_id,
+        user,
+        resource_label="ai_output",
+    )
     return {
         "output_id": record.id,
         "model_name": record.model_name,

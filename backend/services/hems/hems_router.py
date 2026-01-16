@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from core.database import get_hems_db
 from core.guards import require_module
-from core.security import require_roles
+from core.security import require_roles, require_on_shift, require_trusted_device
 from models.hems import (
     HemsAircraft,
     HemsAssignment,
@@ -17,6 +17,7 @@ from models.hems import (
     HemsHandoff,
     HemsIncidentLink,
     HemsMission,
+    HemsQualityReview,
     HemsRiskAssessment,
 )
 from models.user import User, UserRole
@@ -101,6 +102,19 @@ class LinkCreate(BaseModel):
     epcr_id: str = ""
 
 
+class HemsQAFlag(BaseModel):
+    mission_id: int
+    reviewer: str = ""
+    notes: str = ""
+    compliance_flags: list = []
+
+
+class HemsQAResolve(BaseModel):
+    status: str = "closed"
+    determination: str = "pass"
+    notes: str = ""
+
+
 @router.post("/missions", status_code=status.HTTP_201_CREATED)
 def create_mission(
     payload: MissionCreate,
@@ -141,7 +155,7 @@ def create_mission(
         resource="hems_mission",
         classification=mission.classification,
         after_state=model_snapshot(mission),
-        event_type="HEMS_MISSION_CREATED",
+        event_type="hems.mission.created",
         event_payload={
             "mission_id": mission.id,
             "correlation_id": mission.correlation_id,
@@ -412,6 +426,8 @@ def upsert_chart(
     request: Request,
     db: Session = Depends(get_hems_db),
     user: User = Depends(require_roles(UserRole.flight_nurse, UserRole.flight_medic, UserRole.admin)),
+    _: User = Depends(require_on_shift),
+    __: User = Depends(require_trusted_device),
 ):
     mission = get_scoped_record(db, request, HemsMission, mission_id, user, resource_label="hems")
     enforce_legal_hold(db, user.org_id, "hems_chart", str(mission.id), "update")
@@ -465,6 +481,8 @@ def create_handoff(
     request: Request,
     db: Session = Depends(get_hems_db),
     user: User = Depends(require_roles(UserRole.flight_nurse, UserRole.flight_medic, UserRole.admin)),
+    _: User = Depends(require_on_shift),
+    __: User = Depends(require_trusted_device),
 ):
     mission = get_scoped_record(db, request, HemsMission, mission_id, user, resource_label="hems")
     enforce_legal_hold(db, user.org_id, "hems_handoff", str(mission.id), "update")
@@ -579,7 +597,7 @@ def link_ground(
         resource="hems_incident_link",
         classification=link.classification,
         after_state=model_snapshot(link),
-        event_type="RECORD_WRITTEN",
+        event_type="hems.mission.linked",
         event_payload={"link_id": link.id, "mission_id": mission.id},
         schema_name="hems",
     )
@@ -652,7 +670,7 @@ def simulate_mission(
         resource="hems_mission",
         classification=mission.classification,
         after_state=model_snapshot(mission),
-        event_type="HEMS_MISSION_CREATED",
+        event_type="hems.mission.simulated",
         event_payload={"mission_id": mission.id, "simulated": True},
         schema_name="hems",
     )
@@ -669,3 +687,84 @@ def simulate_mission(
         training_mode=request.state.training_mode,
     )
     return mission
+
+
+@router.get("/qa")
+def list_hems_qa(
+    request: Request,
+    db: Session = Depends(get_hems_db),
+    user: User = Depends(require_roles(UserRole.admin, UserRole.hems_supervisor, UserRole.aviation_qa)),
+):
+    return scoped_query(
+        db, HemsQualityReview, user.org_id, request.state.training_mode
+    ).order_by(HemsQualityReview.created_at.desc())
+
+
+@router.post("/qa", status_code=status.HTTP_201_CREATED)
+def flag_hems_qa(
+    payload: HemsQAFlag,
+    request: Request,
+    db: Session = Depends(get_hems_db),
+    user: User = Depends(require_roles(UserRole.admin, UserRole.hems_supervisor, UserRole.aviation_qa)),
+):
+    mission = (
+        scoped_query(db, HemsMission, user.org_id, request.state.training_mode)
+        .filter(HemsMission.id == payload.mission_id)
+        .first()
+    )
+    if not mission:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Mission not found")
+    review = HemsQualityReview(org_id=user.org_id, **payload.dict())
+    apply_training_mode(review, request)
+    db.add(review)
+    db.commit()
+    db.refresh(review)
+    audit_and_event(
+        db=db,
+        request=request,
+        user=user,
+        action="create",
+        resource="hems_quality_review",
+        classification=review.classification,
+        after_state=model_snapshot(review),
+        event_type="hems.qa.created",
+        event_payload={"review_id": review.id, "mission_id": mission.id},
+        schema_name="hems",
+    )
+    return review
+
+
+@router.post("/qa/{review_id}/resolve")
+def resolve_hems_qa(
+    review_id: int,
+    payload: HemsQAResolve,
+    request: Request,
+    db: Session = Depends(get_hems_db),
+    user: User = Depends(require_roles(UserRole.admin, UserRole.hems_supervisor, UserRole.aviation_qa)),
+):
+    review = (
+        scoped_query(db, HemsQualityReview, user.org_id, request.state.training_mode)
+        .filter(HemsQualityReview.id == review_id)
+        .first()
+    )
+    if not review:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Review not found")
+    before = model_snapshot(review)
+    review.status = payload.status
+    review.determination = payload.determination
+    review.notes = payload.notes
+    db.commit()
+    audit_and_event(
+        db=db,
+        request=request,
+        user=user,
+        action="update",
+        resource="hems_quality_review",
+        classification=review.classification,
+        before_state=before,
+        after_state=model_snapshot(review),
+        event_type="hems.qa.resolved",
+        event_payload={"review_id": review.id},
+        schema_name="hems",
+    )
+    return {"status": "ok", "review_id": review.id}

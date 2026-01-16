@@ -92,7 +92,7 @@ def create_call(
         resource="cad_call",
         classification=call.classification,
         after_state=model_snapshot(call),
-        event_type="RUN_CREATED",
+        event_type="cad.call.created",
         event_payload={"call_id": call.id, "priority": call.priority},
     )
     logger.info("Call logged %s", call.id)
@@ -142,7 +142,7 @@ def create_unit(
         resource="cad_unit",
         classification=unit.classification,
         after_state=model_snapshot(unit),
-        event_type="RECORD_WRITTEN",
+        event_type="cad.unit.created",
         event_payload={"unit_identifier": unit.unit_identifier},
     )
     return unit
@@ -182,7 +182,7 @@ def dispatch_unit(
         classification=call.classification,
         before_state=call_before,
         after_state=model_snapshot(call),
-        event_type="UNIT_ASSIGNED",
+        event_type="cad.call.dispatched",
         event_payload={"call_id": call.id, "unit_identifier": unit.unit_identifier},
     )
     audit_and_event(
@@ -194,7 +194,7 @@ def dispatch_unit(
         classification=unit.classification,
         before_state=unit_before,
         after_state=model_snapshot(unit),
-        event_type="TRANSPORT_STARTED",
+        event_type="cad.unit.dispatched",
         event_payload={"call_id": call.id, "status": call.status},
     )
     audit_and_event(
@@ -205,7 +205,7 @@ def dispatch_unit(
         resource="cad_dispatch",
         classification=dispatch.classification,
         after_state=model_snapshot(dispatch),
-        event_type="UNIT_ASSIGNED",
+        event_type="cad.dispatch.created",
         event_payload={"dispatch_id": dispatch.id, "call_id": call.id},
     )
     logger.info("Dispatching %s to call %s", unit.unit_identifier, call.id)

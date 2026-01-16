@@ -104,7 +104,7 @@ def resolve_orphan(
         classification=action.classification,
         before_state=before,
         after_state=model_snapshot(assignment),
-        event_type="RECORD_WRITTEN",
+        event_type="repair.orphan.resolved",
         event_payload={"repair_id": action.id},
         schema_name="hems",
     )

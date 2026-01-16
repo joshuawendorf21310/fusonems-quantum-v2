@@ -1,5 +1,6 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { apiFetch } from '../services/api.js'
+import AppContext from './appContext.js'
 import {
   fallbackCalls,
   fallbackUnits,
@@ -10,8 +11,6 @@ import {
   fallbackModules,
   fallbackSystemHealth,
 } from '../data/fallback.js'
-
-const AppContext = createContext(null)
 
 const formatTime = (date) =>
   new Intl.DateTimeFormat('en-US', {
@@ -126,12 +125,4 @@ export function AppProvider({ children }) {
   }, [refreshAll])
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
-}
-
-export function useAppData() {
-  const context = useContext(AppContext)
-  if (!context) {
-    throw new Error('useAppData must be used within an AppProvider')
-  }
-  return context
 }

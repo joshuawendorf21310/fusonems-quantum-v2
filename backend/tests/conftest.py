@@ -1,13 +1,19 @@
 import os
+import sys
 from pathlib import Path
 
 db_path = Path("test.db")
 if db_path.exists():
     db_path.unlink()
 
+backend_root = Path(__file__).resolve().parents[1]
+if str(backend_root) not in sys.path:
+    sys.path.insert(0, str(backend_root))
+
 os.environ["DATABASE_URL"] = "sqlite:///./test.db"
 os.environ["TELEHEALTH_DATABASE_URL"] = "sqlite:///./test.db"
 os.environ["FIRE_DATABASE_URL"] = "sqlite:///./test.db"
+os.environ["HEMS_DATABASE_URL"] = "sqlite:///./test.db"
 os.environ["JWT_SECRET_KEY"] = "test-secret"
 
 from fastapi.testclient import TestClient

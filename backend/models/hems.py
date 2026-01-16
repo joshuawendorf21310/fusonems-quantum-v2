@@ -163,3 +163,20 @@ class HemsIncidentLink(HemsBase):
     ground_incident_id = Column(String, default="")
     epcr_id = Column(String, default="")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class HemsQualityReview(HemsBase):
+    __tablename__ = "hems_quality_reviews"
+    __table_args__ = SCHEMA_ARGS
+
+    id = Column(Integer, primary_key=True, index=True)
+    org_id = Column(Integer, nullable=False, index=True)
+    mission_id = Column(Integer, ForeignKey(f"{SCHEMA_PREFIX}hems_missions.id"), nullable=False)
+    classification = Column(String, default="OPS")
+    training_mode = Column(Boolean, default=False)
+    reviewer = Column(String, default="")
+    status = Column(String, default="open")
+    determination = Column(String, default="pending")
+    notes = Column(Text, default="")
+    compliance_flags = Column(JSON, nullable=False, default=list)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -64,7 +64,7 @@ def publish_event(
         resource="event_log",
         classification=normalize_classification(payload.payload.get("classification", "OPS")),
         after_state=model_snapshot(record),
-        event_type=None,
+        event_type="events.published",
     )
     return record
 

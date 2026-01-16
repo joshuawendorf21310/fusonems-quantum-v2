@@ -1,11 +1,12 @@
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from core.database import get_db
-from core.security import require_roles
+from core.config import settings
+from core.security import get_current_user, require_roles
 from core.upgrade import check_upgrade_readiness
 from models.event import EventLog
 from models.module_registry import ModuleRegistry
@@ -26,8 +27,31 @@ class ModuleUpdate(BaseModel):
 def system_health(
     request: Request,
     db: Session = Depends(get_db),
-    user: User = Depends(require_roles(UserRole.admin, UserRole.founder)),
 ):
+    token = request.headers.get("authorization", "")
+    if token.lower().startswith("bearer "):
+        token = token.split(" ", 1)[1]
+    else:
+        token = None
+
+    user = None
+    if token:
+        try:
+            user = get_current_user(token=token, db=db, request=request)
+            require_roles(UserRole.admin, UserRole.founder)(user)
+        except HTTPException:
+            user = None
+
+    if not user:
+        return {
+            "status": "online",
+            "modules": [],
+            "last_event_at": None,
+            "recent_events": 0,
+            "upgrade": {"status": "UNKNOWN", "blocking": []},
+            "smart_mode": settings.SMART_MODE,
+        }
+
     modules = scoped_query(db, ModuleRegistry, user.org_id, None).order_by(
         ModuleRegistry.module_key.asc()
     ).all()
@@ -49,6 +73,7 @@ def system_health(
         "last_event_at": last_event.created_at.isoformat() if last_event else None,
         "recent_events": recent_events,
         "upgrade": upgrade_status,
+        "smart_mode": settings.SMART_MODE,
     }
 
 
@@ -95,7 +120,7 @@ def update_module(
         classification="NON_PHI",
         before_state=before,
         after_state=model_snapshot(module),
-        event_type="RECORD_WRITTEN",
+        event_type="system.module.updated",
         event_payload={"module_key": module.module_key},
     )
     return {"status": "ok", "module_key": module.module_key}

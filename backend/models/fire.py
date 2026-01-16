@@ -143,3 +143,17 @@ class FireAuditLog(FireBase):
     action = Column(String, nullable=False)
     actor = Column(String, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class FireExportRecord(FireBase):
+    __tablename__ = "fire_exports"
+
+    id = Column(Integer, primary_key=True, index=True)
+    org_id = Column(Integer, nullable=False, index=True)
+    classification = Column(String, default="OPS")
+    training_mode = Column(Boolean, default=False)
+    export_type = Column(String, default="NFIRS")
+    incident_id = Column(String, default="")
+    status = Column(String, default="generated")
+    payload = Column(Text, default="")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

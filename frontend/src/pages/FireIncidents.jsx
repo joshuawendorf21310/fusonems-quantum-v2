@@ -15,6 +15,7 @@ const incidentColumns = [
 
 export default function FireIncidents() {
   const [incidents, setIncidents] = useState([])
+  const [exportHistory, setExportHistory] = useState([])
   const [formState, setFormState] = useState({
     incident_type: '',
     location: '',
@@ -38,8 +39,20 @@ export default function FireIncidents() {
     }
   }
 
+  const loadExports = async () => {
+    try {
+      const data = await apiFetch('/api/fire/exports/history')
+      if (Array.isArray(data)) {
+        setExportHistory(data)
+      }
+    } catch (error) {
+      console.warn('Unable to load fire exports', error)
+    }
+  }
+
   useEffect(() => {
     loadIncidents()
+    loadExports()
   }, [])
 
   const handleChange = (event) => {
@@ -91,12 +104,35 @@ export default function FireIncidents() {
     }
   }
 
+  const exportIncident = async (format) => {
+    if (!selectedIncident) return
+    const endpoint = format === 'NERIS' ? '/api/fire/exports/neris' : '/api/fire/exports/nfirs'
+    try {
+      await apiFetch(endpoint, {
+        method: 'POST',
+        body: JSON.stringify({ incident_id: selectedIncident }),
+      })
+      await loadExports()
+    } catch (error) {
+      console.warn('Unable to export incident', error)
+    }
+  }
+
   return (
     <div className="page">
       <SectionHeader
         eyebrow="Fire Incidents"
         title="NFIRS / NERIS-ready Incident Reporting"
-        action={<button className="ghost-button">Export NFIRS</button>}
+        action={
+          <div className="inline-actions">
+            <button className="ghost-button" onClick={() => exportIncident('NFIRS')}>
+              Export NFIRS
+            </button>
+            <button className="ghost-button" onClick={() => exportIncident('NERIS')}>
+              Export NERIS
+            </button>
+          </div>
+        }
       />
 
       <div className="section-grid">
@@ -207,6 +243,20 @@ export default function FireIncidents() {
           columns={incidentColumns}
           rows={incidents}
           emptyState="No incidents logged yet."
+        />
+      </div>
+
+      <div className="panel">
+        <SectionHeader eyebrow="Exports" title="NFIRS / NERIS History" />
+        <DataTable
+          columns={[
+            { key: 'export_type', label: 'Type' },
+            { key: 'incident_id', label: 'Incident' },
+            { key: 'status', label: 'Status' },
+            { key: 'created_at', label: 'Created' },
+          ]}
+          rows={exportHistory}
+          emptyState="No exports generated yet."
         />
       </div>
     </div>

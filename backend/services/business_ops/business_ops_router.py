@@ -49,7 +49,7 @@ def create_task(
         resource="business_ops_task",
         classification=task.classification,
         after_state=model_snapshot(task),
-        event_type="RECORD_WRITTEN",
+        event_type="business_ops.task.created",
         event_payload={"task_id": task.id},
     )
     return task

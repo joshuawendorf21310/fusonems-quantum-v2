@@ -1,7 +1,9 @@
-import { useAppData } from '../context/AppContext.jsx'
+import { useAppData } from '../context/useAppData.js'
+import { useAuth } from '../context/useAuth.js'
 
 export default function TopBar() {
   const { lastSync, refreshAll, trainingStatus } = useAppData()
+  const { smartMode } = useAuth()
   const trainingActive =
     trainingStatus?.org_mode === 'ENABLED' || trainingStatus?.user_mode
 
@@ -19,6 +21,9 @@ export default function TopBar() {
         </div>
         <div className="topbar-actions">
           <div className="status-pill">System Alive</div>
+          <div className={`status-pill ${smartMode ? 'focus' : 'muted'}`}>
+            Smart Mode {smartMode ? 'On' : 'Off'}
+          </div>
           <div className="sync">
             <span className="sync-dot" />
             <div>

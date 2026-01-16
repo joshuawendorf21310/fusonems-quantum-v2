@@ -55,6 +55,7 @@ def set_org_training_mode(
 ):
     org = db.query(Organization).filter(Organization.id == user.org_id).first()
     org.training_mode = "ENABLED" if payload.enabled else "DISABLED"
+    request.state.training_mode = org.training_mode == "ENABLED"
     db.commit()
     audit_and_event(
         db=db,
@@ -64,7 +65,7 @@ def set_org_training_mode(
         resource="org_training_mode",
         classification="OPS",
         after_state={"training_mode": org.training_mode},
-        event_type="RECORD_WRITTEN",
+        event_type="training.org_mode.updated",
         event_payload={"training_mode": org.training_mode},
     )
     return {"status": "ok", "training_mode": org.training_mode}
@@ -90,7 +91,7 @@ def set_user_training_mode(
         resource="user_training_mode",
         classification="OPS",
         after_state={"user_id": target.id, "training_mode": target.training_mode},
-        event_type="RECORD_WRITTEN",
+        event_type="training.user_mode.updated",
         event_payload={"user_id": target.id, "training_mode": target.training_mode},
     )
     return {"status": "ok", "user_id": target.id, "training_mode": target.training_mode}
@@ -176,13 +177,13 @@ def seed_training_data(
     db.refresh(invoice)
     db.refresh(insight)
 
-    for obj, resource in [
-        (call, "cad_call"),
-        (unit, "cad_unit"),
-        (patient, "epcr_patient"),
-        (shift, "schedule_shift"),
-        (invoice, "billing_record"),
-        (insight, "ai_insight"),
+    for obj, resource, event_type in [
+        (call, "cad_call", "cad.call.created"),
+        (unit, "cad_unit", "cad.unit.created"),
+        (patient, "epcr_patient", "epcr.patient.created"),
+        (shift, "schedule_shift", "schedule.shift.created"),
+        (invoice, "billing_record", "billing.invoice.created"),
+        (insight, "ai_insight", "ai_console.insight.created"),
     ]:
         audit_and_event(
             db=db,
@@ -192,7 +193,7 @@ def seed_training_data(
             resource=resource,
             classification=obj.classification,
             after_state=model_snapshot(obj),
-            event_type="RECORD_WRITTEN",
+            event_type=event_type,
             event_payload={"resource": resource},
         )
     return {"status": "seeded"}

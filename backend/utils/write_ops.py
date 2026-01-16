@@ -63,6 +63,13 @@ def audit_and_event(
     event_type: Optional[str] = None,
     event_payload: Optional[dict] = None,
     reason_code: str = "WRITE",
+    decision_packet: Optional[dict] = None,
+    reasoning_component: str = "",
+    reasoning_version: str = "",
+    method_used: str = "",
+    input_hash: str = "",
+    output_hash: str = "",
+    decision_id: str = "",
     schema_name: str = "public",
 ) -> None:
     training_mode = False
@@ -80,6 +87,13 @@ def audit_and_event(
             reason_code=reason_code,
             before_state=before_state,
             after_state=after_state,
+            decision_packet=decision_packet,
+            reasoning_component=reasoning_component,
+            reasoning_version=reasoning_version,
+            method_used=method_used,
+            input_hash=input_hash,
+            output_hash=output_hash,
+            decision_id=decision_id,
         )
         device_id = request.headers.get("x-device-id", "")
         server_time = getattr(request.state, "server_time", utc_now())

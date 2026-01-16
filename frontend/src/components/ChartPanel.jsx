@@ -1,4 +1,5 @@
-export default function ChartPanel({ title, description, data }) {
+export default function ChartPanel({ title, description, data = [], emptyState = 'No chart data yet.' }) {
+  const hasData = Array.isArray(data) && data.length > 0
   return (
     <div className="chart-panel">
       <div className="chart-meta">
@@ -6,15 +7,19 @@ export default function ChartPanel({ title, description, data }) {
         <p>{description}</p>
       </div>
       <div className="chart">
-        {data.map((value, index) => (
-          <div
-            key={`${value}-${index}`}
-            className="chart-bar"
-            style={{ height: `${value * 6 + 10}px` }}
-          >
-            <span>{value}</span>
-          </div>
-        ))}
+        {hasData ? (
+          data.map((value, index) => (
+            <div
+              key={`${value}-${index}`}
+              className="chart-bar"
+              style={{ height: `${value * 6 + 10}px` }}
+            >
+              <span>{value}</span>
+            </div>
+          ))
+        ) : (
+          <div className="chart-empty">{emptyState}</div>
+        )}
       </div>
     </div>
   )

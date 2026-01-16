@@ -11,5 +11,6 @@ class Organization(Base):
     encryption_key = Column(String, nullable=False)
     lifecycle_state = Column(String, default="ACTIVE")
     status = Column(String, default="Active")
+    email_domain = Column(String, default="")
     training_mode = Column(String, default="DISABLED")
     created_at = Column(DateTime(timezone=True), server_default=func.now())

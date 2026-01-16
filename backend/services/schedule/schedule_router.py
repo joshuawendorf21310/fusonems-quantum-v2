@@ -55,7 +55,7 @@ def create_shift(
         resource="schedule_shift",
         classification=shift.classification,
         after_state=model_snapshot(shift),
-        event_type="RECORD_WRITTEN",
+        event_type="schedule.shift.created",
         event_payload={"shift_id": shift.id},
     )
     return shift
@@ -94,7 +94,7 @@ def swap_shift(
         classification=shift.classification,
         before_state=before,
         after_state=model_snapshot(shift),
-        event_type="RECORD_WRITTEN",
+        event_type="schedule.shift.updated",
         event_payload={"shift_id": shift.id},
     )
     return {"status": "ok", "shift_id": shift.id, "crew_name": shift.crew_name}

@@ -11,11 +11,13 @@ from core.config import settings
 from core.database import get_db
 from utils.audit import record_audit
 from models.time import DeviceClockDrift
+from models.device_trust import DeviceTrust
+from models.scheduling import Shift
 from models.organization import Organization
 from models.user import User, UserRole
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
 
 
 def hash_password(password: str) -> str:
@@ -37,8 +39,19 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     return jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm="HS256")
 
 
+def _resolve_token(request: Request, token: Optional[str]) -> Optional[str]:
+    if token:
+        return token
+    if request is None:
+        return None
+    cookie_token = request.cookies.get(settings.SESSION_COOKIE_NAME)
+    if cookie_token:
+        return cookie_token
+    return None
+
+
 def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    token: Optional[str] = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
     request: Request = None,
 ) -> User:
@@ -47,10 +60,16 @@ def get_current_user(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    resolved_token = _resolve_token(request, token)
+    if not resolved_token:
+        raise credentials_exception
     try:
-        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=["HS256"])
+        payload = jwt.decode(resolved_token, settings.JWT_SECRET_KEY, algorithms=["HS256"])
         user_id = payload.get("sub")
         token_org = payload.get("org")
+        request_mfa = payload.get("mfa", False)
+        device_trusted = payload.get("device_trusted", True)
+        on_shift = payload.get("on_shift", True)
         if user_id is None:
             raise credentials_exception
         try:
@@ -72,6 +91,40 @@ def get_current_user(
         request.state.training_mode = (
             org.training_mode == "ENABLED" or getattr(user, "training_mode", False)
         )
+        request.state.mfa_verified = bool(request_mfa)
+        device_id = request.headers.get("x-device-id", "")
+        trusted_flag = bool(device_trusted)
+        if device_id:
+            device = (
+                db.query(DeviceTrust)
+                .filter(
+                    DeviceTrust.org_id == user.org_id,
+                    DeviceTrust.user_id == user.id,
+                    DeviceTrust.device_id == device_id,
+                )
+                .first()
+            )
+            if device:
+                device.last_seen = datetime.utcnow()
+                db.commit()
+                trusted_flag = device.trusted
+            else:
+                trusted_flag = False
+        request.state.device_trusted = trusted_flag
+        shifts_exist = db.query(Shift).filter(Shift.org_id == user.org_id).count() > 0
+        active_shift = None
+        if shifts_exist:
+            now = datetime.utcnow()
+            active_shift = (
+                db.query(Shift)
+                .filter(
+                    Shift.org_id == user.org_id,
+                    Shift.shift_start <= now,
+                    Shift.shift_end >= now,
+                )
+                .first()
+            )
+        request.state.on_shift = bool(active_shift) if shifts_exist else True
     lifecycle = org.lifecycle_state or "ACTIVE"
     if lifecycle == "TERMINATED":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="ORG_TERMINATED")
@@ -126,3 +179,23 @@ def require_roles(*roles: UserRole):
         return user
 
     return _require
+
+
+def require_mfa(user: User = Depends(get_current_user), request: Request = None) -> User:
+    if settings.ENV != "production":
+        return user
+    if request is not None and not getattr(request.state, "mfa_verified", False):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="MFA_REQUIRED")
+    return user
+
+
+def require_trusted_device(user: User = Depends(get_current_user), request: Request = None) -> User:
+    if request is not None and not getattr(request.state, "device_trusted", True):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="DEVICE_NOT_TRUSTED")
+    return user
+
+
+def require_on_shift(user: User = Depends(get_current_user), request: Request = None) -> User:
+    if request is not None and not getattr(request.state, "on_shift", True):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="OFF_SHIFT")
+    return user

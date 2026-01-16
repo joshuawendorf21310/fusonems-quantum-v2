@@ -22,6 +22,7 @@ const holdColumns = [
 
 export default function HemsQA() {
   const [holds, setHolds] = useState(demoHolds)
+  const [reviews, setReviews] = useState([])
   const [overrideState, setOverrideState] = useState({
     override_type: 'aviation',
     resource_type: 'hems_mission',
@@ -41,8 +42,20 @@ export default function HemsQA() {
     }
   }
 
+  const loadReviews = async () => {
+    try {
+      const data = await apiFetch('/api/hems/qa')
+      if (Array.isArray(data)) {
+        setReviews(data)
+      }
+    } catch (error) {
+      console.warn('Unable to load HEMS QA', error)
+    }
+  }
+
   useEffect(() => {
     loadHolds()
+    loadReviews()
   }, [])
 
   const handleOverrideChange = (event) => {
@@ -142,6 +155,20 @@ export default function HemsQA() {
             </div>
           </form>
         </div>
+      </div>
+
+      <div className="panel">
+        <SectionHeader eyebrow="QA Queue" title="HEMS Quality Reviews" />
+        <DataTable
+          columns={[
+            { key: 'mission_id', label: 'Mission' },
+            { key: 'reviewer', label: 'Reviewer' },
+            { key: 'status', label: 'Status' },
+            { key: 'determination', label: 'Determination' },
+          ]}
+          rows={reviews}
+          emptyState="No HEMS QA reviews yet."
+        />
       </div>
     </div>
   )

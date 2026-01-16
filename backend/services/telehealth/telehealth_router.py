@@ -31,6 +31,9 @@ class SessionCreate(BaseModel):
     consent_captured: bool = True
     consent_context: str = "telehealth_intake"
     policy_hash: str = ""
+    modality: str = "video"
+    recording_enabled: bool = True
+    consent_required: bool = True
 
 
 class SessionResponse(BaseModel):
@@ -39,6 +42,10 @@ class SessionResponse(BaseModel):
     host_name: str
     access_code: str
     status: str
+    modality: str
+    recording_enabled: bool
+    consent_required: bool
+    consent_captured_at: datetime | None
     started_at: datetime | None
     ended_at: datetime | None
 
@@ -100,6 +107,9 @@ def create_session(
         host_name=payload.host_name,
         access_code=str(secrets.randbelow(900000) + 100000),
         session_secret=secrets.token_hex(16),
+        modality=payload.modality,
+        recording_enabled=payload.recording_enabled,
+        consent_required=payload.consent_required,
     )
     apply_training_mode(session, request)
     db.add(session)
@@ -126,6 +136,8 @@ def create_session(
         apply_training_mode(consent, request)
         primary_db.add(consent)
         primary_db.commit()
+        session.consent_captured_at = datetime.utcnow()
+        db.commit()
         audit_and_event(
             db=primary_db,
             request=request,
@@ -134,7 +146,7 @@ def create_session(
             resource="consent_provenance",
             classification=consent.classification,
             after_state=model_snapshot(consent),
-            event_type="RECORD_WRITTEN",
+            event_type="telehealth.consent.created",
             event_payload={"consent_id": consent.id},
         )
     audit_and_event(
@@ -145,10 +157,56 @@ def create_session(
         resource="telehealth_session",
         classification=session.classification,
         after_state=model_snapshot(session),
-        event_type="RECORD_WRITTEN",
+        event_type="telehealth.session.created",
         event_payload={"session_uuid": session.session_uuid},
     )
     return session
+
+
+@router.post("/sessions/{session_uuid}/consent")
+def capture_consent(
+    session_uuid: str,
+    request: Request,
+    db: Session = Depends(get_telehealth_db),
+    primary_db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin, UserRole.provider)),
+):
+    session = get_scoped_record(
+        db,
+        request,
+        TelehealthSession,
+        session_uuid,
+        user,
+        id_field="session_uuid",
+        resource_label="telehealth",
+    )
+    consent = ConsentProvenance(
+        org_id=user.org_id,
+        subject_type="telehealth_session",
+        subject_id=session.session_uuid,
+        policy_hash="telehealth-standard",
+        context="telehealth_consent",
+        metadata_json={"title": session.title, "host_name": session.host_name},
+        captured_by=user.email,
+        device_id=request.headers.get("x-device-id", "") if request else "",
+    )
+    apply_training_mode(consent, request)
+    primary_db.add(consent)
+    primary_db.commit()
+    session.consent_captured_at = datetime.utcnow()
+    db.commit()
+    audit_and_event(
+        db=primary_db,
+        request=request,
+        user=user,
+        action="create",
+        resource="consent_provenance",
+        classification=consent.classification,
+        after_state=model_snapshot(consent),
+        event_type="telehealth.consent.created",
+        event_payload={"consent_id": consent.id},
+    )
+    return {"status": "ok", "session_uuid": session_uuid}
 
 
 @router.get("/sessions", response_model=list[SessionResponse])
@@ -212,7 +270,7 @@ def add_participant(
         resource="telehealth_participant",
         classification=participant.classification,
         after_state=model_snapshot(participant),
-        event_type="RECORD_WRITTEN",
+        event_type="telehealth.participant.added",
         event_payload={"participant_id": participant.id},
     )
     return participant
@@ -253,7 +311,7 @@ def add_message(
         resource="telehealth_message",
         classification=message.classification,
         after_state=model_snapshot(message),
-        event_type="RECORD_WRITTEN",
+        event_type="telehealth.message.created",
         event_payload={"message_id": message.id},
     )
     return message
@@ -290,6 +348,8 @@ def start_session(
         id_field="session_uuid",
         resource_label="telehealth",
     )
+    if session.consent_required and not session.consent_captured_at:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Consent required")
     enforce_legal_hold(db, user.org_id, "telehealth_session", session.session_uuid, "update")
     before = model_snapshot(session)
     session.status = "Live"
@@ -305,7 +365,7 @@ def start_session(
         classification=session.classification,
         before_state=before,
         after_state=model_snapshot(session),
-        event_type="RECORD_WRITTEN",
+        event_type="telehealth.session.started",
         event_payload={"session_uuid": session.session_uuid, "status": session.status},
     )
     return {"status": "started", "session_uuid": session_uuid}
@@ -348,7 +408,7 @@ def end_session(
         classification=session.classification,
         before_state=before,
         after_state=model_snapshot(session),
-        event_type="RECORD_WRITTEN",
+        event_type="telehealth.session.ended",
         event_payload={"session_uuid": session.session_uuid, "status": session.status},
     )
     return {"status": "ended", "session_uuid": session_uuid}
@@ -370,16 +430,45 @@ def get_webrtc_config(
         id_field="session_uuid",
         resource_label="telehealth",
     )
+    token = secrets.token_hex(16)
     return {
         "session_uuid": session_uuid,
         "provider": "webrtc",
         "room_id": session_uuid,
         "access_code": "internal",
+        "token": token,
+        "ice_servers": [
+            {"urls": ["stun:stun.l.google.com:19302"]},
+        ],
         "features": {
             "screen_share": True,
             "chat": True,
-            "recording": True,
+            "recording": session.recording_enabled,
             "multi_party": True,
         },
         "status": session.status,
+    }
+
+
+@router.get("/sessions/{session_uuid}/secure-token")
+def get_secure_token(
+    session_uuid: str,
+    request: Request,
+    db: Session = Depends(get_telehealth_db),
+    user: User = Depends(require_roles()),
+):
+    session = get_scoped_record(
+        db,
+        request,
+        TelehealthSession,
+        session_uuid,
+        user,
+        id_field="session_uuid",
+        resource_label="telehealth",
+    )
+    return {
+        "session_uuid": session_uuid,
+        "token": secrets.token_hex(16),
+        "encryption_state": session.encryption_state,
+        "modality": session.modality,
     }

@@ -50,7 +50,7 @@ def create_rule(
         resource="automation_rule",
         classification=rule.classification,
         after_state=model_snapshot(rule),
-        event_type="RECORD_WRITTEN",
+        event_type="automation.rule.created",
         event_payload={"rule_id": rule.id},
     )
     return rule
@@ -87,7 +87,7 @@ def create_task(
         resource="automation_task",
         classification=task.classification,
         after_state=model_snapshot(task),
-        event_type="RECORD_WRITTEN",
+        event_type="automation.task.created",
         event_payload={"task_id": task.id},
     )
     return task

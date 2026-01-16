@@ -7,7 +7,7 @@ from core.guards import require_module
 from core.security import require_roles
 from models.user import User, UserRole
 from models.workflow import WorkflowState
-from utils.tenancy import scoped_query
+from utils.tenancy import get_scoped_record, scoped_query
 from utils.workflows import upsert_workflow_state
 from utils.write_ops import audit_and_event, model_snapshot
 
@@ -63,7 +63,7 @@ def create_workflow(
         resource="workflow_state",
         classification=record.classification,
         after_state=model_snapshot(record),
-        event_type="RECORD_WRITTEN",
+        event_type="workflows.created",
         event_payload={"workflow_id": record.id},
     )
     return model_snapshot(record)
@@ -96,11 +96,14 @@ def update_workflow(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.hems_supervisor)),
 ):
-    record = scoped_query(db, WorkflowState, user.org_id, request.state.training_mode).filter(
-        WorkflowState.id == workflow_id
-    ).first()
-    if not record:
-        return {"status": "not_found"}
+    record = get_scoped_record(
+        db,
+        request,
+        WorkflowState,
+        workflow_id,
+        user,
+        resource_label="workflow_state",
+    )
     before = model_snapshot(record)
     record.status = payload.status
     record.last_step = payload.last_step
@@ -116,7 +119,7 @@ def update_workflow(
         classification=record.classification,
         before_state=before,
         after_state=model_snapshot(record),
-        event_type="RECORD_WRITTEN",
+        event_type="workflows.updated",
         event_payload={"workflow_id": record.id},
     )
     return {"status": "ok", "workflow_id": record.id}
@@ -129,11 +132,14 @@ def resume_workflow(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.hems_supervisor)),
 ):
-    record = scoped_query(db, WorkflowState, user.org_id, request.state.training_mode).filter(
-        WorkflowState.id == workflow_id
-    ).first()
-    if not record:
-        return {"status": "not_found"}
+    record = get_scoped_record(
+        db,
+        request,
+        WorkflowState,
+        workflow_id,
+        user,
+        resource_label="workflow_state",
+    )
     before = model_snapshot(record)
     record.status = "resumed"
     db.commit()
@@ -146,7 +152,7 @@ def resume_workflow(
         classification=record.classification,
         before_state=before,
         after_state=model_snapshot(record),
-        event_type="RECORD_WRITTEN",
+        event_type="workflows.resumed",
         event_payload={"workflow_id": record.id},
     )
     return {"status": "ok", "workflow_id": record.id}

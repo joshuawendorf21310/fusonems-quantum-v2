@@ -54,7 +54,7 @@ def create_consent(
         resource="consent_provenance",
         classification=consent.classification,
         after_state=model_snapshot(consent),
-        event_type="RECORD_WRITTEN",
+        event_type="consent.created",
         event_payload={"consent_id": consent.id},
     )
     return consent

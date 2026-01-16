@@ -62,7 +62,7 @@ def create_alert(
         resource="compliance_alert",
         classification=alert.classification,
         after_state=model_snapshot(alert),
-        event_type="RECORD_WRITTEN",
+        event_type="compliance.alert.created",
         event_payload={"alert_id": alert.id},
     )
     return alert
@@ -99,7 +99,7 @@ def log_audit(
         resource="access_audit",
         classification=audit.classification,
         after_state=model_snapshot(audit),
-        event_type="RECORD_WRITTEN",
+        event_type="compliance.audit.created",
         event_payload={"audit_id": audit.id},
     )
     return audit
@@ -149,7 +149,7 @@ def create_forensic(
         resource="forensic_audit",
         classification=record.classification,
         after_state=model_snapshot(record),
-        event_type="RECORD_WRITTEN",
+        event_type="compliance.forensic.created",
         event_payload={"forensic_id": record.id},
     )
     return record

@@ -9,6 +9,7 @@ export default function Telehealth() {
   const [messages, setMessages] = useState([])
   const [chatState, setChatState] = useState({ sender: '', message: '' })
   const [webrtcConfig, setWebrtcConfig] = useState(null)
+  const [secureToken, setSecureToken] = useState(null)
 
   const loadSessions = async () => {
     try {
@@ -85,6 +86,29 @@ export default function Telehealth() {
     }
   }
 
+  const fetchSecureToken = async () => {
+    if (!selectedSession) return
+    try {
+      const data = await apiFetch(`/api/telehealth/sessions/${selectedSession}/secure-token`)
+      setSecureToken(data)
+    } catch (error) {
+      console.warn('Unable to load secure token', error)
+    }
+  }
+
+  const captureConsent = async () => {
+    if (!selectedSession) return
+    try {
+      await apiFetch(`/api/telehealth/sessions/${selectedSession}/consent`, {
+        method: 'POST',
+        body: '{}',
+      })
+      await loadSessions()
+    } catch (error) {
+      console.warn('Unable to capture consent', error)
+    }
+  }
+
   useEffect(() => {
     loadMessages(selectedSession)
   }, [selectedSession])
@@ -134,7 +158,12 @@ export default function Telehealth() {
               <div className="list-row" key={session.session_uuid}>
                 <div>
                   <p className="list-title">{session.title}</p>
-                  <p className="list-sub">Host: {session.host_name}</p>
+                  <p className="list-sub">
+                    Host: {session.host_name} · Modality: {session.modality}
+                  </p>
+                  <p className="list-sub">
+                    Consent: {session.consent_captured_at ? 'Captured' : 'Required'}
+                  </p>
                 </div>
                 <span className="badge active">{session.status}</span>
               </div>
@@ -166,6 +195,14 @@ export default function Telehealth() {
                 </option>
               ))}
             </select>
+            <div className="inline-actions">
+              <button className="ghost-button" type="button" onClick={captureConsent}>
+                Capture Consent
+              </button>
+              <button className="ghost-button" type="button" onClick={fetchSecureToken}>
+                Get Secure Token
+              </button>
+            </div>
             {webrtcConfig ? (
               <pre className="code-block">{JSON.stringify(webrtcConfig, null, 2)}</pre>
             ) : (
@@ -175,6 +212,9 @@ export default function Telehealth() {
                 with no external API keys required.
               </p>
             )}
+            {secureToken ? (
+              <pre className="code-block">{JSON.stringify(secureToken, null, 2)}</pre>
+            ) : null}
           </div>
         </div>
         <div className="panel">

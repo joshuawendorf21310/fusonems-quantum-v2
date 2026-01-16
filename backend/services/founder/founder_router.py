@@ -44,7 +44,7 @@ def create_metric(
         resource="founder_metric",
         classification=metric.classification,
         after_state=model_snapshot(metric),
-        event_type="RECORD_WRITTEN",
+        event_type="founder.metric.created",
         event_payload={"metric_id": metric.id},
     )
     return metric

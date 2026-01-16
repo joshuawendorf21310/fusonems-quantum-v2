@@ -6,6 +6,7 @@ pydantic
 pydantic-settings
 email-validator
 telnyx
+pynacl
 lob
 psycopg2-binary
 passlib[bcrypt]
@@ -13,3 +14,5 @@ bcrypt<5.0.0
 python-multipart
 pytest
 httpx
+stripe
+boto3

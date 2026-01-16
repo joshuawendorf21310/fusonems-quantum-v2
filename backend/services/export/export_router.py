@@ -81,7 +81,7 @@ def export_full(
         resource="data_export_manifest",
         classification=record.classification,
         after_state=model_snapshot(record),
-        event_type="RECORD_WRITTEN",
+        event_type="exports.full.created",
         event_payload={"export_id": record.id},
     )
     upsert_workflow_state(
