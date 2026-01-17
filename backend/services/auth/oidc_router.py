@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import secrets
+import uuid
 from datetime import timedelta
 from typing import Any
 
@@ -12,9 +13,10 @@ from sqlalchemy.orm import Session
 
 from core.config import settings
 from core.database import get_db
-from core.security import create_access_token
+from core.security import create_access_token, get_current_user
 from models.organization import Organization
 from models.user import User
+from services.auth.session_service import create_session, revoke_session
 from utils.write_ops import audit_and_event, model_snapshot
 from utils.rate_limit import check_rate_limit
 
@@ -177,10 +179,26 @@ def oidc_callback(code: str, state: str, request: Request, db: Session = Depends
         user.oidc_sub = oidc_sub
         db.commit()
 
-    token = create_access_token(
-        {"sub": user.id, "org": user.org_id, "role": user.role, "mfa": mfa_verified},
+    # Create JWT with session claims
+    jti = str(uuid.uuid4())
+    token, expires_at = create_access_token(
+        {"sub": user.id, "org": user.org_id, "role": user.role, "mfa": mfa_verified, "jti": jti},
         expires_delta=timedelta(hours=1),
     )
+    
+    # Create session record
+    ip_address = request.client.host if request and request.client else None
+    user_agent = request.headers.get("user-agent") if request else None
+    session = create_session(
+        db=db,
+        org_id=user.org_id,
+        user_id=user.id,
+        jwt_jti=jti,
+        expires_at=expires_at,
+        ip_address=ip_address,
+        user_agent=user_agent,
+    )
+    
     audit_and_event(
         db=db,
         request=request,
@@ -188,9 +206,9 @@ def oidc_callback(code: str, state: str, request: Request, db: Session = Depends
         action="login",
         resource="oidc_session",
         classification="NON_PHI",
-        after_state=model_snapshot(user),
+        after_state={"session_id": session.id, "jti": jti, "user": model_snapshot(user)},
         event_type="auth.oidc.login",
-        event_payload={"auth_provider": "oidc"},
+        event_payload={"auth_provider": "oidc", "session_id": session.id},
     )
     redirect_response = RedirectResponse(_frontend_redirect(redirect_path))
     redirect_response.set_cookie(
@@ -202,7 +220,7 @@ def oidc_callback(code: str, state: str, request: Request, db: Session = Depends
     )
     redirect_response.set_cookie(
         settings.CSRF_COOKIE_NAME,
-        secrets.token_hex(16),
+        session.csrf_secret,
         httponly=False,
         secure=settings.ENV == "production",
         samesite="lax",
@@ -212,9 +230,42 @@ def oidc_callback(code: str, state: str, request: Request, db: Session = Depends
 
 
 @router.post("/logout")
-def oidc_logout(response: Response):
+def oidc_logout(
+    response: Response,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+    request: Request = None,
+):
     if not settings.OIDC_ENABLED:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="OIDC_DISABLED")
+    
+    # Extract JWT from request to get jti
+    token = request.cookies.get(settings.SESSION_COOKIE_NAME) if request else None
+    if token:
+        try:
+            payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=["HS256"])
+            jti = payload.get("jti")
+            if jti:
+                # Revoke the session
+                revoke_session(db=db, jwt_jti=jti, reason="oidc_logout")
+                
+                # Log session revocation
+                if request is not None:
+                    audit_and_event(
+                        db=db,
+                        request=request,
+                        user=user,
+                        action="revoke",
+                        resource="oidc_session",
+                        classification="NON_PHI",
+                        after_state={"jti": jti, "reason": "oidc_logout"},
+                        event_type="auth.oidc.session.revoked",
+                        event_payload={"jti": jti, "user_id": user.id, "reason": "oidc_logout"},
+                    )
+        except Exception:
+            # If we can't decode the token, still clear cookies
+            pass
+    
     response.delete_cookie(settings.SESSION_COOKIE_NAME)
     response.delete_cookie(settings.CSRF_COOKIE_NAME)
     config = _get_oidc_config()

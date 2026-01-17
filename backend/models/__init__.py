@@ -1,5 +1,6 @@
 from models.ai_console import AiInsight
 from models.ai_registry import AiOutputRegistry
+from models.auth_session import AuthSession
 from models.automation import WorkflowRule, WorkflowTask
 from models.billing import BillingRecord
 from models.billing_accounts import (
@@ -114,6 +115,7 @@ from models.compliance import ForensicAuditLog
 __all__ = [
     "AiInsight",
     "AiOutputRegistry",
+    "AuthSession",
     "WorkflowRule",
     "WorkflowTask",
     "BillingRecord",
