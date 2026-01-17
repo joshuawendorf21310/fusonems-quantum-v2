@@ -129,9 +129,18 @@ FATAL: remaining connection slots are reserved for non-replication superuser con
   3. Optimize slow queries or long-running transactions
   4. Add horizontal scaling (more instances) with connection pooler
 
+```
+QueuePool limit of 5 overflow 10 reached, connection timed out, timeout 30
+```
+
 #### "server closed the connection unexpectedly"
 - **Cause**: Database-side connection timeout exceeded.
 - **Solution**: Reduce `DB_POOL_RECYCLE` to be less than database timeout.
+
+```
+server closed the connection unexpectedly
+This probably means the server terminated abnormally before or while processing the request.
+```
 
 #### "FATAL: too many connections"
 - **Cause**: Exceeded PostgreSQL `max_connections`.
@@ -140,6 +149,10 @@ FATAL: remaining connection slots are reserved for non-replication superuser con
   2. Scale down number of application instances
   3. Increase PostgreSQL `max_connections` (requires database restart)
   4. Deploy PgBouncer or another connection pooler
+
+```
+FATAL: remaining connection slots are reserved for non-replication superuser connections
+```
 
 ### Connection Pooler (PgBouncer) Considerations
 

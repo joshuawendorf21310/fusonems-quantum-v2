@@ -65,7 +65,9 @@ def _create_engine_with_pooling(database_url: str):
     try:
         with engine.connect() as conn:
             conn.execute(text("SELECT 1"))
-            logger.info(f"Database connectivity verified for {resolved_url.split('@')[-1] if '@' in resolved_url else 'sqlite'}")
+            # Extract safe database identifier for logging (no credentials)
+            db_name = "sqlite" if "sqlite" in resolved_url else resolved_url.split("@")[-1].split("/")[0] if "@" in resolved_url else "database"
+            logger.info(f"Database connectivity verified for {db_name}")
     except Exception as e:
         if settings.ENV == "production":
             raise RuntimeError(
