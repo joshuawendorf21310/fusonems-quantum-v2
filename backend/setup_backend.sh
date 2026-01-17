@@ -3,6 +3,11 @@ setopt NO_BANG_HIST
 # ==========================================================
 # 🚑 FusonEMS Quantum Backend Auto-Setup Script
 # ==========================================================
+# ⚠️  SCAFFOLDING ONLY - FOR INITIAL PROJECT SETUP
+# This script generates a minimal backend structure for development.
+# For runtime database engine behavior, use backend/core/database.py
+# which contains the canonical, hardened pooling configuration.
+# ==========================================================
 
 echo "🔍 Initializing FusonEMS Quantum Backend Setup..."
 
@@ -45,6 +50,9 @@ settings = Settings()
 EOF
 
 # --- Database ---
+# NOTE: This is a minimal scaffolding version.
+# For production runtime, use the canonical backend/core/database.py
+# which includes hardened pooling, fail-fast connectivity checks, and tunable parameters.
 cat <<'EOF' > core/database.py
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker

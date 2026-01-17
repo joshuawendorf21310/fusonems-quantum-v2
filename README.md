@@ -66,6 +66,17 @@ cp .env.template backend/.env
 
 Set `VITE_API_URL` in `frontend/.env` (or your hosting platform) for API integration.
 
+### Database Connection Pool Tuning
+
+The platform uses PostgreSQL connection pooling for efficient resource management. Key environment variables for pool tuning:
+
+- `DB_POOL_SIZE` - Number of persistent connections (default: 5)
+- `DB_MAX_OVERFLOW` - Additional burst connections (default: 10)
+- `DB_POOL_TIMEOUT` - Timeout in seconds for getting a connection (default: 30)
+- `DB_POOL_RECYCLE` - Recycle connections after N seconds (default: 1800)
+
+For deployment-tier recommendations and detailed tuning guidance, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#database-connection-pooling).
+
 ## Tests
 ### Backend
 ```bash

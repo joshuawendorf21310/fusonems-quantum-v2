@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     ENV: str = Field("development", env="ENV")
     DB_POOL_SIZE: int = Field(5, env="DB_POOL_SIZE")
     DB_MAX_OVERFLOW: int = Field(10, env="DB_MAX_OVERFLOW")
+    DB_POOL_TIMEOUT: int = Field(30, env="DB_POOL_TIMEOUT")
+    DB_POOL_RECYCLE: int = Field(1800, env="DB_POOL_RECYCLE")
     TELNYX_API_KEY: str = Field("", env="TELNYX_API_KEY")
     TELNYX_NUMBER: str = Field("", env="TELNYX_NUMBER")
     TELNYX_CONNECTION_ID: str = Field("", env="TELNYX_CONNECTION_ID")
@@ -73,6 +75,8 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
+        extra = "ignore"
+        case_sensitive = False
 
 settings = Settings()
 
