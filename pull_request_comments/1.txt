@@ -1,0 +1,7 @@
+This PR is being closed to avoid duplication and merge ambiguity.
+
+Its scope has been consolidated into PR #2, which is the canonical Fix 3 implementation for database engine hardening, pooling configuration, and production-safe defaults.
+
+Closing this PR ensures a single authoritative merge point and a clean audit trail.
+
+No loss of functionality — superseded by PR #2.
