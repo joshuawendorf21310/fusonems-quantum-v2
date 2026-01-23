@@ -85,7 +85,7 @@ def create_template(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.medical_director, UserRole.founder)),
 ):
-    template = DocumentTemplate(**payload.dict(), org_id=user.org_id)
+    template = DocumentTemplate(**payload.model_dump(), org_id=user.org_id)
     apply_training_mode(template, request)
     db.add(template)
     db.commit()

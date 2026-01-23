@@ -84,7 +84,7 @@ def create_message(
             status_code=status.HTTP_412_PRECONDITION_FAILED,
             detail="Telnyx API key not configured",
         )
-    message = Message(**payload.dict(exclude={"media_url"}), org_id=user.org_id)
+    message = Message(**payload.model_dump(exclude={"media_url"}), org_id=user.org_id)
     apply_training_mode(message, request)
     if payload.channel.lower() in {"sms", "fax", "voice", "call"}:
         try:

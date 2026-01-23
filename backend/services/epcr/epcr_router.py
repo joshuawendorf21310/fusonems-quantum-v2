@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -72,7 +72,7 @@ def create_patient(
     __: User = Depends(require_trusted_device),
 ):
     enforce_legal_hold(db, user.org_id, "epcr_patient", payload.incident_number, "create")
-    patient = Patient(**payload.dict(), org_id=user.org_id)
+    patient = Patient(**payload.model_dump(), org_id=user.org_id)
     apply_training_mode(patient, request)
     db.add(patient)
     db.commit()
@@ -215,7 +215,7 @@ def ingest_ocr(
             request=request,
             user=user,
             builder=builder,
-            input_payload=payload.dict(),
+            input_payload=payload.model_dump(),
             classification="PHI",
             action="ocr_ingest",
             resource="epcr_patient",
@@ -246,7 +246,7 @@ def ingest_ocr(
                 "source": entry_dict.get("source") or payload.device_type,
             }
             for entry_dict in [
-                entry.dict() if hasattr(entry, "dict") else entry for entry in raw_fields
+                entry.model_dump() if hasattr(entry, "dict") else entry for entry in raw_fields
             ]
         ]
     for entry in structured_fields:
@@ -268,7 +268,7 @@ def ingest_ocr(
     patient = get_scoped_record(db, request, Patient, patient_id, user, resource_label="epcr")
     enforce_legal_hold(db, user.org_id, "epcr_patient", str(patient.id), "update")
     before = model_snapshot(patient)
-    snapshot = payload.dict()
+    snapshot = payload.model_dump()
     snapshot["fields"] = structured_fields
     snapshot["unknown_fields"] = unknown_fields
     low_conf_fields = [field for field in structured_fields if field.get("confidence", 0) < OCR_MIN_CONFIDENCE]
@@ -425,7 +425,7 @@ def add_lab(
     enforce_legal_hold(db, user.org_id, "epcr_patient", str(patient.id), "update")
     before = model_snapshot(patient)
     labs = list(patient.labs or [])
-    labs.append(payload.dict())
+    labs.append(payload.model_dump())
     patient.labs = labs
     db.commit()
     audit_and_event(
@@ -457,7 +457,7 @@ def add_cct_intervention(
     enforce_legal_hold(db, user.org_id, "epcr_patient", str(patient.id), "update")
     before = model_snapshot(patient)
     entries = list(patient.cct_interventions or [])
-    entries.append(payload.dict())
+    entries.append(payload.model_dump())
     patient.cct_interventions = entries
     db.commit()
     audit_and_event(
@@ -567,7 +567,7 @@ def lock_chart(
     enforce_legal_hold(db, user.org_id, "epcr_patient", str(patient.id), "update")
     before = model_snapshot(patient)
     patient.chart_locked = True
-    patient.locked_at = datetime.utcnow()
+    patient.locked_at = datetime.now(timezone.utc)
     patient.locked_by = user.email
     db.commit()
     audit_and_event(

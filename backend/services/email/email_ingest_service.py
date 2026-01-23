@@ -4,7 +4,7 @@ import base64
 import hashlib
 import hmac
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
@@ -320,7 +320,7 @@ def ingest_inbound(
         actor_id=None,
         actor_role="system",
         device_id="",
-        server_time=getattr(request.state, "server_time", datetime.utcnow()),
+        server_time=getattr(request.state, "server_time", datetime.now(timezone.utc)),
         drift_seconds=getattr(request.state, "drift_seconds", 0),
         drifted=getattr(request.state, "drifted", False),
         training_mode=getattr(request.state, "training_mode", False),

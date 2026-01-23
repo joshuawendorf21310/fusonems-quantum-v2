@@ -43,7 +43,7 @@ def create_insight(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
 ):
-    insight = AiInsight(**payload.dict(), org_id=user.org_id)
+    insight = AiInsight(**payload.model_dump(), org_id=user.org_id)
     apply_training_mode(insight, request)
     db.add(insight)
     db.commit()

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -265,7 +265,7 @@ def create_aircraft(
     db: Session = Depends(get_hems_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.hems_supervisor, UserRole.aviation_qa)),
 ):
-    aircraft = HemsAircraft(org_id=user.org_id, **payload.dict())
+    aircraft = HemsAircraft(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(aircraft, request)
     db.add(aircraft)
     db.commit()
@@ -303,7 +303,7 @@ def create_crew(
     db: Session = Depends(get_hems_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.hems_supervisor, UserRole.aviation_qa)),
 ):
-    crew = HemsCrew(org_id=user.org_id, **payload.dict())
+    crew = HemsCrew(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(crew, request)
     db.add(crew)
     db.commit()
@@ -639,7 +639,7 @@ def simulate_mission(
         pickup_location="Training LZ Alpha",
         destination_location="Demo Trauma Center",
         status="accepted",
-        correlation_id=f"SIM-{datetime.utcnow().strftime('%H%M%S')}",
+        correlation_id=f"SIM-{datetime.now(timezone.utc).strftime('%H%M%S')}",
     )
     apply_training_mode(mission, request)
     db.add(mission)
@@ -714,7 +714,7 @@ def flag_hems_qa(
     )
     if not mission:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Mission not found")
-    review = HemsQualityReview(org_id=user.org_id, **payload.dict())
+    review = HemsQualityReview(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(review, request)
     db.add(review)
     db.commit()

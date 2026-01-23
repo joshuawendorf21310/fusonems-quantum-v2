@@ -47,7 +47,7 @@ def create_case(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.founder)),
 ):
-    record = LegalCase(org_id=user.org_id, **payload.dict())
+    record = LegalCase(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(record, request)
     db.add(record)
     db.commit()
@@ -94,7 +94,7 @@ def create_evidence(
     )
     if not case:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Case not found")
-    record = LegalEvidence(org_id=user.org_id, **payload.dict())
+    record = LegalEvidence(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(record, request)
     db.add(record)
     db.commit()

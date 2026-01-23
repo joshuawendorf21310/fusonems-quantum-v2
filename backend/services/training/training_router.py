@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
@@ -120,7 +120,7 @@ def seed_training_data(
     unit = Unit(
         org_id=user.org_id,
         classification="TRAINING_ONLY",
-        unit_identifier=f"TR-{datetime.utcnow().strftime('%H%M')}",
+        unit_identifier=f"TR-{datetime.now(timezone.utc).strftime('%H%M')}",
         status="Available",
         latitude=0.0,
         longitude=0.0,
@@ -141,8 +141,8 @@ def seed_training_data(
         org_id=user.org_id,
         classification="TRAINING_ONLY",
         crew_name="Training Crew",
-        shift_start=datetime.utcnow(),
-        shift_end=datetime.utcnow(),
+        shift_start=datetime.now(timezone.utc),
+        shift_end=datetime.now(timezone.utc),
         status="Training",
         certifications=["BLS"],
     )

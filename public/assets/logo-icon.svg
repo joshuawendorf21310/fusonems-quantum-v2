@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="FusionEMS app icon - dark">
+  <defs>
+    <linearGradient id="gi" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#FF9B22"/>
+      <stop offset="80%" stop-color="#FF6A3A"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="72" fill="#000000"/>
+  <g transform="translate(256,256)">
+    <path d="M-90,-36 C-38,-126 120,-108 160,-18 C200,72 44,144 -68,144 C-156,144 -208,96 -208,36 C-208,-36 -176,-72 -90,-36 Z" fill="url(#gi)"/>
+    <circle cx="92" cy="-18" r="18" fill="#000000"/>
+  </g>
+</svg>

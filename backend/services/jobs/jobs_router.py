@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Request, status
@@ -119,7 +119,7 @@ def run_job(
     job = get_scoped_record(db, request, JobQueue, job_id, user, resource_label="job_queue")
     before = model_snapshot(job)
     job.status = "running"
-    job.started_at = datetime.utcnow()
+    job.started_at = datetime.now(timezone.utc)
     job.attempts += 1
     run = JobRun(org_id=user.org_id, job_id=job.id, status="running")
     apply_training_mode(run, request)

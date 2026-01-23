@@ -232,7 +232,7 @@ def create_invoice(
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
 ):
     enforce_legal_hold(db, user.org_id, "billing_record", payload.invoice_number, "create")
-    record = BillingRecord(**payload.dict(), org_id=user.org_id)
+    record = BillingRecord(**payload.model_dump(), org_id=user.org_id)
     apply_training_mode(record, request)
     db.add(record)
     db.commit()
@@ -349,7 +349,7 @@ def submit_837p(
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
     _: User = Depends(require_mfa),
 ):
-    submission = ClaimSubmission(org_id=user.org_id, **payload.dict())
+    submission = ClaimSubmission(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(submission, request)
     db.add(submission)
     db.commit()
@@ -400,7 +400,7 @@ def import_835(
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
     _: User = Depends(require_mfa),
 ):
-    record = RemittanceAdvice(org_id=user.org_id, **payload.dict())
+    record = RemittanceAdvice(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(record, request)
     db.add(record)
     db.commit()
@@ -440,7 +440,7 @@ def import_ack(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
 ):
-    ack = ClearinghouseAck(org_id=user.org_id, **payload.dict())
+    ack = ClearinghouseAck(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(ack, request)
     db.add(ack)
     db.commit()
@@ -477,7 +477,7 @@ def check_eligibility(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
 ):
-    record = EligibilityCheck(org_id=user.org_id, **payload.dict(), status="checked")
+    record = EligibilityCheck(org_id=user.org_id, **payload.model_dump(), status="checked")
     apply_training_mode(record, request)
     db.add(record)
     db.commit()
@@ -514,7 +514,7 @@ def claim_status(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
 ):
-    record = ClaimStatusInquiry(org_id=user.org_id, **payload.dict(), status="received")
+    record = ClaimStatusInquiry(org_id=user.org_id, **payload.model_dump(), status="received")
     apply_training_mode(record, request)
     db.add(record)
     db.commit()
@@ -551,7 +551,7 @@ def create_statement(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
 ):
-    record = PatientStatement(org_id=user.org_id, **payload.dict())
+    record = PatientStatement(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(record, request)
     db.add(record)
     db.commit()
@@ -588,7 +588,7 @@ def post_payment(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
 ):
-    record = PaymentPosting(org_id=user.org_id, **payload.dict())
+    record = PaymentPosting(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(record, request)
     db.add(record)
     db.commit()
@@ -625,7 +625,7 @@ def create_appeal(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
 ):
-    record = AppealPacket(org_id=user.org_id, **payload.dict())
+    record = AppealPacket(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(record, request)
     db.add(record)
     db.commit()
@@ -693,7 +693,7 @@ def create_business_task(
     user: User = Depends(require_roles(UserRole.admin, UserRole.founder)),
 ):
     task = BusinessOpsTask(
-        **payload.dict(exclude={"metadata"}),
+        **payload.model_dump(exclude={"metadata"}),
         task_metadata=payload.metadata,
         org_id=user.org_id,
     )

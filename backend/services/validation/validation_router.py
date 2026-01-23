@@ -135,7 +135,7 @@ def create_rule(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.founder)),
 ):
-    rule = ValidationRule(org_id=user.org_id, **payload.dict())
+    rule = ValidationRule(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(rule, request)
     db.add(rule)
     db.commit()
@@ -170,7 +170,7 @@ def update_rule(
     if not rule:
         return {"status": "not_found"}
     before = model_snapshot(rule)
-    data = payload.dict(exclude_unset=True)
+    data = payload.model_dump(exclude_unset=True)
     for key, value in data.items():
         if value is not None:
             setattr(rule, key, value)

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -31,7 +31,8 @@ router = APIRouter(
 def _retention_blocked(policy: RetentionPolicy | None, created_at: datetime | None) -> bool:
     if not policy or policy.retention_days is None or created_at is None:
         return False
-    return created_at + timedelta(days=policy.retention_days) > datetime.utcnow()
+    created_at_aware = created_at.replace(tzinfo=timezone.utc)
+    return created_at_aware + timedelta(days=policy.retention_days) > datetime.now(timezone.utc)
 
 
 def _policy_decision(

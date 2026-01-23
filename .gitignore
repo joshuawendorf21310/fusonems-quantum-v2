@@ -7,6 +7,8 @@ backend/test.db
 node_modules/
 frontend/dist/
 frontend/dist-ssr/
+**/.next/
+**/tsconfig.tsbuildinfo
 __pycache__/
 # Local databases
 prod.db

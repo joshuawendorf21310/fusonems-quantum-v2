@@ -81,7 +81,7 @@ def create_metric(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.founder)),
 ):
-    metric = AnalyticsMetric(org_id=user.org_id, **payload.dict())
+    metric = AnalyticsMetric(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(metric, request)
     db.add(metric)
     db.commit()

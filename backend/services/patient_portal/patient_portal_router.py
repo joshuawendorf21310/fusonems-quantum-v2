@@ -47,7 +47,7 @@ def create_account(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.provider, UserRole.founder)),
 ):
-    record = PatientPortalAccount(org_id=user.org_id, **payload.dict())
+    record = PatientPortalAccount(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(record, request)
     db.add(record)
     db.commit()
@@ -94,7 +94,7 @@ def create_message(
     )
     if not account:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Account not found")
-    record = PatientPortalMessage(org_id=user.org_id, **payload.dict())
+    record = PatientPortalMessage(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(record, request)
     db.add(record)
     db.commit()

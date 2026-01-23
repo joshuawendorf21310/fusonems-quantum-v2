@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Request, status
 from pydantic import BaseModel
@@ -103,7 +103,7 @@ def release_hold(
         return {"status": "not_found"}
     before = model_snapshot(hold)
     hold.status = "Released"
-    hold.released_at = datetime.utcnow()
+    hold.released_at = datetime.now(timezone.utc)
     db.commit()
     if request is not None:
         audit_and_event(
@@ -221,7 +221,7 @@ def approve_override(
     before = model_snapshot(override)
     override.status = "Approved"
     override.approved_by = user.email
-    override.approved_at = datetime.utcnow()
+    override.approved_at = datetime.now(timezone.utc)
     db.commit()
     if request is not None:
         audit_and_event(

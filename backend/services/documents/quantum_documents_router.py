@@ -3,7 +3,7 @@ import hmac
 import io
 import json
 import zipfile
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import uuid4
 
@@ -75,7 +75,8 @@ def _has_permission(
 def _retention_blocked(policy: RetentionPolicy | None, created_at: datetime | None) -> bool:
     if not policy or policy.retention_days is None or created_at is None:
         return False
-    return created_at + timedelta(days=policy.retention_days) > datetime.utcnow()
+    created_at_aware = created_at.replace(tzinfo=timezone.utc)
+    return created_at_aware + timedelta(days=policy.retention_days) > datetime.now(timezone.utc)
 
 
 def _legal_hold_count(db: Session, org_id: int, file_id: str) -> int:
@@ -105,7 +106,7 @@ def _serialize_file(file: DocumentFile, legal_hold_count: int, policy: Retention
 
 
 def _signed_download_url(file_id: str, org_id: int) -> str:
-    expires = int((datetime.utcnow() + timedelta(minutes=10)).timestamp())
+    expires = int((datetime.now(timezone.utc) + timedelta(minutes=10)).timestamp())
     signature = _sign_download(file_id, org_id, expires)
     return f"/api/documents/files/{file_id}/download?expires={expires}&signature={signature}"
 
@@ -117,7 +118,7 @@ def _sign_download(file_id: str, org_id: int, expires: int) -> str:
 
 
 def _verify_signature(file_id: str, org_id: int, expires: int, signature: str) -> bool:
-    if expires < int(datetime.utcnow().timestamp()):
+    if expires < int(datetime.now(timezone.utc).timestamp()):
         return False
     expected = _sign_download(file_id, org_id, expires)
     return hmac.compare_digest(expected, signature)
@@ -636,7 +637,7 @@ def create_discovery_export(
 
     manifest = {
         "export_id": export.id,
-        "generated_at": datetime.utcnow().isoformat(),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
         "files": [
             {
                 "id": doc.id,
@@ -662,7 +663,7 @@ def create_discovery_export(
     export.status = "complete"
     export.storage_key = storage_key
     export.sha256 = sha256
-    export.completed_at = datetime.utcnow()
+    export.completed_at = datetime.now(timezone.utc)
     db.commit()
 
     audit_and_event(

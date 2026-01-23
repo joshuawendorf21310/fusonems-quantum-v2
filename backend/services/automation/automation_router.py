@@ -37,7 +37,7 @@ def create_rule(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
 ):
-    rule = WorkflowRule(**payload.dict(), org_id=user.org_id)
+    rule = WorkflowRule(**payload.model_dump(), org_id=user.org_id)
     apply_training_mode(rule, request)
     db.add(rule)
     db.commit()
@@ -74,7 +74,7 @@ def create_task(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
 ):
-    task = WorkflowTask(**payload.dict(), org_id=user.org_id)
+    task = WorkflowTask(**payload.model_dump(), org_id=user.org_id)
     apply_training_mode(task, request)
     db.add(task)
     db.commit()

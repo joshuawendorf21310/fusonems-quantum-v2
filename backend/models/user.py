@@ -9,6 +9,7 @@ class UserRole(str, Enum):
     admin = "admin"
     dispatcher = "dispatcher"
     provider = "provider"
+<<<<<<< ours
     investor = "investor"
     founder = "founder"
     pilot = "pilot"
@@ -17,6 +18,16 @@ class UserRole(str, Enum):
     hems_supervisor = "hems_supervisor"
     aviation_qa = "aviation_qa"
     medical_director = "medical_director"
+=======
+    medical_director = "medical_director"
+    hems_supervisor = "hems_supervisor"
+    pilot = "pilot"
+    flight_nurse = "flight_nurse"
+    flight_medic = "flight_medic"
+    aviation_qa = "aviation_qa"
+    investor = "investor"
+    crew = "crew"
+>>>>>>> theirs
     billing = "billing"
 
 

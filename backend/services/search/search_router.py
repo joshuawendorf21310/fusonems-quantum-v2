@@ -96,7 +96,7 @@ def index_record(
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher, UserRole.provider, UserRole.founder)),
 ):
     entry = SearchIndexEntry(
-        **payload.dict(),
+        **payload.model_dump(),
         org_id=user.org_id,
     )
     apply_training_mode(entry, request)

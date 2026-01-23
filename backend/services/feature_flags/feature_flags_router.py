@@ -58,7 +58,7 @@ def create_flag(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.founder)),
 ):
-    flag = FeatureFlag(org_id=user.org_id, **payload.dict())
+    flag = FeatureFlag(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(flag, request)
     db.add(flag)
     db.commit()

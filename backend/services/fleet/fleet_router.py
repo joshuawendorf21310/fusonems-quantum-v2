@@ -76,7 +76,7 @@ def create_vehicle(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
 ):
-    record = FleetVehicle(org_id=user.org_id, **payload.dict())
+    record = FleetVehicle(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(record, request)
     db.add(record)
     db.commit()
@@ -123,7 +123,7 @@ def create_maintenance(
     )
     if not vehicle:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Vehicle not found")
-    record = FleetMaintenance(org_id=user.org_id, **payload.dict())
+    record = FleetMaintenance(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(record, request)
     db.add(record)
     db.commit()
@@ -170,7 +170,7 @@ def create_inspection(
     )
     if not vehicle:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Vehicle not found")
-    record = FleetInspection(org_id=user.org_id, **payload.dict())
+    record = FleetInspection(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(record, request)
     db.add(record)
     db.commit()
@@ -217,7 +217,7 @@ def create_telemetry(
     )
     if not vehicle:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Vehicle not found")
-    record = FleetTelemetry(org_id=user.org_id, **payload.dict())
+    record = FleetTelemetry(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(record, request)
     db.add(record)
     db.commit()

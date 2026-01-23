@@ -42,7 +42,7 @@ def create_shift(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
 ):
-    shift = Shift(**payload.dict(), org_id=user.org_id)
+    shift = Shift(**payload.model_dump(), org_id=user.org_id)
     apply_training_mode(shift, request)
     db.add(shift)
     db.commit()

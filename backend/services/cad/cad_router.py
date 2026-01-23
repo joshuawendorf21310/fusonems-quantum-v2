@@ -79,7 +79,7 @@ def create_call(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
 ):
-    call = Call(**payload.dict(), org_id=user.org_id)
+    call = Call(**payload.model_dump(), org_id=user.org_id)
     apply_training_mode(call, request)
     db.add(call)
     db.commit()
@@ -129,7 +129,7 @@ def create_unit(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
 ):
-    unit = Unit(**payload.dict(), org_id=user.org_id)
+    unit = Unit(**payload.model_dump(), org_id=user.org_id)
     apply_training_mode(unit, request)
     db.add(unit)
     db.commit()

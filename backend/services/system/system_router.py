@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
@@ -60,7 +60,7 @@ def system_health(
         .order_by(EventLog.created_at.desc())
         .first()
     )
-    one_hour_ago = datetime.utcnow() - timedelta(hours=1)
+    one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
     recent_events = (
         scoped_query(db, EventLog, user.org_id, request.state.training_mode)
         .filter(EventLog.created_at >= one_hour_ago)

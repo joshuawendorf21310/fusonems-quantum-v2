@@ -33,7 +33,7 @@ def create_task(
     user: User = Depends(require_roles(UserRole.admin, UserRole.founder)),
 ):
     task = BusinessOpsTask(
-        **payload.dict(exclude={"metadata"}),
+        **payload.model_dump(exclude={"metadata"}),
         task_metadata=payload.metadata,
         org_id=user.org_id,
     )

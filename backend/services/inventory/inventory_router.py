@@ -68,7 +68,7 @@ def create_item(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.provider)),
 ):
-    item = InventoryItem(org_id=user.org_id, **payload.dict())
+    item = InventoryItem(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(item, request)
     db.add(item)
     db.commit()
@@ -115,7 +115,7 @@ def create_movement(
     )
     if not item:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Item not found")
-    record = InventoryMovement(org_id=user.org_id, **payload.dict())
+    record = InventoryMovement(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(record, request)
     db.add(record)
     db.commit()
@@ -155,7 +155,7 @@ def create_rig_check(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.provider)),
 ):
-    record = InventoryRigCheck(org_id=user.org_id, **payload.dict())
+    record = InventoryRigCheck(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(record, request)
     db.add(record)
     db.commit()

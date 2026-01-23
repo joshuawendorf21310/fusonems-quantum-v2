@@ -63,7 +63,7 @@ def create_master(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.provider)),
 ):
-    record = MedicationMaster(org_id=user.org_id, **payload.dict())
+    record = MedicationMaster(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(record, request)
     db.add(record)
     db.commit()
@@ -100,7 +100,7 @@ def create_administration(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.provider)),
 ):
-    record = MedicationAdministration(org_id=user.org_id, **payload.dict())
+    record = MedicationAdministration(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(record, request)
     db.add(record)
     db.commit()
@@ -137,7 +137,7 @@ def create_formulary(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.provider)),
 ):
-    record = MedicationFormularyVersion(org_id=user.org_id, **payload.dict())
+    record = MedicationFormularyVersion(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(record, request)
     db.add(record)
     db.commit()

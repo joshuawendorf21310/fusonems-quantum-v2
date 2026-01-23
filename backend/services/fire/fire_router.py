@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 from typing import Optional
 from uuid import uuid4
@@ -235,7 +235,7 @@ def update_timeline(
     )
     enforce_legal_hold(db, user.org_id, "fire_incident", incident.incident_id, "update")
     before = model_snapshot(incident)
-    for field, value in payload.dict(exclude_none=True).items():
+    for field, value in payload.model_dump(exclude_none=True).items():
         setattr(incident, field, value)
     log_audit(db, incident_id, "Updated timeline", actor_org_id=user.org_id)
     db.commit()
@@ -274,7 +274,7 @@ def update_status(
     )
     enforce_legal_hold(db, user.org_id, "fire_incident", incident.incident_id, "update")
     before = model_snapshot(incident)
-    for field, value in payload.dict(exclude_none=True).items():
+    for field, value in payload.model_dump(exclude_none=True).items():
         setattr(incident, field, value)
     log_audit(db, incident_id, "Updated status", actor_org_id=user.org_id)
     db.commit()
@@ -314,7 +314,7 @@ def approve_incident(
     enforce_legal_hold(db, user.org_id, "fire_incident", incident.incident_id, "update")
     before = model_snapshot(incident)
     incident.approved_by = payload.approved_by
-    incident.approved_at = payload.approved_at or datetime.utcnow()
+    incident.approved_at = payload.approved_at or datetime.now(timezone.utc)
     log_audit(db, incident_id, f"Approved by {payload.approved_by}", actor_org_id=user.org_id)
     db.commit()
     db.refresh(incident)
@@ -379,7 +379,7 @@ def create_apparatus(
     db: Session = Depends(get_fire_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
 ):
-    apparatus = FireApparatus(**payload.dict(), org_id=user.org_id)
+    apparatus = FireApparatus(**payload.model_dump(), org_id=user.org_id)
     apply_training_mode(apparatus, request)
     db.add(apparatus)
     db.commit()
@@ -423,7 +423,7 @@ def create_apparatus_inventory(
     )
     if not apparatus:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Apparatus not found")
-    record = FireApparatusInventory(**payload.dict(), org_id=user.org_id)
+    record = FireApparatusInventory(**payload.model_dump(), org_id=user.org_id)
     apply_training_mode(record, request)
     db.add(record)
     db.commit()
@@ -463,7 +463,7 @@ def create_personnel(
     db: Session = Depends(get_fire_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
 ):
-    record = FirePersonnel(**payload.dict(), org_id=user.org_id)
+    record = FirePersonnel(**payload.model_dump(), org_id=user.org_id)
     apply_training_mode(record, request)
     db.add(record)
     db.commit()
@@ -637,7 +637,7 @@ def create_training(
     db: Session = Depends(get_fire_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
 ):
-    record = FireTrainingRecord(**payload.dict(), org_id=user.org_id)
+    record = FireTrainingRecord(**payload.model_dump(), org_id=user.org_id)
     apply_training_mode(record, request)
     db.add(record)
     db.commit()
@@ -674,7 +674,7 @@ def create_prevention(
     db: Session = Depends(get_fire_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
 ):
-    record = FirePreventionRecord(**payload.dict(), org_id=user.org_id)
+    record = FirePreventionRecord(**payload.model_dump(), org_id=user.org_id)
     apply_training_mode(record, request)
     db.add(record)
     db.commit()
@@ -782,7 +782,7 @@ def export_nfirs(
     export_payload = {
         "format": "NFIRS",
         "incident_id": payload.incident_id,
-        "generated_at": datetime.utcnow().isoformat(),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
     }
     record = FireExportRecord(
         org_id=user.org_id,
@@ -825,7 +825,7 @@ def export_neris(
     export_payload = {
         "format": "NERIS",
         "incident_id": payload.incident_id,
-        "generated_at": datetime.utcnow().isoformat(),
+        "generated_at": datetime.now(timezone.utc).isoformat(),
     }
     record = FireExportRecord(
         org_id=user.org_id,

@@ -64,7 +64,7 @@ def create_pwa(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.founder)),
 ):
-    record = PwaDistribution(org_id=user.org_id, **payload.dict())
+    record = PwaDistribution(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(record, request)
     db.add(record)
     db.commit()
@@ -101,7 +101,7 @@ def create_pricing(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.founder)),
 ):
-    record = PricingPlan(org_id=user.org_id, **payload.dict())
+    record = PricingPlan(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(record, request)
     db.add(record)
     db.commit()
@@ -138,7 +138,7 @@ def create_incident(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.founder)),
 ):
-    record = IncidentCommand(org_id=user.org_id, **payload.dict())
+    record = IncidentCommand(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(record, request)
     db.add(record)
     db.commit()
@@ -175,7 +175,7 @@ def create_governance(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.founder)),
 ):
-    record = DataGovernanceRule(org_id=user.org_id, **payload.dict())
+    record = DataGovernanceRule(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(record, request)
     db.add(record)
     db.commit()

@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from fastapi import Depends, HTTPException, Request, status
@@ -32,7 +32,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     to_encode = data.copy()
     if "sub" in to_encode:
         to_encode["sub"] = str(to_encode["sub"])
-    expire = datetime.utcnow() + (
+    expire = datetime.now(timezone.utc) + (
         expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     to_encode.update({"exp": expire})
@@ -105,7 +105,7 @@ def get_current_user(
                 .first()
             )
             if device:
-                device.last_seen = datetime.utcnow()
+                device.last_seen = datetime.now(timezone.utc)
                 db.commit()
                 trusted_flag = device.trusted
             else:
@@ -114,7 +114,7 @@ def get_current_user(
         shifts_exist = db.query(Shift).filter(Shift.org_id == user.org_id).count() > 0
         active_shift = None
         if shifts_exist:
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             active_shift = (
                 db.query(Shift)
                 .filter(

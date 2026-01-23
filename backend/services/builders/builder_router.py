@@ -76,7 +76,7 @@ def create_builder(
     user: User = Depends(require_roles(UserRole.admin, UserRole.founder)),
 ):
     registry = BuilderRegistry(
-        **payload.dict(),
+        **payload.model_dump(),
         org_id=user.org_id,
         last_changed_by=user.id,
     )
@@ -114,7 +114,7 @@ def update_builder(
     if not registry:
         return {"status": "not_found"}
     before = model_snapshot(registry)
-    data = payload.dict(exclude_unset=True)
+    data = payload.model_dump(exclude_unset=True)
     data.pop("change_summary", None)
     for key, value in data.items():
         if value is not None:

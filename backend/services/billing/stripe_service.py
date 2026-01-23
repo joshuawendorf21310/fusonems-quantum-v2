@@ -1,5 +1,5 @@
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone
 
 import stripe
 from sqlalchemy.orm import Session
@@ -124,7 +124,7 @@ def record_payment(
         amount=amount,
         status=status,
         method=method,
-        received_at=datetime.utcnow(),
+        received_at=datetime.now(timezone.utc),
         meta_data=metadata,
     )
     db.add(payment)

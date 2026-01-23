@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="FusionEMS social preview - dark">
+  <defs>
+    <linearGradient id="gs" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#FF9B22"/>
+      <stop offset="85%" stop-color="#FF6A3A"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="#000000"/>
+
+  <!-- centered wordmark -->
+  <g transform="translate(600,315)" text-anchor="middle">
+    <text x="0" y="-6" font-family="Inter, Roboto, Arial, sans-serif" font-weight="800" font-size="96" fill="#FFFFFF">Fusion</text>
+    <text x="220" y="-6" font-family="Inter, Roboto, Arial, sans-serif" font-weight="900" font-size="96" fill="url(#gs)">EMS</text>
+    <text x="0" y="56" font-family="Inter, Roboto, Arial, sans-serif" font-weight="600" font-size="20" fill="#9AA0A6">Unified EMS operating system</text>
+  </g>
+
+</svg>

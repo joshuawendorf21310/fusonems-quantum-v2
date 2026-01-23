@@ -73,7 +73,7 @@ def create_rubric(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.medical_director, UserRole.founder)),
 ):
-    rubric = QARubric(org_id=user.org_id, **payload.dict())
+    rubric = QARubric(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(rubric, request)
     db.add(rubric)
     db.commit()
@@ -110,7 +110,7 @@ def create_case(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.medical_director)),
 ):
-    case = QACase(org_id=user.org_id, **payload.dict())
+    case = QACase(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(case, request)
     db.add(case)
     db.commit()
@@ -155,7 +155,7 @@ def create_review(
     review = QAReview(
         org_id=user.org_id,
         reviewer_id=user.id,
-        **payload.dict(),
+        **payload.model_dump(),
     )
     apply_training_mode(review, request)
     db.add(review)
@@ -189,7 +189,7 @@ def create_remediation(
     )
     if not case:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Case not found")
-    remediation = QARemediation(org_id=user.org_id, **payload.dict())
+    remediation = QARemediation(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(remediation, request)
     db.add(remediation)
     db.commit()

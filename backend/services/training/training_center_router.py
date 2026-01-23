@@ -90,7 +90,7 @@ def create_course(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.founder)),
 ):
-    course = TrainingCourse(org_id=user.org_id, **payload.dict())
+    course = TrainingCourse(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(course, request)
     db.add(course)
     db.commit()
@@ -144,7 +144,7 @@ def create_enrollment(
     )
     if not enrollee:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User not found")
-    enrollment = TrainingEnrollment(org_id=user.org_id, **payload.dict())
+    enrollment = TrainingEnrollment(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(enrollment, request)
     db.add(enrollment)
     db.commit()
@@ -191,7 +191,7 @@ def create_credential(
     )
     if not credential_user:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User not found")
-    record = CredentialRecord(org_id=user.org_id, **payload.dict())
+    record = CredentialRecord(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(record, request)
     db.add(record)
     db.commit()
@@ -238,7 +238,7 @@ def create_skill(
     )
     if not skill_user:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User not found")
-    skill = SkillCheckoff(org_id=user.org_id, **payload.dict())
+    skill = SkillCheckoff(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(skill, request)
     db.add(skill)
     db.commit()
@@ -285,7 +285,7 @@ def create_ce(
     )
     if not ce_user:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User not found")
-    record = CERecord(org_id=user.org_id, **payload.dict())
+    record = CERecord(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(record, request)
     db.add(record)
     db.commit()

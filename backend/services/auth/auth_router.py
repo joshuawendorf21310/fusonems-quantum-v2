@@ -174,3 +174,68 @@ def logout(response: Response):
     response.delete_cookie(settings.SESSION_COOKIE_NAME)
     response.delete_cookie(settings.CSRF_COOKIE_NAME)
     return {"status": "ok"}
+
+
+@router.post("/dev_seed", response_model=TokenResponse)
+def dev_seed(response: Response = None, db: Session = Depends(get_db)):
+    """Development helper: create a demo org + user and return a session.
+
+    This endpoint is intentionally available only when ENV != 'production'.
+    It helps local developers quickly get a valid session for manual testing.
+    """
+    if settings.ENV == "production":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="NOT_ALLOWED_IN_PRODUCTION")
+    if not settings.LOCAL_AUTH_ENABLED:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="LOCAL_AUTH_DISABLED")
+    demo_email = "dev@local"
+    demo_password = "password"
+    demo_org_name = "Dev Organization"
+    user = db.query(User).filter(User.email == demo_email).first()
+    if not user:
+        org = db.query(Organization).filter(Organization.name == demo_org_name).first()
+        org_created = False
+        if not org:
+            org = Organization(name=demo_org_name, encryption_key=secrets.token_hex(32))
+            db.add(org)
+            db.commit()
+            db.refresh(org)
+            org_created = True
+            for module_key, deps in MODULE_DEPENDENCIES.items():
+                db.add(
+                    ModuleRegistry(
+                        org_id=org.id,
+                        module_key=module_key,
+                        dependencies=deps,
+                        enabled=True,
+                        kill_switch=False,
+                    )
+                )
+            db.commit()
+            seed_retention_policies(db, org.id)
+        user = User(
+            email=demo_email,
+            full_name="Developer",
+            hashed_password=hash_password(demo_password),
+            role=UserRole.admin.value if hasattr(UserRole, 'admin') else UserRole.dispatcher.value,
+            org_id=org.id,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+    token = create_access_token({"sub": user.id, "org": user.org_id, "role": user.role, "mfa": False})
+    if response is not None:
+        response.set_cookie(
+            settings.SESSION_COOKIE_NAME,
+            token,
+            httponly=True,
+            secure=settings.ENV == "production",
+            samesite="lax",
+        )
+        response.set_cookie(
+            settings.CSRF_COOKIE_NAME,
+            secrets.token_hex(16),
+            httponly=False,
+            secure=settings.ENV == "production",
+            samesite="lax",
+        )
+    return TokenResponse(access_token=token, user=model_snapshot(user))

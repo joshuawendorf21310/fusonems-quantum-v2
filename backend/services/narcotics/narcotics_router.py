@@ -67,7 +67,7 @@ def create_item(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.provider)),
 ):
-    item = NarcoticItem(org_id=user.org_id, **payload.dict())
+    item = NarcoticItem(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(item, request)
     db.add(item)
     db.commit()
@@ -100,7 +100,7 @@ def log_custody(
     )
     if not item:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Narcotic not found")
-    event = NarcoticCustodyEvent(org_id=user.org_id, **payload.dict())
+    event = NarcoticCustodyEvent(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(event, request)
     db.add(event)
     db.commit()
@@ -147,7 +147,7 @@ def create_discrepancy(
     )
     if not item:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Narcotic not found")
-    record = NarcoticDiscrepancy(org_id=user.org_id, **payload.dict())
+    record = NarcoticDiscrepancy(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(record, request)
     db.add(record)
     db.commit()

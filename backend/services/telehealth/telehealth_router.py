@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import uuid4
 import secrets
 
@@ -136,7 +136,7 @@ def create_session(
         apply_training_mode(consent, request)
         primary_db.add(consent)
         primary_db.commit()
-        session.consent_captured_at = datetime.utcnow()
+        session.consent_captured_at = datetime.now(timezone.utc)
         db.commit()
         audit_and_event(
             db=primary_db,
@@ -193,7 +193,7 @@ def capture_consent(
     apply_training_mode(consent, request)
     primary_db.add(consent)
     primary_db.commit()
-    session.consent_captured_at = datetime.utcnow()
+    session.consent_captured_at = datetime.now(timezone.utc)
     db.commit()
     audit_and_event(
         db=primary_db,
@@ -353,7 +353,7 @@ def start_session(
     enforce_legal_hold(db, user.org_id, "telehealth_session", session.session_uuid, "update")
     before = model_snapshot(session)
     session.status = "Live"
-    session.started_at = datetime.utcnow()
+    session.started_at = datetime.now(timezone.utc)
     db.commit()
     _log_alert(db, session_uuid, "Session started", session.org_id)
     audit_and_event(
@@ -390,7 +390,7 @@ def end_session(
     enforce_legal_hold(db, user.org_id, "telehealth_session", session.session_uuid, "update")
     before = model_snapshot(session)
     session.status = "Ended"
-    session.ended_at = datetime.utcnow()
+    session.ended_at = datetime.now(timezone.utc)
     db.commit()
     _log_alert(db, session_uuid, "Session ended", session.org_id)
     _create_integration_task(

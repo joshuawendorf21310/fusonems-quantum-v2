@@ -422,7 +422,7 @@ def create_thread(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher, UserRole.provider)),
 ):
-    thread = CommsThread(org_id=user.org_id, **payload.dict())
+    thread = CommsThread(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(thread, request)
     db.add(thread)
     db.commit()
@@ -471,7 +471,7 @@ def create_message(
     )
     if not thread:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Thread not found")
-    message = CommsMessage(org_id=user.org_id, **payload.dict())
+    message = CommsMessage(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(message, request)
     db.add(message)
     db.commit()
@@ -543,7 +543,7 @@ def create_call(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
 ):
-    log = CommsCallLog(org_id=user.org_id, **payload.dict())
+    log = CommsCallLog(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(log, request)
     db.add(log)
     db.commit()
@@ -569,7 +569,7 @@ def initiate_outbound_call(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
 ):
-    call = CommsCallLog(org_id=user.org_id, **payload.dict())
+    call = CommsCallLog(org_id=user.org_id, **payload.model_dump())
     call.call_state = "INITIATED"
     apply_training_mode(call, request)
     db.add(call)
@@ -679,7 +679,7 @@ def create_transcript(
     evidence_hash = hash_payload(
         {
             "transcript_text": payload.transcript_text,
-            "segments": [segment.dict() for segment in payload.segments],
+            "segments": [segment.model_dump() for segment in payload.segments],
             "confidence": payload.confidence,
         }
     )
@@ -715,7 +715,7 @@ def create_transcript(
         call_id=call.id,
         classification=call.classification,
         transcript_text=payload.transcript_text,
-        segments=[segment.dict() for segment in payload.segments],
+        segments=[segment.model_dump() for segment in payload.segments],
         confidence=int(payload.confidence * 100),
         evidence_hash=evidence_hash,
         method_used=payload.method_used,
@@ -872,7 +872,7 @@ def voice_plan(
         request=request,
         user=user,
         builder=builder,
-        input_payload=payload.dict(),
+        input_payload=payload.model_dump(),
         classification="OPS",
         action="voice_plan",
         resource="comms_voice",
@@ -906,7 +906,7 @@ def create_phone_number(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.founder)),
 ):
-    phone = CommsPhoneNumber(org_id=user.org_id, **payload.dict())
+    phone = CommsPhoneNumber(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(phone, request)
     db.add(phone)
     db.commit()
@@ -943,7 +943,7 @@ def create_routing_policy(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.founder)),
 ):
-    policy = CommsRoutingPolicy(org_id=user.org_id, **payload.dict())
+    policy = CommsRoutingPolicy(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(policy, request)
     db.add(policy)
     db.commit()
@@ -980,7 +980,7 @@ def create_ring_group(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.founder)),
 ):
-    group = CommsRingGroup(org_id=user.org_id, **payload.dict())
+    group = CommsRingGroup(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(group, request)
     db.add(group)
     db.commit()
@@ -1016,7 +1016,7 @@ def create_broadcast(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.founder)),
 ):
-    broadcast = CommsBroadcast(org_id=user.org_id, **payload.dict())
+    broadcast = CommsBroadcast(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(broadcast, request)
     db.add(broadcast)
     db.commit()
@@ -1053,7 +1053,7 @@ def create_task(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
 ):
-    task = CommsTask(org_id=user.org_id, **payload.dict())
+    task = CommsTask(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(task, request)
     db.add(task)
     db.commit()

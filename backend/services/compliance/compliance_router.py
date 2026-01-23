@@ -49,7 +49,7 @@ def create_alert(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
 ):
-    alert = ComplianceAlert(**payload.dict(), org_id=user.org_id)
+    alert = ComplianceAlert(**payload.model_dump(), org_id=user.org_id)
     apply_training_mode(alert, request)
     db.add(alert)
     db.commit()
@@ -86,7 +86,7 @@ def log_audit(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher, UserRole.provider)),
 ):
-    audit = AccessAudit(**payload.dict(), org_id=user.org_id)
+    audit = AccessAudit(**payload.model_dump(), org_id=user.org_id)
     apply_training_mode(audit, request)
     db.add(audit)
     db.commit()
