@@ -49,7 +49,7 @@ cd ..
 
 # --- Frontend Setup ---
 echo "🧡 Setting up frontend..."
-cd frontend || exit
+cd next-fusionems || exit
 
 # Install frontend dependencies
 echo "🔄 Installing frontend dependencies..."
@@ -66,7 +66,7 @@ echo "🚀 Launching backend and frontend in split terminals..."
 osascript <<'APPLESCRIPT'
 tell application "Terminal"
   do script "cd /Users/joshuawendorf/fusonems-quantum-v2/backend && source venv/bin/activate && uvicorn main:app --reload --host 127.0.0.1 --port 8000"
-  do script "cd /Users/joshuawendorf/fusonems-quantum-v2/frontend && npm install && npm run dev"
+  do script "cd /Users/joshuawendorf/fusonems-quantum-v2/next-fusionems && npm install && npm run dev"
   activate
 end tell
 APPLESCRIPT

@@ -1,0 +1,13 @@
+{
+  "name": "fusonems-quantum",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "next-fusionems"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=next-fusionems",
+    "build": "npm run build --workspace=next-fusionems",
+    "typecheck": "npm run typecheck --workspace=next-fusionems"
+  }
+}

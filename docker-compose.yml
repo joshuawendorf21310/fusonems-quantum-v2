@@ -25,7 +25,7 @@ services:
       - db
   frontend:
     build:
-      context: ./frontend
+      context: ./next-fusionems
       dockerfile: Dockerfile
     environment:
       VITE_API_URL: http://localhost:8000

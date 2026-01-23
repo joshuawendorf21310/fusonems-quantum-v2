@@ -68,7 +68,7 @@ services:
       repo: your-org/fusonems-quantum-platform
       branch: main
       deploy_on_push: true
-    source_dir: frontend
+    source_dir: next-fusionems
     environment_slug: node-js
     build_command: npm install && npm run build
     run_command: npm run preview -- --host 0.0.0.0 --port 8080
