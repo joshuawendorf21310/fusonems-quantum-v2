@@ -1,12 +1,11 @@
 import { useState } from 'react'
 import { useAppData } from '../context/useAppData.js'
 import SectionHeader from '../components/SectionHeader.jsx'
-import DataTable from '../components/DataTable.jsx'
-import StatusBadge from '../components/StatusBadge.jsx'
+import DualScreenCAD from '../components/cad/DualScreenCAD.tsx'
 import { apiFetch } from '../services/api.js'
 
 export default function CadManagement() {
-  const { calls, units, refreshAll } = useAppData()
+  const { refreshAll } = useAppData()
   const [formState, setFormState] = useState({
     caller_name: '',
     caller_phone: '',
@@ -45,15 +44,6 @@ export default function CadManagement() {
       console.warn('Unable to create call', error)
     }
   }
-
-  const columns = [
-    { key: 'id', label: 'Call ID' },
-    { key: 'caller_name', label: 'Caller' },
-    { key: 'location_address', label: 'Location' },
-    { key: 'priority', label: 'Priority', render: (row) => <StatusBadge value={row.priority} /> },
-    { key: 'status', label: 'Status', render: (row) => <StatusBadge value={row.status} /> },
-    { key: 'eta_minutes', label: 'ETA', render: (row) => (row.eta_minutes ? `${row.eta_minutes} min` : 'Pending') },
-  ]
 
   return (
     <div className="page">
@@ -131,26 +121,7 @@ export default function CadManagement() {
         </form>
       </div>
 
-      <div className="section-grid">
-        <div className="panel">
-          <SectionHeader eyebrow="Queue" title="Active Calls" />
-          <DataTable columns={columns} rows={calls} emptyState="No calls in queue." />
-        </div>
-        <div className="panel">
-          <SectionHeader eyebrow="Units" title="Dispatch Availability" />
-          <div className="stack">
-            {units.map((unit) => (
-              <div className="list-row" key={unit.unit_identifier}>
-                <div>
-                  <p className="list-title">Unit {unit.unit_identifier}</p>
-                  <p className="list-sub">Lat {unit.latitude?.toFixed?.(2)}</p>
-                </div>
-                <StatusBadge value={unit.status} />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <DualScreenCAD />
     </div>
   )
 }

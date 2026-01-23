@@ -24,6 +24,7 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+    chunkSizeWarningLimit: 800,
   },
   test: {
     environment: 'jsdom',

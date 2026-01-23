@@ -18,6 +18,9 @@ from models.organization import Organization
 from models.session import Session as UserSession
 from models.setting import Setting
 from models.user import User, UserRole
+from services.cad.cad_router import router as cad_router
+from services.cad.live_router import router as cad_live_router
+from services.cad.tracking_router import router as cad_tracking_router
 from services.core.audit_router import router as audit_router
 from services.core.auth_router import router as auth_router
 from services.core.settings_router import router as settings_router
@@ -70,6 +73,9 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(audit_router)
 app.include_router(settings_router)
+app.include_router(cad_router)
+app.include_router(cad_tracking_router)
+app.include_router(cad_live_router)
 
 
 @app.get("/me")
