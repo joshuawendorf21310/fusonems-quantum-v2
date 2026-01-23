@@ -57,7 +57,7 @@ Status: Drafted after implementation review. Tests not executed in this environm
 | Retention + legal hold blocks | PASS | `backend/services/email/email_router.py` |
 | Audit + events for actions | PASS | `email_router`, `email_ingest_service`, `email_transport_service` |
 | Search criteria support | PASS | `email_router.search_messages` |
-| UI Gmail-style layout | PASS | `frontend/src/pages/EmailInbox.jsx`, `frontend/src/style.css` |
+| UI Gmail-style layout | PASS | `next-fusionems/src/pages/EmailInbox.jsx`, `next-fusionems/src/style.css` |
 | Tests present | PASS | `backend/tests/test_email_postmark.py` |
 | Tests executed | FAIL | Not run in this environment |
 

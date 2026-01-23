@@ -1,4 +1,7 @@
-from sqlalchemy import Column, DateTime, Integer, String, func
+import uuid
+
+from sqlalchemy import Column, DateTime, String, func
+from sqlalchemy.dialects.postgresql import UUID
 
 from core.database import Base
 
@@ -6,11 +9,6 @@ from core.database import Base
 class Organization(Base):
     __tablename__ = "organizations"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     name = Column(String, unique=True, nullable=False, index=True)
-    encryption_key = Column(String, nullable=False)
-    lifecycle_state = Column(String, default="ACTIVE")
-    status = Column(String, default="Active")
-    email_domain = Column(String, default="")
-    training_mode = Column(String, default="DISABLED")
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_at = Column("createdAt", DateTime(timezone=True), server_default=func.now())

@@ -18,7 +18,7 @@ backend/
   models/          # SQLAlchemy models
   services/        # API routers by module
   tests/           # pytest tests
-frontend/
+next-fusionems/
   src/
     components/
     context/
@@ -47,7 +47,7 @@ uvicorn main:app --reload --host 127.0.0.1 --port 8000
 
 ### Frontend
 ```bash
-cd frontend
+cd next-fusionems
 npm install
 npm run dev
 ```
@@ -64,7 +64,7 @@ Copy `.env.template` and populate the values.
 cp .env.template backend/.env
 ```
 
-Set `VITE_API_URL` in `frontend/.env` (or your hosting platform) for API integration.
+Set `VITE_API_URL` in `next-fusionems/.env` (or your hosting platform) for API integration.
 
 ## Tests
 ### Backend
@@ -75,7 +75,7 @@ pytest
 
 ### Frontend
 ```bash
-cd frontend
+cd next-fusionems
 npm run test
 ```
 

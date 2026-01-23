@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = Field("FusonEMS Quantum", env="PROJECT_NAME")
     DATABASE_URL: Optional[str] = Field("", env="DATABASE_URL")
     ALLOWED_ORIGINS: str = Field("http://localhost:5173", env="ALLOWED_ORIGINS")
-    JWT_SECRET_KEY: str = Field("change-me", env="JWT_SECRET_KEY")
+    JWT_SECRET_KEY: str = Field("change-me", env=["JWT_SECRET_KEY", "JWT_SECRET"])
     ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(60, env="ACCESS_TOKEN_EXPIRE_MINUTES")
     ENV: str = Field("development", env="ENV")
     DB_POOL_SIZE: int = Field(5, env="DB_POOL_SIZE")
