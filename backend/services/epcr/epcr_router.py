@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import json
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -7,9 +8,10 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from core.database import get_db
+from core.config import settings
 from core.guards import require_module
 from core.security import require_roles, require_on_shift, require_trusted_device
-from models.epcr import Patient
+from models.epcr import Patient, MasterPatient, MasterPatientLink
 from models.user import User, UserRole
 from utils.legal import enforce_legal_hold
 from utils.decision import DecisionBuilder, finalize_decision_packet, hash_payload
@@ -42,6 +44,8 @@ class PatientCreate(BaseModel):
     first_name: str
     last_name: str
     date_of_birth: str
+    phone: str = ""
+    address: str = ""
     incident_number: str
     vitals: dict = {}
     interventions: list = []
@@ -125,6 +129,58 @@ class CCTIntervention(BaseModel):
     performed_at: str = ""
 
 
+class MasterPatientLinkCreate(BaseModel):
+    master_patient_id: int
+    provenance: str = ""
+
+class RepeatCandidate(BaseModel):
+    master_patient_id: int
+    score: float
+    reasons: list[str]
+
+
+def _normalize(value: str) -> str:
+    return "".join(char for char in value.lower().strip() if char.isalnum() or char.isspace()).strip()
+
+
+def _load_mpi_weights() -> dict:
+    try:
+        weights = json.loads(settings.MPI_MATCH_WEIGHTS or "{}")
+        if isinstance(weights, dict):
+            return weights
+    except json.JSONDecodeError:
+        pass
+    return {
+        "first_name": 0.25,
+        "last_name": 0.25,
+        "date_of_birth": 0.3,
+        "phone": 0.1,
+        "address": 0.1,
+    }
+
+
+def _compute_match(patient: Patient, master_patient: MasterPatient) -> tuple[float, list[str]]:
+    weights = _load_mpi_weights()
+    score = 0.0
+    reasons = []
+    if _normalize(patient.first_name) and _normalize(patient.first_name) == _normalize(master_patient.first_name):
+        score += weights.get("first_name", 0.0)
+        reasons.append("MPI.NAME.FIRST.EXACT")
+    if _normalize(patient.last_name) and _normalize(patient.last_name) == _normalize(master_patient.last_name):
+        score += weights.get("last_name", 0.0)
+        reasons.append("MPI.NAME.LAST.EXACT")
+    if patient.date_of_birth and patient.date_of_birth == master_patient.date_of_birth:
+        score += weights.get("date_of_birth", 0.0)
+        reasons.append("MPI.DOB.EXACT")
+    if patient.phone and master_patient.phone and _normalize(patient.phone) == _normalize(master_patient.phone):
+        score += weights.get("phone", 0.0)
+        reasons.append("MPI.PHONE.EXACT")
+    if patient.address and master_patient.address and _normalize(patient.address) == _normalize(master_patient.address):
+        score += weights.get("address", 0.0)
+        reasons.append("MPI.ADDRESS.EXACT")
+    return round(score, 4), reasons
+
+
 def _map_ocr_fields(patient: Patient, fields: list[dict]) -> None:
     mapping = {
         "heart_rate": ("vitals", "hr"),
@@ -190,6 +246,100 @@ def get_patient(
         reason_code="READ",
     )
     return patient
+
+
+@router.get("/patients/{patient_id}/repeat_candidates", response_model=list[RepeatCandidate])
+def repeat_candidates(
+    patient_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin, UserRole.provider)),
+):
+    patient = get_scoped_record(db, request, Patient, patient_id, user, resource_label="epcr")
+    linked_ids = {
+        link.master_patient_id
+        for link in db.query(MasterPatientLink)
+        .filter(MasterPatientLink.epcr_patient_id == patient.id)
+        .all()
+    }
+    candidates = []
+    for master_patient in (
+        scoped_query(db, MasterPatient, user.org_id, request.state.training_mode)
+        .filter(MasterPatient.merged_into_id.is_(None))
+        .all()
+    ):
+        if master_patient.id in linked_ids:
+            continue
+        score, reasons = _compute_match(patient, master_patient)
+        if score >= settings.MPI_MATCH_THRESHOLD:
+            candidates.append(
+                RepeatCandidate(
+                    master_patient_id=master_patient.id, score=score, reasons=reasons
+                )
+            )
+    candidates.sort(key=lambda item: item.score, reverse=True)
+    audit_and_event(
+        db=db,
+        request=request,
+        user=user,
+        action="read",
+        resource="epcr_master_patient_candidate",
+        classification=patient.classification,
+        after_state={"patient_id": patient.id, "candidates": [c.model_dump() for c in candidates]},
+        event_type="epcr.patient.repeat_candidates.requested",
+        event_payload={"patient_id": patient.id, "candidate_count": len(candidates)},
+    )
+    return candidates
+
+
+@router.post("/patients/{patient_id}/link_master_patient", status_code=status.HTTP_201_CREATED)
+def link_master_patient(
+    patient_id: int,
+    payload: MasterPatientLinkCreate,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin, UserRole.provider)),
+):
+    patient = get_scoped_record(db, request, Patient, patient_id, user, resource_label="epcr")
+    master_patient = get_scoped_record(
+        db, request, MasterPatient, payload.master_patient_id, user, resource_label="master_patient"
+    )
+    existing = (
+        db.query(MasterPatientLink)
+        .filter(
+            MasterPatientLink.epcr_patient_id == patient.id,
+            MasterPatientLink.master_patient_id == master_patient.id,
+        )
+        .first()
+    )
+    if existing:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Link already exists")
+    link = MasterPatientLink(
+        org_id=user.org_id,
+        epcr_patient_id=patient.id,
+        master_patient_id=master_patient.id,
+        provenance=payload.provenance,
+    )
+    apply_training_mode(link, request)
+    db.add(link)
+    db.commit()
+    db.refresh(link)
+    audit_and_event(
+        db=db,
+        request=request,
+        user=user,
+        action="link",
+        resource="master_patient_link",
+        classification=patient.classification,
+        after_state=model_snapshot(link),
+        event_type="epcr.master_patient.linked",
+        event_payload={
+            "patient_id": patient.id,
+            "master_patient_id": master_patient.id,
+            "provenance": payload.provenance,
+        },
+    )
+    return {"status": "linked", "link_id": link.id}
 
 
 @router.post("/patients/{patient_id}/ocr", status_code=status.HTTP_201_CREATED)

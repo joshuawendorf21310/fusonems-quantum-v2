@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     OFFICEALLY_FTP_USER: str = Field("")
     OFFICEALLY_FTP_PASSWORD: str = Field("")
     OFFICEALLY_FTP_PORT: int = Field(21)
+    MPI_MATCH_WEIGHTS: str = Field('{"first_name": 0.25, "last_name": 0.25, "date_of_birth": 0.3, "phone": 0.1, "address": 0.1}')
+    MPI_MATCH_THRESHOLD: float = Field(0.35)
     STORAGE_ENCRYPTION_KEY: str = Field("change-me")
     DOCS_STORAGE_BACKEND: str = Field("local")
     DOCS_STORAGE_LOCAL_DIR: str = Field("storage/documents")

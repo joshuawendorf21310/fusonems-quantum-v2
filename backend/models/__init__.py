@@ -77,7 +77,7 @@ from models.inventory import InventoryItem, InventoryMovement, InventoryRigCheck
 from models.fleet import FleetInspection, FleetMaintenance, FleetTelemetry, FleetVehicle
 from models.founder_ops import DataGovernanceRule, IncidentCommand, PricingPlan, PwaDistribution
 from models.exports import DataExportManifest, OrphanRepairAction
-from models.epcr import Patient
+from models.epcr import Patient, MasterPatient, MasterPatientLink, MasterPatientMerge
 from models.fire import (
     FireApparatus,
     FireApparatusInventory,
@@ -211,6 +211,9 @@ __all__ = [
     "DataExportManifest",
     "OrphanRepairAction",
     "Patient",
+    "MasterPatient",
+    "MasterPatientLink",
+    "MasterPatientMerge",
     "FounderMetric",
     "InvestorMetric",
     "AnalyticsMetric",
