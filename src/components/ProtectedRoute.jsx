@@ -9,17 +9,6 @@ export default function ProtectedRoute({ children, allowedRoles = [] }) {
   const { isAuthenticated, userRole } = useAuth()
   const errorPushedRef = useRef(false)
 
-  // Redirect unauthenticated users
-  if (!isAuthenticated) {
-    return (
-      <Navigate
-        to="/login"
-        replace
-        state={{ from: location.pathname }}
-      />
-    )
-  }
-
   const roleRestricted =
     Array.isArray(allowedRoles) &&
     allowedRoles.length > 0 &&
@@ -34,6 +23,17 @@ export default function ProtectedRoute({ children, allowedRoles = [] }) {
       errorPushedRef.current = true
     }
   }, [roleRestricted])
+
+  // Redirect unauthenticated users
+  if (!isAuthenticated) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: location.pathname }}
+      />
+    )
+  }
 
   if (roleRestricted) {
     return (

@@ -33,6 +33,7 @@ from services.cad.cad_router import router as cad_router
 from services.cad.tracking_router import router as tracking_router
 from services.compliance.compliance_router import router as compliance_router
 from services.epcr.epcr_router import router as epcr_router
+from services.epcr.master_patient_router import router as master_patient_router
 from services.founder.founder_router import router as founder_router
 from services.investor_demo.investor_demo_router import router as investor_demo_router
 from services.mail.mail_router import router as mail_router
@@ -119,6 +120,7 @@ app.add_middleware(
 app.include_router(cad_router)
 app.include_router(tracking_router)
 app.include_router(epcr_router)
+app.include_router(master_patient_router)
 app.include_router(schedule_router)
 app.include_router(system_router)
 app.include_router(billing_router)
