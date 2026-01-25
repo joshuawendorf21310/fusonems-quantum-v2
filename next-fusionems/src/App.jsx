@@ -9,6 +9,19 @@ import Scheduling from './pages/Scheduling.jsx'
 import Billing from './pages/Billing.jsx'
 import AiConsole from './pages/AiConsole.jsx'
 import Reporting from './pages/Reporting.jsx'
+import FounderBilling from './pages/FounderBilling.jsx'
+import FounderBillingInvoices from './pages/FounderBillingInvoices.jsx'
+import FounderBillingClaims from './pages/FounderBillingClaims.jsx'
+import FounderBillingDenials from './pages/FounderBillingDenials.jsx'
+import FounderBillingFacilities from './pages/FounderBillingFacilities.jsx'
+import FounderBillingPatients from './pages/FounderBillingPatients.jsx'
+import FounderBillingReports from './pages/FounderBillingReports.jsx'
+import FounderComms from './pages/FounderComms.jsx'
+import FounderCommsEmail from './pages/FounderCommsEmail.jsx'
+import FounderCommsVoice from './pages/FounderCommsVoice.jsx'
+import FounderCommsFax from './pages/FounderCommsFax.jsx'
+import CarefusionPortal from './pages/CarefusionPortal.jsx'
+import PatientPay from './pages/PatientPay.jsx'
 import FounderDashboard from './pages/FounderDashboard.jsx'
 import InvestorDashboard from './pages/InvestorDashboard.jsx'
 import Communications from './pages/Communications.jsx'
@@ -134,6 +147,94 @@ export default function App() {
               element={
                 <Guarded moduleKey="BILLING">
                   <Billing />
+                </Guarded>
+              }
+            />
+            <Route
+              path="/founder/billing"
+              element={
+                <Guarded moduleKey="FOUNDER">
+                  <FounderBilling />
+                </Guarded>
+              }
+            />
+            <Route
+              path="/founder/billing/invoices"
+              element={
+                <Guarded moduleKey="FOUNDER">
+                  <FounderBillingInvoices />
+                </Guarded>
+              }
+            />
+            <Route
+              path="/founder/billing/claims"
+              element={
+                <Guarded moduleKey="FOUNDER">
+                  <FounderBillingClaims />
+                </Guarded>
+              }
+            />
+            <Route
+              path="/founder/billing/denials"
+              element={
+                <Guarded moduleKey="FOUNDER">
+                  <FounderBillingDenials />
+                </Guarded>
+              }
+            />
+            <Route
+              path="/founder/billing/facilities"
+              element={
+                <Guarded moduleKey="FOUNDER">
+                  <FounderBillingFacilities />
+                </Guarded>
+              }
+            />
+            <Route
+              path="/founder/billing/patients"
+              element={
+                <Guarded moduleKey="FOUNDER">
+                  <FounderBillingPatients />
+                </Guarded>
+              }
+            />
+            <Route
+              path="/founder/billing/reports"
+              element={
+                <Guarded moduleKey="FOUNDER">
+                  <FounderBillingReports />
+                </Guarded>
+              }
+            />
+            <Route
+              path="/founder/comms"
+              element={
+                <Guarded moduleKey="FOUNDER">
+                  <FounderComms />
+                </Guarded>
+              }
+            />
+            <Route
+              path="/founder/comms/email"
+              element={
+                <Guarded moduleKey="FOUNDER">
+                  <FounderCommsEmail />
+                </Guarded>
+              }
+            />
+            <Route
+              path="/founder/comms/voice"
+              element={
+                <Guarded moduleKey="FOUNDER">
+                  <FounderCommsVoice />
+                </Guarded>
+              }
+            />
+            <Route
+              path="/founder/comms/fax"
+              element={
+                <Guarded moduleKey="FOUNDER">
+                  <FounderCommsFax />
                 </Guarded>
               }
             />
@@ -286,6 +387,15 @@ export default function App() {
               element={
                 <Guarded moduleKey="BILLING">
                   <PatientPortal />
+                </Guarded>
+              }
+            />
+            <Route path="/patient/pay/:token" element={<PatientPay />} />
+            <Route
+              path="/carefusion/portal"
+              element={
+                <Guarded moduleKey="TELEHEALTH">
+                  <CarefusionPortal />
                 </Guarded>
               }
             />

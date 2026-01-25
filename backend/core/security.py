@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import uuid
 from typing import Optional
 
 from fastapi import Depends, HTTPException, Request, status
@@ -78,9 +79,9 @@ def get_current_user(
         if user_id is None:
             raise credentials_exception
         try:
-            user_id = int(user_id)
-        except (TypeError, ValueError) as exc:
-            raise credentials_exception from exc
+            user_id = uuid.UUID(str(user_id))
+        except (TypeError, ValueError):
+            user_id = str(user_id)
         
         # Validate session if jti is present
         if token_jti:
@@ -123,9 +124,10 @@ def get_current_user(
     if not org:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Organization missing")
     if request is not None:
-        request.state.org_lifecycle = org.lifecycle_state
+        request.state.org_lifecycle = getattr(org, "lifecycle_state", "ACTIVE")
+        org_training_mode = getattr(org, "training_mode", None)
         request.state.training_mode = (
-            org.training_mode == "ENABLED" or getattr(user, "training_mode", False)
+            org_training_mode == "ENABLED" or getattr(user, "training_mode", False)
         )
         request.state.mfa_verified = bool(request_mfa)
         device_id = request.headers.get("x-device-id", "")
@@ -161,7 +163,7 @@ def get_current_user(
                 .first()
             )
         request.state.on_shift = bool(active_shift) if shifts_exist else True
-    lifecycle = org.lifecycle_state or "ACTIVE"
+    lifecycle = getattr(org, "lifecycle_state", None) or "ACTIVE"
     if lifecycle == "TERMINATED":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="ORG_TERMINATED")
     if lifecycle == "SUSPENDED":

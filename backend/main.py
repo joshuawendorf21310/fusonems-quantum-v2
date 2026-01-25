@@ -24,6 +24,7 @@ from services.cad.tracking_router import router as cad_tracking_router
 from services.core.audit_router import router as audit_router
 from services.core.auth_router import router as auth_router
 from services.core.settings_router import router as settings_router
+from services.documents.billing_docs_router import router as billing_docs_router
 from utils.logger import logger
 from utils.time import compute_drift_seconds, parse_device_time, utc_now
 
@@ -71,8 +72,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(auth_router)
+app.include_router(api_auth_router)
 app.include_router(audit_router)
 app.include_router(settings_router)
+app.include_router(billing_batch5_router)
+app.include_router(payments_router)
+app.include_router(billing_docs_router)
+app.include_router(comms_router)
+app.include_router(comms_webhook_router)
+app.include_router(carefusion_router)
 app.include_router(cad_router)
 app.include_router(cad_tracking_router)
 app.include_router(cad_live_router)

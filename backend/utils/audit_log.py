@@ -21,7 +21,7 @@ def record_audit_event(
         action=action,
         entity_type=entity_type,
         entity_id=entity_id,
-        metadata=metadata or {},
+        meta_data=metadata or {},
     )
     db.add(event)
     db.commit()

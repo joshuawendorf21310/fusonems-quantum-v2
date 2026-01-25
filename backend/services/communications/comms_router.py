@@ -26,6 +26,12 @@ from models.communications import (
     CommsTranscript,
     CommsVoicemail,
 )
+from models.communications_batch5 import (
+    CommsDeliveryAttempt,
+    CommsEvent,
+    CommsProvider,
+    CommsTemplate,
+)
 from models.quantum_documents import RetentionPolicy
 from models.module_registry import ModuleRegistry
 from models.organization import Organization
@@ -52,6 +58,92 @@ TELNYX_EVENT_MAP = {
     "call.playback.ended": ("PLAYBACK_COMPLETE", "comms.call.playback.ended"),
     "call.dtmf.received": ("DTMF", "comms.call.dtmf.received"),
 }
+
+
+def _redact_text(value: str) -> str:
+    if not value:
+        return ""
+    redacted = []
+    for char in value:
+        if char.isdigit():
+            redacted.append("*")
+        else:
+            redacted.append(char)
+    return "".join(redacted)[:160]
+
+
+def _record_event(
+    db: Session,
+    request: Request,
+    user: User,
+    thread: CommsThread,
+    message: CommsMessage,
+    event_type: str,
+    payload: dict,
+    status: str = "queued",
+) -> CommsEvent:
+    event = CommsEvent(
+        org_id=user.org_id,
+        thread_id=thread.id,
+        message_id=message.id,
+        event_type=event_type,
+        status=status,
+        payload=payload,
+    )
+    apply_training_mode(event, request)
+    db.add(event)
+    db.commit()
+    db.refresh(event)
+    return event
+
+
+def _record_attempt(db: Session, event: CommsEvent, provider: str, status: str, payload: dict, error: str = "") -> None:
+    attempt = CommsDeliveryAttempt(
+        org_id=event.org_id,
+        event_id=event.id,
+        provider=provider,
+        status=status,
+        response_payload=payload,
+        error=error,
+    )
+    db.add(attempt)
+    db.commit()
+
+
+def _send_telnyx(channel: str, recipient: str, body: str, media_url: str = "") -> str:
+    if not settings.TELNYX_API_KEY:
+        raise HTTPException(status_code=412, detail="Telnyx API key not configured")
+    try:
+        import telnyx
+    except ImportError as exc:
+        raise HTTPException(status_code=412, detail="Telnyx SDK not installed") from exc
+    telnyx.api_key = settings.TELNYX_API_KEY
+    if channel == "sms":
+        response = telnyx.Message.create(
+            from_=settings.TELNYX_NUMBER,
+            to=recipient,
+            text=body,
+            messaging_profile_id=settings.TELNYX_MESSAGING_PROFILE_ID or None,
+        )
+        return response.id
+    if channel == "fax":
+        if not media_url:
+            raise HTTPException(status_code=422, detail="Fax requires media_url")
+        response = telnyx.Fax.create(
+            connection_id=settings.TELNYX_CONNECTION_ID,
+            to=recipient,
+            from_=settings.TELNYX_NUMBER,
+            media_url=media_url,
+        )
+        return response.id
+    if channel == "voice":
+        response = telnyx.Call.create(
+            connection_id=settings.TELNYX_CONNECTION_ID,
+            to=recipient,
+            from_=settings.TELNYX_NUMBER,
+        )
+        return response.id
+    raise HTTPException(status_code=422, detail="Unsupported channel")
 
 
 def _parse_occurred_at(value: Optional[str]) -> Optional[datetime]:
@@ -1070,3 +1162,350 @@ def create_task(
         event_payload={"task_id": task.id},
     )
     return model_snapshot(task)
+
+
+class ThreadCreate(BaseModel):
+    channel: str = "email"
+    subject: str = ""
+    priority: str = "Normal"
+    linked_resource: str = ""
+    participants: list = []
+
+
+class SendEmail(BaseModel):
+    thread_id: int | None = None
+    subject: str
+    recipients: list[str]
+    body_plain: str = ""
+    body_html: str = ""
+    metadata: dict = {}
+
+
+class SendTelnyx(BaseModel):
+    thread_id: int | None = None
+    recipient: str
+    body: str = ""
+    media_url: str = ""
+    metadata: dict = {}
+
+
+@router.post("/thread/create", status_code=status.HTTP_201_CREATED)
+def create_thread_alias(
+    payload: ThreadCreate,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin, UserRole.billing, UserRole.compliance, UserRole.founder)),
+):
+    thread = CommsThread(org_id=user.org_id, **payload.dict())
+    apply_training_mode(thread, request)
+    db.add(thread)
+    db.commit()
+    db.refresh(thread)
+    audit_and_event(
+        db=db,
+        request=request,
+        user=user,
+        action="create",
+        resource="comms_thread",
+        classification="NON_PHI",
+        after_state=model_snapshot(thread),
+        event_type="comms.thread.created",
+        event_payload={"thread_id": thread.id},
+    )
+    return model_snapshot(thread)
+
+
+@router.get("/thread/{thread_id}")
+def get_thread_detail(
+    thread_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin, UserRole.billing, UserRole.compliance, UserRole.founder)),
+):
+    thread = (
+        scoped_query(db, CommsThread, user.org_id, request.state.training_mode)
+        .filter(CommsThread.id == thread_id)
+        .first()
+    )
+    if not thread:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Thread not found")
+    messages = (
+        scoped_query(db, CommsMessage, user.org_id, request.state.training_mode)
+        .filter(CommsMessage.thread_id == thread.id)
+        .order_by(CommsMessage.created_at.asc())
+        .all()
+    )
+    return {
+        "thread": model_snapshot(thread),
+        "messages": [model_snapshot(message) for message in messages],
+    }
+
+
+@router.post("/send/email", status_code=status.HTTP_201_CREATED)
+def send_email(
+    payload: SendEmail,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin, UserRole.billing, UserRole.compliance, UserRole.founder)),
+):
+    if not payload.recipients:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Recipients required")
+    thread = None
+    if payload.thread_id:
+        thread = (
+            scoped_query(db, CommsThread, user.org_id, request.state.training_mode)
+            .filter(CommsThread.id == payload.thread_id)
+            .first()
+        )
+    if not thread:
+        thread = CommsThread(org_id=user.org_id, channel="email", subject=payload.subject)
+        apply_training_mode(thread, request)
+        db.add(thread)
+        db.commit()
+        db.refresh(thread)
+    message = CommsMessage(
+        org_id=user.org_id,
+        thread_id=thread.id,
+        sender=user.email,
+        body=payload.body_plain or payload.body_html,
+        delivery_status="queued",
+    )
+    apply_training_mode(message, request)
+    db.add(message)
+    db.commit()
+    db.refresh(message)
+    event = _record_event(
+        db,
+        request,
+        user,
+        thread,
+        message,
+        "email.send",
+        {"subject": payload.subject, "preview": _redact_text(message.body)},
+    )
+    try:
+        from services.email.email_transport_service import send_outbound
+
+        result = send_outbound(
+            db=db,
+            request=request,
+            user=user,
+            payload={
+                "subject": payload.subject,
+                "recipients": payload.recipients,
+                "body_plain": payload.body_plain,
+                "body_html": payload.body_html,
+                "metadata": payload.metadata,
+            },
+        )
+        event.status = "sent"
+        db.commit()
+        _record_attempt(db, event, "postmark", "sent", result)
+    except HTTPException as exc:
+        event.status = "failed"
+        event.error = str(exc.detail)
+        db.commit()
+        _record_attempt(db, event, "postmark", "failed", {}, str(exc.detail))
+        raise
+    return {"thread": model_snapshot(thread), "message": model_snapshot(message)}
+
+
+@router.post("/send/sms", status_code=status.HTTP_201_CREATED)
+def send_sms(
+    payload: SendTelnyx,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin, UserRole.billing, UserRole.compliance, UserRole.founder)),
+):
+    thread = None
+    if payload.thread_id:
+        thread = (
+            scoped_query(db, CommsThread, user.org_id, request.state.training_mode)
+            .filter(CommsThread.id == payload.thread_id)
+            .first()
+        )
+    if not thread:
+        thread = CommsThread(org_id=user.org_id, channel="sms", subject="SMS")
+        apply_training_mode(thread, request)
+        db.add(thread)
+        db.commit()
+        db.refresh(thread)
+    message = CommsMessage(
+        org_id=user.org_id,
+        thread_id=thread.id,
+        sender=settings.TELNYX_NUMBER or user.email,
+        body=payload.body,
+        delivery_status="queued",
+    )
+    apply_training_mode(message, request)
+    db.add(message)
+    db.commit()
+    db.refresh(message)
+    event = _record_event(
+        db,
+        request,
+        user,
+        thread,
+        message,
+        "sms.send",
+        {"recipient": payload.recipient, "preview": _redact_text(payload.body)},
+    )
+    try:
+        provider_id = _send_telnyx("sms", payload.recipient, payload.body)
+        event.status = "sent"
+        db.commit()
+        _record_attempt(db, event, "telnyx", "sent", {"provider_id": provider_id})
+    except HTTPException as exc:
+        event.status = "failed"
+        event.error = str(exc.detail)
+        db.commit()
+        _record_attempt(db, event, "telnyx", "failed", {}, str(exc.detail))
+        raise
+    return {"thread": model_snapshot(thread), "message": model_snapshot(message)}
+
+
+@router.post("/send/fax", status_code=status.HTTP_201_CREATED)
+def send_fax(
+    payload: SendTelnyx,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin, UserRole.billing, UserRole.compliance, UserRole.founder)),
+):
+    if not payload.media_url:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Fax media_url required")
+    thread = CommsThread(org_id=user.org_id, channel="fax", subject="Fax")
+    apply_training_mode(thread, request)
+    db.add(thread)
+    db.commit()
+    db.refresh(thread)
+    message = CommsMessage(
+        org_id=user.org_id,
+        thread_id=thread.id,
+        sender=settings.TELNYX_NUMBER or user.email,
+        body=payload.body or "fax",
+        media_url=payload.media_url,
+        delivery_status="queued",
+    )
+    apply_training_mode(message, request)
+    db.add(message)
+    db.commit()
+    db.refresh(message)
+    event = _record_event(
+        db,
+        request,
+        user,
+        thread,
+        message,
+        "fax.send",
+        {"recipient": payload.recipient, "preview": _redact_text(payload.body)},
+    )
+    try:
+        provider_id = _send_telnyx("fax", payload.recipient, payload.body, payload.media_url)
+        event.status = "sent"
+        db.commit()
+        _record_attempt(db, event, "telnyx", "sent", {"provider_id": provider_id})
+    except HTTPException as exc:
+        event.status = "failed"
+        event.error = str(exc.detail)
+        db.commit()
+        _record_attempt(db, event, "telnyx", "failed", {}, str(exc.detail))
+        raise
+    return {"thread": model_snapshot(thread), "message": model_snapshot(message)}
+
+
+@router.post("/send/voice", status_code=status.HTTP_201_CREATED)
+def send_voice(
+    payload: SendTelnyx,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin, UserRole.billing, UserRole.compliance, UserRole.founder)),
+):
+    thread = CommsThread(org_id=user.org_id, channel="voice", subject="Voice")
+    apply_training_mode(thread, request)
+    db.add(thread)
+    db.commit()
+    db.refresh(thread)
+    message = CommsMessage(
+        org_id=user.org_id,
+        thread_id=thread.id,
+        sender=settings.TELNYX_NUMBER or user.email,
+        body=payload.body or "voice",
+        delivery_status="queued",
+    )
+    apply_training_mode(message, request)
+    db.add(message)
+    db.commit()
+    db.refresh(message)
+    event = _record_event(
+        db,
+        request,
+        user,
+        thread,
+        message,
+        "voice.send",
+        {"recipient": payload.recipient, "preview": _redact_text(payload.body)},
+    )
+    try:
+        provider_id = _send_telnyx("voice", payload.recipient, payload.body)
+        event.status = "sent"
+        db.commit()
+        _record_attempt(db, event, "telnyx", "sent", {"provider_id": provider_id})
+    except HTTPException as exc:
+        event.status = "failed"
+        event.error = str(exc.detail)
+        db.commit()
+        _record_attempt(db, event, "telnyx", "failed", {}, str(exc.detail))
+        raise
+    return {"thread": model_snapshot(thread), "message": model_snapshot(message)}
+
+
+@router.post("/retry/{event_id}")
+def retry_event(
+    event_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin, UserRole.billing, UserRole.compliance, UserRole.founder)),
+):
+    event = (
+        scoped_query(db, CommsEvent, user.org_id, request.state.training_mode)
+        .filter(CommsEvent.id == event_id)
+        .first()
+    )
+    if not event:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+    event.status = "retry_queued"
+    db.commit()
+    audit_and_event(
+        db=db,
+        request=request,
+        user=user,
+        action="update",
+        resource="comms_event",
+        classification="OPS",
+        after_state=model_snapshot(event),
+        event_type="comms.event.retry",
+        event_payload={"event_id": event.id},
+    )
+    return {"status": "queued"}
+
+
+@router.get("/queue")
+def comms_queue(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin, UserRole.billing, UserRole.compliance, UserRole.founder)),
+):
+    events = (
+        scoped_query(db, CommsEvent, user.org_id, request.state.training_mode)
+        .order_by(CommsEvent.created_at.desc())
+        .all()
+    )
+    attempts = (
+        scoped_query(db, CommsDeliveryAttempt, user.org_id, request.state.training_mode)
+        .order_by(CommsDeliveryAttempt.created_at.desc())
+        .all()
+    )
+    return {
+        "events": [model_snapshot(event) for event in events],
+        "attempts": [model_snapshot(attempt) for attempt in attempts],
+    }

@@ -1,4 +1,5 @@
 import hashlib
+import uuid
 from datetime import datetime
 
 import stripe
@@ -11,6 +12,7 @@ from models.billing_accounts import (
     BillingPayment,
     BillingWebhookReceipt,
 )
+from services.documents.billing_pdf_service import generate_receipt_pdf
 from models.feature_flags import FeatureFlag
 from models.module_registry import ModuleRegistry
 from models.user import User
@@ -41,12 +43,20 @@ def payload_hash(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
-def _get_system_user(db: Session, org_id: int) -> User:
-    user = db.query(User).filter(User.org_id == org_id, User.email == "system@fusonems.local").first()
+def _normalize_org_id(org_id: int | str) -> str:
+    try:
+        return str(uuid.UUID(str(org_id)))
+    except (TypeError, ValueError):
+        return str(org_id)
+
+
+def _get_system_user(db: Session, org_id: int | str) -> User:
+    normalized = _normalize_org_id(org_id)
+    user = db.query(User).filter(User.org_id == normalized, User.email == "system@fusonems.local").first()
     if user:
         return user
     user = User(
-        org_id=org_id,
+        org_id=normalized,
         email="system@fusonems.local",
         full_name="System Integration",
         hashed_password="",
@@ -61,7 +71,7 @@ def _get_system_user(db: Session, org_id: int) -> User:
 def resolve_invoice(db: Session, org_id: int, metadata: dict) -> BillingInvoice | None:
     invoice_id = metadata.get("invoice_id")
     invoice_number = metadata.get("invoice_number")
-    query = db.query(BillingInvoice).filter(BillingInvoice.org_id == org_id)
+    query = db.query(BillingInvoice).filter(BillingInvoice.org_id == _normalize_org_id(org_id))
     if invoice_id:
         return query.filter(BillingInvoice.id == invoice_id).first()
     if invoice_number:
@@ -69,7 +79,8 @@ def resolve_invoice(db: Session, org_id: int, metadata: dict) -> BillingInvoice 
     return None
 
 
-def upsert_feature_flags(db: Session, org_id: int, subscription_items: list[dict]) -> None:
+def upsert_feature_flags(db: Session, org_id: int | str, subscription_items: list[dict]) -> None:
+    normalized = _normalize_org_id(org_id)
     active_prices = {item.get("price", {}).get("id") for item in subscription_items}
     for price_id, module_key in PRICE_TO_MODULE.items():
         if not price_id:
@@ -78,7 +89,7 @@ def upsert_feature_flags(db: Session, org_id: int, subscription_items: list[dict
         flag = (
             db.query(FeatureFlag)
             .filter(
-                FeatureFlag.org_id == org_id,
+                FeatureFlag.org_id == normalized,
                 FeatureFlag.module_key == module_key,
                 FeatureFlag.flag_key == "stripe_entitlement",
             )
@@ -86,7 +97,7 @@ def upsert_feature_flags(db: Session, org_id: int, subscription_items: list[dict
         )
         if not flag:
             flag = FeatureFlag(
-                org_id=org_id,
+                org_id=normalized,
                 module_key=module_key,
                 flag_key="stripe_entitlement",
                 enabled=enabled,
@@ -98,7 +109,7 @@ def upsert_feature_flags(db: Session, org_id: int, subscription_items: list[dict
         if settings.STRIPE_ENFORCE_ENTITLEMENTS:
             module = (
                 db.query(ModuleRegistry)
-                .filter(ModuleRegistry.org_id == org_id, ModuleRegistry.module_key == module_key)
+                .filter(ModuleRegistry.org_id == normalized, ModuleRegistry.module_key == module_key)
                 .first()
             )
             if module:
@@ -108,7 +119,7 @@ def upsert_feature_flags(db: Session, org_id: int, subscription_items: list[dict
 
 def record_payment(
     db: Session,
-    org_id: int,
+    org_id: int | str,
     invoice: BillingInvoice,
     provider_payment_id: str,
     amount: int,
@@ -117,7 +128,7 @@ def record_payment(
     metadata: dict,
 ) -> BillingPayment:
     payment = BillingPayment(
-        org_id=org_id,
+        org_id=_normalize_org_id(org_id),
         invoice_id=invoice.id,
         provider="stripe",
         provider_payment_id=provider_payment_id,
@@ -133,9 +144,10 @@ def record_payment(
     return payment
 
 
-def record_ledger_entries(db: Session, org_id: int, payment: BillingPayment) -> None:
+def record_ledger_entries(db: Session, org_id: int | str, payment: BillingPayment) -> None:
+    normalized = _normalize_org_id(org_id)
     debit = BillingLedgerEntry(
-        org_id=org_id,
+        org_id=normalized,
         entry_type="debit",
         account="Cash",
         amount=payment.amount,
@@ -144,7 +156,7 @@ def record_ledger_entries(db: Session, org_id: int, payment: BillingPayment) -> 
         reference_id=payment.id,
     )
     credit = BillingLedgerEntry(
-        org_id=org_id,
+        org_id=normalized,
         entry_type="credit",
         account="AR",
         amount=payment.amount,
@@ -166,7 +178,7 @@ def update_invoice_balance(invoice: BillingInvoice, payment: BillingPayment) -> 
         invoice.status = "PARTIALLY_PAID"
 
 
-def handle_stripe_event(db: Session, event: dict, org_id: int | None, signature_valid: bool) -> dict:
+def handle_stripe_event(db: Session, event: dict, org_id: str | None, signature_valid: bool) -> dict:
     event_type = event.get("type", "")
     data_object = event.get("data", {}).get("object", {}) or {}
     metadata = data_object.get("metadata") or {}
@@ -178,23 +190,23 @@ def handle_stripe_event(db: Session, event: dict, org_id: int | None, signature_
         "customer.subscription.deleted",
     } and resolved_org_id:
         items = data_object.get("items", {}).get("data", [])
-        upsert_feature_flags(db, int(resolved_org_id), items)
+        upsert_feature_flags(db, resolved_org_id, items)
         return {"status": "entitlements_updated"}
 
     if not resolved_org_id:
         return {"status": "no_org"}
 
-    invoice = resolve_invoice(db, int(resolved_org_id), metadata)
+    invoice = resolve_invoice(db, resolved_org_id, metadata)
     if not invoice:
         return {"status": "invoice_not_found"}
 
-    system_user = _get_system_user(db, int(resolved_org_id))
+    system_user = _get_system_user(db, resolved_org_id)
 
     if event_type in {"payment_intent.succeeded", "invoice.payment_succeeded", "invoice.paid"}:
         amount = data_object.get("amount_received") or data_object.get("amount") or 0
         payment = record_payment(
             db,
-            int(resolved_org_id),
+            resolved_org_id,
             invoice,
             data_object.get("id", ""),
             int(amount),
@@ -204,7 +216,11 @@ def handle_stripe_event(db: Session, event: dict, org_id: int | None, signature_
         )
         update_invoice_balance(invoice, payment)
         db.commit()
-        record_ledger_entries(db, int(resolved_org_id), payment)
+        record_ledger_entries(db, resolved_org_id, payment)
+        try:
+            generate_receipt_pdf(db, invoice, payment)
+        except Exception:
+            pass
         audit_and_event(
             db=db,
             request=None,
@@ -222,7 +238,7 @@ def handle_stripe_event(db: Session, event: dict, org_id: int | None, signature_
         amount = data_object.get("amount") or 0
         payment = record_payment(
             db,
-            int(resolved_org_id),
+            resolved_org_id,
             invoice,
             data_object.get("id", ""),
             int(amount),
@@ -246,7 +262,7 @@ def handle_stripe_event(db: Session, event: dict, org_id: int | None, signature_
     if event_type in {"charge.refunded", "charge.dispute.created", "charge.dispute.closed"}:
         payment = record_payment(
             db,
-            int(resolved_org_id),
+            resolved_org_id,
             invoice,
             data_object.get("id", ""),
             int(data_object.get("amount") or 0),
@@ -270,13 +286,22 @@ def handle_stripe_event(db: Session, event: dict, org_id: int | None, signature_
     return {"status": "ignored"}
 
 
-def create_checkout_session(org_id: int, invoice: BillingInvoice, success_url: str, cancel_url: str) -> dict:
+def create_checkout_session(
+    org_id: int,
+    invoice: BillingInvoice,
+    success_url: str,
+    cancel_url: str,
+    idempotency_key: str | None = None,
+    patient_account_id: str | None = None,
+) -> dict:
     _set_stripe_key()
     metadata = {
         "org_id": str(org_id),
         "invoice_id": invoice.id,
         "invoice_number": invoice.invoice_number,
     }
+    if patient_account_id:
+        metadata["patient_account_id"] = patient_account_id
     session = stripe.checkout.Session.create(
         mode="payment",
         success_url=success_url,
@@ -293,5 +318,6 @@ def create_checkout_session(org_id: int, invoice: BillingInvoice, success_url: s
         ],
         metadata=metadata,
         payment_intent_data={"metadata": metadata},
+        idempotency_key=idempotency_key,
     )
     return {"id": session.id, "url": session.url}

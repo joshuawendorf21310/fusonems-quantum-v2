@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     OFFICEALLY_FTP_USER: str = Field("", env="OFFICEALLY_FTP_USER")
     OFFICEALLY_FTP_PASSWORD: str = Field("", env="OFFICEALLY_FTP_PASSWORD")
     OFFICEALLY_FTP_PORT: int = Field(21, env="OFFICEALLY_FTP_PORT")
+    APP_BASE_URL: str = Field("", env="APP_BASE_URL")
+    FUSIONEMS_CORE_URL: str = Field("", env="FUSIONEMS_CORE_URL")
     STORAGE_ENCRYPTION_KEY: str = Field("change-me", env="STORAGE_ENCRYPTION_KEY")
     DOCS_STORAGE_BACKEND: str = Field("local", env="DOCS_STORAGE_BACKEND")
     DOCS_STORAGE_LOCAL_DIR: str = Field("storage/documents", env="DOCS_STORAGE_LOCAL_DIR")

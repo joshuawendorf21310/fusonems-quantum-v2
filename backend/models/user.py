@@ -13,6 +13,14 @@ class UserRole(str, Enum):
     crew = "crew"
     billing = "billing"
     compliance = "compliance"
+    dispatcher = "dispatcher"
+    provider = "provider"
+    medical_director = "medical_director"
+    pilot = "pilot"
+    flight_medic = "flight_medic"
+    flight_nurse = "flight_nurse"
+    hems_supervisor = "hems_supervisor"
+    aviation_qa = "aviation_qa"
 
 
 class User(Base):
