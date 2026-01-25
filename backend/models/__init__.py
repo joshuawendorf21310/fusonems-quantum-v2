@@ -21,6 +21,21 @@ from models.billing_exports import (
     PaymentPosting,
     RemittanceAdvice,
 )
+from models.billing_batch5 import (
+    BillingAppeal,
+    BillingClaim,
+    BillingClaimEvent,
+    BillingContact,
+    BillingContactAttempt,
+    BillingDenial,
+    BillingDocument,
+    BillingFacility,
+    BillingInvoiceEvent,
+    BillingInvoiceItem,
+    BillingPatientAccount,
+    BillingPaymentEvent,
+    BillingPortalToken,
+)
 from models.builders import BuilderRegistry, BuilderChangeLog
 from models.business_ops import BusinessOpsTask
 from models.consent import ConsentProvenance
@@ -40,6 +55,12 @@ from models.communications import (
     CommsThread,
     CommsTranscript,
     CommsVoicemail,
+)
+from models.communications_batch5 import (
+    CommsDeliveryAttempt,
+    CommsEvent,
+    CommsProvider,
+    CommsTemplate,
 )
 from models.documents import DocumentTemplate, DocumentRecord
 from models.email import EmailAttachmentLink, EmailLabel, EmailMessage, EmailMessageLabel, EmailThread
@@ -112,6 +133,12 @@ from models.telehealth import TelehealthMessage, TelehealthParticipant, Teleheal
 from models.user import User, UserRole
 from models.validation import DataValidationIssue, ValidationRule
 from models.compliance import ForensicAuditLog
+from models.carefusion_billing import (
+    CarefusionAuditEvent,
+    CarefusionClaim,
+    CarefusionLedgerEntry,
+    CarefusionPayerRouting,
+)
 
 __all__ = [
     "AiInsight",
@@ -134,6 +161,19 @@ __all__ = [
     "PatientStatement",
     "PaymentPosting",
     "AppealPacket",
+    "BillingInvoiceItem",
+    "BillingInvoiceEvent",
+    "BillingClaim",
+    "BillingClaimEvent",
+    "BillingPaymentEvent",
+    "BillingDenial",
+    "BillingAppeal",
+    "BillingFacility",
+    "BillingContact",
+    "BillingContactAttempt",
+    "BillingPatientAccount",
+    "BillingDocument",
+    "BillingPortalToken",
     "BuilderRegistry",
     "BuilderChangeLog",
     "BusinessOpsTask",
@@ -156,6 +196,9 @@ __all__ = [
     "CommsTranscript",
     "CommsBroadcast",
     "CommsTask",
+    "CommsEvent",
+    "CommsDeliveryAttempt",
+    "CommsProvider",
     "CommsTemplate",
     "EmailThread",
     "EmailMessage",
@@ -232,6 +275,10 @@ __all__ = [
     "TelehealthMessage",
     "TelehealthParticipant",
     "TelehealthSession",
+    "CarefusionLedgerEntry",
+    "CarefusionClaim",
+    "CarefusionPayerRouting",
+    "CarefusionAuditEvent",
     "User",
     "UserRole",
     "Organization",

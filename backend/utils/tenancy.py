@@ -1,4 +1,5 @@
 from typing import Any, Optional, Type
+import uuid
 
 from fastapi import HTTPException, Request, status
 from sqlalchemy.orm import Session
@@ -7,8 +8,9 @@ from utils.audit import record_audit
 from models.user import User
 
 
-def scoped_query(db: Session, model: Type[Any], org_id: int, training_mode: Optional[bool] = None):
-    query = db.query(model).filter(model.org_id == org_id)
+def scoped_query(db: Session, model: Type[Any], org_id: Any, training_mode: Optional[bool] = None):
+    scoped_value = str(org_id) if org_id is not None else org_id
+    query = db.query(model).filter(model.org_id == scoped_value)
     if training_mode is not None and hasattr(model, "training_mode"):
         query = query.filter(model.training_mode == training_mode)
     return query
@@ -30,7 +32,13 @@ def get_scoped_record(
     if training_flag is not None and hasattr(record, "training_mode"):
         if record.training_mode != training_flag:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Record not found")
-    if getattr(record, "org_id", None) != user.org_id:
+    record_org = getattr(record, "org_id", None)
+    user_org = user.org_id
+    if isinstance(record_org, uuid.UUID):
+        record_org = str(record_org)
+    if isinstance(user_org, uuid.UUID):
+        user_org = str(user_org)
+    if record_org != user_org:
         record_audit(
             db=db,
             request=request,

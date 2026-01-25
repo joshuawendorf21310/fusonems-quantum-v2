@@ -1,7 +1,7 @@
 import uuid
 
-from sqlalchemy import Column, DateTime, ForeignKey, String, func
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import Column, DateTime, ForeignKey, JSON, String, func
+from sqlalchemy.dialects.postgresql import UUID
 
 from core.database import Base
 
@@ -15,5 +15,5 @@ class AuditEvent(Base):
     action = Column(String, nullable=False, index=True)
     entity_type = Column("entityType", String, nullable=False, index=True)
     entity_id = Column("entityId", String, nullable=False, index=True)
-    metadata = Column(JSONB, nullable=False, default=dict)
+    meta_data = Column("metadata", JSON, nullable=False, default=dict)
     timestamp = Column(DateTime(timezone=True), server_default=func.now(), index=True)

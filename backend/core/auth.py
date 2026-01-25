@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from typing import Optional
+import uuid
 
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
@@ -74,6 +75,10 @@ def get_current_user(
         user_id = payload.get("sub")
         if not user_id:
             raise credentials_exception
+        try:
+            user_id = uuid.UUID(str(user_id))
+        except (TypeError, ValueError):
+            user_id = str(user_id)
     except JWTError as exc:
         raise credentials_exception from exc
     session = db.query(UserSession).filter(UserSession.token == resolved).first()

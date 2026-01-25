@@ -9,7 +9,6 @@ from models.user import UserRole
 
 router = APIRouter(prefix="/audit", tags=["Audit"])
 
-
 @router.get("")
 def list_audit_events(
     db: Session = Depends(get_db),

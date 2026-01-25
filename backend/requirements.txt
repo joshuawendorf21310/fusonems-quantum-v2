@@ -16,3 +16,4 @@ pytest
 httpx
 stripe
 boto3
+reportlab

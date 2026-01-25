@@ -20,10 +20,10 @@ class EventBus:
     def publish(
         self,
         db: Session,
-        org_id: int,
+        org_id: str,
         event_type: str,
         payload: dict[str, Any],
-        actor_id: Optional[int] = None,
+        actor_id: Optional[str] = None,
         actor_role: str = "",
         idempotency_key: Optional[str] = None,
         device_id: str = "",
@@ -42,10 +42,10 @@ class EventBus:
             if existing:
                 return existing
         record = EventLog(
-            org_id=org_id,
+            org_id=str(org_id),
             event_type=event_type,
             payload=payload,
-            actor_id=actor_id,
+            actor_id=str(actor_id) if actor_id is not None else None,
             actor_role=actor_role,
             idempotency_key=idempotency_key,
             device_id=device_id,
@@ -65,7 +65,7 @@ class EventBus:
     def replay(
         self,
         db: Session,
-        org_id: int,
+        org_id: str,
         event_types: Optional[Iterable[str]] = None,
         training_mode: Optional[bool] = None,
     ) -> list[dict[str, Any]]:

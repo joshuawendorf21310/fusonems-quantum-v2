@@ -18,13 +18,13 @@ from models.organization import Organization
 from models.session import Session as UserSession
 from models.setting import Setting
 from models.user import User, UserRole
+from services.cad.cad_router import router as cad_router
+from services.cad.live_router import router as cad_live_router
+from services.cad.tracking_router import router as cad_tracking_router
 from services.core.audit_router import router as audit_router
 from services.core.auth_router import router as auth_router
 from services.core.settings_router import router as settings_router
-from services.communications.comms_router import router as comms_router
-from services.communications.comms_router import webhook_router as comms_webhook_router
-from services.documents.document_router import router as document_router
-from services.documents.quantum_documents_router import router as quantum_documents_router
+from services.documents.billing_docs_router import router as billing_docs_router
 from utils.logger import logger
 from utils.time import compute_drift_seconds, parse_device_time, utc_now
 
@@ -72,12 +72,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(auth_router)
+app.include_router(api_auth_router)
 app.include_router(audit_router)
 app.include_router(settings_router)
+app.include_router(billing_batch5_router)
+app.include_router(payments_router)
+app.include_router(billing_docs_router)
 app.include_router(comms_router)
 app.include_router(comms_webhook_router)
-app.include_router(document_router)
-app.include_router(quantum_documents_router)
+app.include_router(carefusion_router)
+app.include_router(cad_router)
+app.include_router(cad_tracking_router)
+app.include_router(cad_live_router)
 
 
 @app.get("/me")

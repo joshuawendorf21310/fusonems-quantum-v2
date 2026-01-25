@@ -4,11 +4,6 @@ import DataTable from '../components/DataTable.jsx'
 import AdvisoryPanel from '../components/AdvisoryPanel.jsx'
 import StatusBadge from '../components/StatusBadge.jsx'
 import { apiFetch } from '../services/api.js'
-import {
-  fallbackPatientAccounts,
-  fallbackPatientMessages,
-  fallbackPatientInvoices,
-} from '../data/fallback.js'
 
 const accountColumns = [
   { key: 'patient_name', label: 'Patient' },
@@ -24,20 +19,36 @@ const messageColumns = [
 ]
 
 export default function PatientPortal() {
-  const [invoiceRows, setInvoiceRows] = useState(fallbackPatientInvoices)
+  const [invoiceRows, setInvoiceRows] = useState([])
   const [invoiceLoading, setInvoiceLoading] = useState(true)
   const [activeCheckout, setActiveCheckout] = useState(null)
+  const [accountRows, setAccountRows] = useState([])
+  const [messageRows, setMessageRows] = useState([])
 
   useEffect(() => {
     let mounted = true
     const loadInvoices = async () => {
       try {
-        const data = await apiFetch('/api/billing/internal-invoices')
-        if (mounted && Array.isArray(data) && data.length > 0) {
-          setInvoiceRows(data)
+        const [invoiceData, accountData, messageData] = await Promise.all([
+          apiFetch('/api/billing/invoices'),
+          apiFetch('/api/billing/patient/accounts'),
+          apiFetch('/api/comms/threads'),
+        ])
+        if (mounted && Array.isArray(invoiceData)) {
+          setInvoiceRows(invoiceData)
+        }
+        if (mounted && Array.isArray(accountData)) {
+          setAccountRows(accountData)
+        }
+        if (mounted && Array.isArray(messageData)) {
+          setMessageRows(messageData)
         }
       } catch (err) {
-        // Fallback data keeps the portal alive.
+        if (mounted) {
+          setInvoiceRows([])
+          setAccountRows([])
+          setMessageRows([])
+        }
       } finally {
         if (mounted) {
           setInvoiceLoading(false)
@@ -64,17 +75,14 @@ export default function PatientPortal() {
     }
     setActiveCheckout(invoice.id)
     try {
-      const origin = window.location.origin
-      const session = await apiFetch('/api/billing/stripe/checkout-session', {
+      const session = await apiFetch('/api/payments/stripe/checkout', {
         method: 'POST',
         body: JSON.stringify({
-          invoice_id: invoice.id,
-          success_url: `${origin}/patient-portal?payment=success`,
-          cancel_url: `${origin}/patient-portal?payment=cancel`,
+          invoiceId: invoice.id,
         }),
       })
-      if (session?.url) {
-        window.location.assign(session.url)
+      if (session?.checkoutUrl) {
+        window.location.assign(session.checkoutUrl)
         return
       }
     } catch (err) {
@@ -88,7 +96,7 @@ export default function PatientPortal() {
     {
       key: 'patient_name',
       label: 'Patient',
-      render: (row) => row.meta_data?.patient_name || 'Unknown',
+      render: (row) => row.meta_data?.patient_name || row.customer_id || 'Unknown',
     },
     {
       key: 'amount_due',
@@ -120,13 +128,12 @@ export default function PatientPortal() {
       <SectionHeader
         eyebrow="Patient Portal"
         title="Statements, Messages, Records"
-        action={<button className="primary-button">Invite Patient</button>}
       />
 
       <div className="section-grid">
         <div className="panel">
           <SectionHeader eyebrow="Accounts" title="Portal Access" />
-          <DataTable columns={accountColumns} rows={fallbackPatientAccounts} emptyState="No accounts." />
+          <DataTable columns={accountColumns} rows={accountRows} emptyState="No accounts." />
         </div>
         <div className="panel">
           <AdvisoryPanel
@@ -134,7 +141,7 @@ export default function PatientPortal() {
             model="patient-assist"
             version="1.0"
             level="ADVISORY"
-            message="1 billing message awaiting response."
+            message={`${messageRows.length} billing message${messageRows.length === 1 ? '' : 's'} awaiting response.`}
             reason="Portal inbox"
           />
           <div className="note-card">
@@ -157,7 +164,7 @@ export default function PatientPortal() {
 
       <div className="panel">
         <SectionHeader eyebrow="Messages" title="Patient Inbox" />
-        <DataTable columns={messageColumns} rows={fallbackPatientMessages} emptyState="No messages." />
+        <DataTable columns={messageColumns} rows={messageRows} emptyState="No messages." />
       </div>
     </div>
   )
