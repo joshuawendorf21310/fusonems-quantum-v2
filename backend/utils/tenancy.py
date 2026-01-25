@@ -9,7 +9,7 @@ from models.user import User
 
 
 def scoped_query(db: Session, model: Type[Any], org_id: Any, training_mode: Optional[bool] = None):
-    scoped_value = str(org_id) if isinstance(org_id, uuid.UUID) else org_id
+    scoped_value = str(org_id) if org_id is not None else org_id
     query = db.query(model).filter(model.org_id == scoped_value)
     if training_mode is not None and hasattr(model, "training_mode"):
         query = query.filter(model.training_mode == training_mode)

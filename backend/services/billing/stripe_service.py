@@ -109,7 +109,7 @@ def upsert_feature_flags(db: Session, org_id: int | str, subscription_items: lis
         if settings.STRIPE_ENFORCE_ENTITLEMENTS:
             module = (
                 db.query(ModuleRegistry)
-                .filter(ModuleRegistry.org_id == org_id, ModuleRegistry.module_key == module_key)
+                .filter(ModuleRegistry.org_id == normalized, ModuleRegistry.module_key == module_key)
                 .first()
             )
             if module:

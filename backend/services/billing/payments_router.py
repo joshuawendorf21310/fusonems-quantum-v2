@@ -43,9 +43,10 @@ def create_checkout(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.billing, UserRole.admin, UserRole.founder)),
 ):
+    org_id = str(user.org_id)
     invoice = (
         db.query(BillingInvoice)
-        .filter(BillingInvoice.org_id == user.org_id, BillingInvoice.id == payload.invoiceId)
+        .filter(BillingInvoice.org_id == org_id, BillingInvoice.id == payload.invoiceId)
         .first()
     )
     if not invoice:
@@ -54,10 +55,10 @@ def create_checkout(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invoice balance cleared")
     if not settings.APP_BASE_URL:
         raise HTTPException(status_code=status.HTTP_412_PRECONDITION_FAILED, detail="APP_BASE_URL missing")
-    success_url = f"{settings.APP_BASE_URL}/patient/portal?payment=success"
-    cancel_url = f"{settings.APP_BASE_URL}/patient/portal?payment=cancel"
+    success_url = f"{settings.APP_BASE_URL}/patient-portal?payment=success"
+    cancel_url = f"{settings.APP_BASE_URL}/patient-portal?payment=cancel"
     session = create_checkout_session(
-        user.org_id,
+        org_id,
         invoice,
         success_url,
         cancel_url,
