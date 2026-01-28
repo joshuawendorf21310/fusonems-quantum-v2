@@ -91,10 +91,10 @@ const HRDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-8">
+      <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8">
         <div className="max-w-7xl mx-auto space-y-6">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-32 bg-white/50 rounded-2xl animate-pulse" />
+            <div key={i} className="h-32 bg-zinc-900 rounded-2xl animate-pulse" />
           ))}
         </div>
       </div>
@@ -102,7 +102,7 @@ const HRDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-8">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <motion.div
@@ -111,16 +111,16 @@ const HRDashboard = () => {
           className="flex items-center justify-between"
         >
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent">
               HR Dashboard
             </h1>
-            <p className="text-slate-600 mt-1">Personnel management and analytics</p>
+            <p className="text-zinc-400 mt-1">Personnel management and analytics</p>
           </div>
           <div className="flex gap-3">
             <select
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value)}
-              className="px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm hover:border-blue-400 transition-colors"
+              className="px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-blue-400 transition-colors"
             >
               <option value="1m">Last Month</option>
               <option value="3m">Last 3 Months</option>
@@ -131,7 +131,7 @@ const HRDashboard = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={handleRefresh}
-              className="px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm hover:border-blue-400 transition-colors"
+              className="px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-blue-400 transition-colors"
             >
               <RefreshCw className={`w-5 h-5 text-slate-600 ${refreshing ? 'animate-spin' : ''}`} />
             </motion.button>
@@ -188,12 +188,12 @@ const HRDashboard = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.1 }}
               whileHover={{ y: -4, shadow: '0 20px 40px rgba(0,0,0,0.1)' }}
-              className="bg-white rounded-2xl shadow-lg p-6 border border-slate-100 hover:border-blue-200 transition-all"
+              className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6 hover:border-zinc-700 transition-all"
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-slate-600 font-medium">{kpi.title}</p>
-                  <p className="text-3xl font-bold text-slate-900 mt-2">{kpi.value}</p>
+                  <p className="text-sm text-zinc-400 font-medium">{kpi.title}</p>
+                  <p className="text-3xl font-bold text-zinc-100 mt-2">{kpi.value}</p>
                   <div className="flex items-center gap-1 mt-2">
                     {kpi.trend === 'up' ? (
                       <TrendingUp className="w-4 h-4 text-green-500" />
@@ -234,12 +234,12 @@ const HRDashboard = () => {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="bg-white rounded-2xl shadow-lg p-6 border border-slate-100"
+            className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6"
           >
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-bold text-slate-900">Headcount Trend</h3>
-                <p className="text-sm text-slate-600 mt-1">Active personnel over time</p>
+                <h3 className="text-lg font-bold text-zinc-100">Headcount Trend</h3>
+                <p className="text-sm text-zinc-400 mt-1">Active personnel over time</p>
               </div>
               <Activity className="w-5 h-5 text-blue-500" />
             </div>
@@ -251,15 +251,15 @@ const HRDashboard = () => {
                     <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="month" stroke="#64748b" />
-                <YAxis stroke="#64748b" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#3f3f46" />
+                <XAxis dataKey="month" stroke="#a1a1aa" />
+                <YAxis stroke="#a1a1aa" />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'white',
-                    border: '1px solid #e2e8f0',
+                    backgroundColor: '#18181b',
+                    border: '1px solid #3f3f46',
                     borderRadius: '12px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
                   }}
                 />
                 <Area
@@ -277,7 +277,7 @@ const HRDashboard = () => {
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="bg-white rounded-2xl shadow-lg p-6 border border-slate-100"
+            className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6"
           >
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -311,7 +311,7 @@ const HRDashboard = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl shadow-lg p-6 border border-slate-100"
+            className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6"
           >
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -327,10 +327,10 @@ const HRDashboard = () => {
                 <YAxis dataKey="status" type="category" stroke="#64748b" width={100} />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'white',
-                    border: '1px solid #e2e8f0',
+                    backgroundColor: '#18181b',
+                    border: '1px solid #3f3f46',
                     borderRadius: '12px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
                   }}
                 />
                 <Bar dataKey="count" radius={[0, 8, 8, 0]}>
@@ -346,7 +346,7 @@ const HRDashboard = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl shadow-lg p-6 border border-slate-100"
+            className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6"
           >
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -362,10 +362,10 @@ const HRDashboard = () => {
                 <YAxis stroke="#64748b" />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'white',
-                    border: '1px solid #e2e8f0',
+                    backgroundColor: '#18181b',
+                    border: '1px solid #3f3f46',
                     borderRadius: '12px',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
                   }}
                 />
                 <Line

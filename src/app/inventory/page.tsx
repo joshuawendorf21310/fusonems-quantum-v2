@@ -92,12 +92,12 @@ export default function InventoryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Inventory Management</h1>
-            <p className="text-gray-600">Par levels, expiration tracking, and controlled substances</p>
+            <h1 className="text-2xl font-bold text-zinc-100">Inventory Management</h1>
+            <p className="text-zinc-400">Par levels, expiration tracking, and controlled substances</p>
           </div>
           <div className="flex gap-2">
             <Link
@@ -114,9 +114,9 @@ export default function InventoryPage() {
 
         {stats && (
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-            <div className="bg-white rounded-lg shadow p-4">
-              <div className="text-3xl font-bold text-gray-900">{stats.total_items}</div>
-              <div className="text-sm text-gray-600">Total Items</div>
+            <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-4">
+              <div className="text-3xl font-bold text-zinc-100">{stats.total_items}</div>
+              <div className="text-sm text-zinc-400">Total Items</div>
             </div>
             <Link href="/inventory?low_stock=true" className="bg-white rounded-lg shadow p-4 hover:shadow-md">
               <div className="text-3xl font-bold text-yellow-600">{stats.low_stock_items}</div>
@@ -130,7 +130,7 @@ export default function InventoryPage() {
               <div className="text-3xl font-bold text-orange-600">{stats.expiring_30_days}</div>
               <div className="text-sm text-gray-600">Expiring 30d</div>
             </Link>
-            <div className="bg-white rounded-lg shadow p-4">
+            <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-4">
               <div className="text-3xl font-bold text-green-600">${stats.total_inventory_value.toLocaleString()}</div>
               <div className="text-sm text-gray-600">Total Value</div>
             </div>

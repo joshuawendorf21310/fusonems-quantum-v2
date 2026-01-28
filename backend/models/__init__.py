@@ -88,9 +88,15 @@ from models.fire_rms import (
     FireIncidentSupplement,
 )
 # New Patient Portal Models
-from models.patient_portal_extended import (
+from models.patient_portal import (
     PatientPortalAccount,
     PatientPortalMessage,
+    PatientBill,
+    PatientPayment,
+    PatientPaymentPlan,
+    StripeCustomer,
+)
+from models.patient_portal_extended import (
     MedicalRecordRequest,
     PatientBillPayment,
     AppointmentRequest,
@@ -239,7 +245,17 @@ from models.workflow import WorkflowState
 from models.mail import Message
 from models.scheduling import Shift
 from models.search import SearchIndexEntry, SavedSearch
-from models.telehealth import TelehealthMessage, TelehealthParticipant, TelehealthSession
+from models.telehealth import (
+    TelehealthMessage,
+    TelehealthParticipant,
+    TelehealthSession,
+    TelehealthProvider,
+    TelehealthPatient,
+    TelehealthAppointment,
+    TelehealthVisit,
+    ProviderAvailability,
+    TelehealthPrescription,
+)
 from models.user import User, UserRole
 from models.validation import DataValidationIssue, ValidationRule
 from models.compliance import ForensicAuditLog
@@ -530,6 +546,12 @@ __all__ = [
     "TelehealthMessage",
     "TelehealthParticipant",
     "TelehealthSession",
+    "TelehealthProvider",
+    "TelehealthPatient",
+    "TelehealthAppointment",
+    "TelehealthVisit",
+    "ProviderAvailability",
+    "TelehealthPrescription",
     "CarefusionLedgerEntry",
     "CarefusionClaim",
     "CarefusionPayerRouting",
@@ -554,6 +576,17 @@ __all__ = [
     "LegalEvidence",
     "PatientPortalAccount",
     "PatientPortalMessage",
+    "PatientBill",
+    "PatientPayment",
+    "PatientPaymentPlan",
+    "StripeCustomer",
+    "MedicalRecordRequest",
+    "PatientBillPayment",
+    "AppointmentRequest",
+    "PatientPortalAccessLog",
+    "PatientDocumentShare",
+    "PatientPreference",
+    "PatientSurveyResponse",
     "SupportInteraction",
     "SupportMirrorEvent",
     "SupportSession",

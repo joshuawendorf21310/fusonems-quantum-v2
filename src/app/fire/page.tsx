@@ -22,6 +22,7 @@ type FireDashboardData = {
     incident_type: string;
     address: string;
     timestamp: string;
+    status: string;
   }>;
 };
 
@@ -53,12 +54,12 @@ const fireModules = [
 ];
 
 const rmsQuickLinks = [
-  { href: "/fire/rms/hydrants", label: "Hydrants", icon: MapPin, color: "bg-blue-500/10 border-blue-500/30 hover:border-blue-500" },
-  { href: "/fire/rms/inspections", label: "Inspections", icon: ClipboardCheck, color: "bg-purple-500/10 border-purple-500/30 hover:border-purple-500" },
-  { href: "/fire/rms/preplans", label: "Pre-Plans", icon: FileText, color: "bg-green-500/10 border-green-500/30 hover:border-green-500" },
+  { href: "/fire/incidents", label: "Incidents", icon: AlertTriangle, color: "bg-red-500/10 border-red-500/30 hover:border-red-500" },
+  { href: "/fire/apparatus", label: "Apparatus", icon: Truck, color: "bg-orange-500/10 border-orange-500/30 hover:border-orange-500" },
+  { href: "/fire/hydrants", label: "Hydrants", icon: MapPin, color: "bg-blue-500/10 border-blue-500/30 hover:border-blue-500" },
+  { href: "/fire/inspections", label: "Inspections", icon: ClipboardCheck, color: "bg-purple-500/10 border-purple-500/30 hover:border-purple-500" },
+  { href: "/fire/preplans", label: "Pre-Plans", icon: FileText, color: "bg-green-500/10 border-green-500/30 hover:border-green-500" },
   { href: "/fire/rms/prevention", label: "CRR Programs", icon: Shield, color: "bg-cyan-500/10 border-cyan-500/30 hover:border-cyan-500" },
-  { href: "/fire/rms/apparatus", label: "Apparatus", icon: Truck, color: "bg-orange-500/10 border-orange-500/30 hover:border-orange-500" },
-  { href: "/fire/rms/incidents", label: "Incidents", icon: AlertTriangle, color: "bg-red-500/10 border-red-500/30 hover:border-red-500" },
   { href: "/fire/rms/ai-risk", label: "AI Risk", icon: TrendingUp, color: "bg-pink-500/10 border-pink-500/30 hover:border-pink-500" },
 ];
 
@@ -68,18 +69,17 @@ export default function FireDashboard() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    apiFetch<FireDashboardData>("/fire/dashboard")
+    apiFetch<FireDashboardData>("/fire/dashboard", { credentials: "include" })
       .then(setData)
       .catch(() => setError("Failed to load dashboard."))
       .finally(() => setLoading(false));
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950">
+    <div className="min-h-screen bg-zinc-950">
       {/* Header */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-red-600/20 via-orange-600/20 to-red-600/20" />
-        <div className="absolute inset-0 backdrop-blur-3xl" />
+      <div className="relative overflow-hidden bg-gradient-to-r from-red-950 via-zinc-900 to-orange-950 border-b border-red-900/30">
+        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
         <div className="relative px-6 py-8">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -91,7 +91,7 @@ export default function FireDashboard() {
               <Flame className="w-10 h-10 text-white" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold text-white mb-1">Fire Services</h1>
+              <h1 className="text-4xl font-bold text-zinc-100 mb-1">Fire Services</h1>
               <p className="text-red-200">Comprehensive Fire Department Operations & Records Management</p>
             </div>
           </motion.div>
@@ -105,9 +105,9 @@ export default function FireDashboard() {
             animate={{ opacity: 1 }}
             className="text-center py-12"
           >
-            <div className="inline-flex items-center gap-3 px-6 py-3 bg-gray-800/50 rounded-full border border-gray-700">
+            <div className="inline-flex items-center gap-3 px-6 py-3 bg-zinc-900/50 rounded-full border border-zinc-800">
               <Activity className="w-5 h-5 text-red-400 animate-pulse" />
-              <span className="text-gray-300">Loading dashboard...</span>
+              <span className="text-zinc-300">Loading dashboard...</span>
             </div>
           </motion.div>
         )}
@@ -145,18 +145,15 @@ export default function FireDashboard() {
                   whileHover={{ scale: 1.02, y: -2 }}
                   className="relative group"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl -z-10"
-                    style={{ background: `linear-gradient(to bottom right, var(--tw-gradient-stops))` }}
-                  />
                   <div className={`bg-gradient-to-br ${stat.gradient} p-[1px] rounded-2xl`}>
-                    <div className="bg-gray-900 rounded-2xl p-5">
+                    <div className="bg-zinc-900 rounded-2xl p-5">
                       <div className="flex items-start justify-between mb-3">
-                        <div className={`p-2 bg-${stat.color}-500/10 rounded-lg`}>
-                          <stat.icon className={`w-5 h-5 text-${stat.color}-400`} />
+                        <div className="p-2 bg-zinc-800 rounded-lg">
+                          <stat.icon className="w-5 h-5 text-red-400" />
                         </div>
                       </div>
-                      <div className="text-3xl font-bold text-white mb-1">{stat.value}</div>
-                      <div className="text-sm text-gray-400">{stat.label}</div>
+                      <div className="text-3xl font-bold text-zinc-100 mb-1">{stat.value}</div>
+                      <div className="text-sm text-zinc-400">{stat.label}</div>
                     </div>
                   </div>
                 </motion.div>
@@ -169,33 +166,39 @@ export default function FireDashboard() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-2xl p-6"
+                className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800 rounded-2xl p-6"
               >
-                <div className="flex items-center gap-3 mb-4">
-                  <AlertTriangle className="w-6 h-6 text-red-400" />
-                  <h2 className="text-xl font-bold text-white">Recent Incidents</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <AlertTriangle className="w-6 h-6 text-red-400" />
+                    <h2 className="text-xl font-bold text-zinc-100">Recent Incidents</h2>
+                  </div>
+                  <Link href="/fire/incidents" className="text-sm text-red-400 hover:text-red-300">
+                    View all
+                  </Link>
                 </div>
                 <div className="space-y-2">
                   {data.recent_incidents.slice(0, 5).map((incident, idx) => (
-                    <motion.div
-                      key={incident.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.4 + idx * 0.05 }}
-                      className="flex items-center justify-between p-4 bg-gray-800/50 rounded-xl hover:bg-gray-800 transition-colors"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                        <div>
-                          <div className="font-semibold text-white">{incident.incident_number}</div>
-                          <div className="text-sm text-gray-400">{incident.incident_type}</div>
+                    <Link key={incident.id} href={`/fire/incidents/${incident.id}`}>
+                      <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.4 + idx * 0.05 }}
+                        className="flex items-center justify-between p-4 bg-zinc-800/50 rounded-xl hover:bg-zinc-800 transition-colors cursor-pointer"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                          <div>
+                            <div className="font-semibold text-zinc-100">{incident.incident_number}</div>
+                            <div className="text-sm text-zinc-400">{incident.incident_type}</div>
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-sm text-gray-300">{incident.address}</div>
-                        <div className="text-xs text-gray-500">{new Date(incident.timestamp).toLocaleString()}</div>
-                      </div>
-                    </motion.div>
+                        <div className="text-right">
+                          <div className="text-sm text-zinc-300">{incident.address}</div>
+                          <div className="text-xs text-zinc-500">{new Date(incident.timestamp).toLocaleString()}</div>
+                        </div>
+                      </motion.div>
+                    </Link>
                   ))}
                 </div>
               </motion.div>
@@ -209,7 +212,7 @@ export default function FireDashboard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
         >
-          <h2 className="text-2xl font-bold text-white mb-4">Fire Modules</h2>
+          <h2 className="text-2xl font-bold text-zinc-100 mb-4">Fire Modules</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {fireModules.map((mod, idx) => (
               <motion.div
@@ -220,16 +223,16 @@ export default function FireDashboard() {
                 whileHover={{ scale: 1.02, y: -4 }}
               >
                 <Link href={mod.href} className="block group">
-                  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 hover:border-red-500/50 transition-all duration-300 p-6">
+                  <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 to-zinc-800 border border-zinc-700 hover:border-red-500/50 transition-all duration-300 p-6">
                     <div className={`absolute inset-0 bg-gradient-to-br ${mod.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`} />
                     <div className="relative">
                       <div className={`p-3 bg-gradient-to-br ${mod.color} rounded-xl w-fit mb-4 shadow-lg`}>
                         <mod.icon className="w-8 h-8 text-white" />
                       </div>
-                      <h3 className="text-xl font-bold text-white group-hover:text-red-400 transition-colors mb-2">
+                      <h3 className="text-xl font-bold text-zinc-100 group-hover:text-red-400 transition-colors mb-2">
                         {mod.title}
                       </h3>
-                      <p className="text-sm text-gray-400">{mod.desc}</p>
+                      <p className="text-sm text-zinc-400">{mod.desc}</p>
                     </div>
                   </div>
                 </Link>
@@ -238,14 +241,14 @@ export default function FireDashboard() {
           </div>
         </motion.div>
 
-        {/* Quick Access - Fire RMS */}
+        {/* Quick Access */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
-          className="bg-gray-900/50 backdrop-blur-xl border border-gray-800 rounded-2xl p-6"
+          className="bg-zinc-900/50 backdrop-blur-xl border border-zinc-800 rounded-2xl p-6"
         >
-          <h2 className="text-xl font-bold text-white mb-4">Quick Access - Fire RMS</h2>
+          <h2 className="text-xl font-bold text-zinc-100 mb-4">Quick Access - Fire RMS</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
             {rmsQuickLinks.map((link, idx) => (
               <motion.div
@@ -257,8 +260,8 @@ export default function FireDashboard() {
               >
                 <Link href={link.href}>
                   <div className={`${link.color} border rounded-xl p-4 transition-all duration-200 text-center group`}>
-                    <link.icon className="w-6 h-6 mx-auto mb-2 text-gray-300 group-hover:text-white transition-colors" />
-                    <div className="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">
+                    <link.icon className="w-6 h-6 mx-auto mb-2 text-zinc-300 group-hover:text-white transition-colors" />
+                    <div className="text-sm font-medium text-zinc-300 group-hover:text-white transition-colors">
                       {link.label}
                     </div>
                   </div>
@@ -280,7 +283,7 @@ export default function FireDashboard() {
               <AlertTriangle className="w-6 h-6 text-amber-400 flex-shrink-0 mt-1" />
               <div>
                 <h3 className="text-lg font-bold text-amber-400 mb-2">Attention Required</h3>
-                <div className="space-y-1 text-gray-300">
+                <div className="space-y-1 text-zinc-300">
                   {data.hydrants_due > 0 && (
                     <div>{data.hydrants_due} hydrant{data.hydrants_due > 1 ? 's' : ''} due for inspection</div>
                   )}

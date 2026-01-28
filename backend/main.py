@@ -115,6 +115,9 @@ from services.fleet.fleet_router import router as fleet_router
 from services.founder_ops.founder_ops_router import router as founder_ops_router
 from services.legal_portal.legal_portal_router import router as legal_portal_router
 from services.patient_portal.patient_portal_router import router as patient_portal_router
+from services.patient_portal.patient_billing_router import router as patient_billing_router
+from services.carefusion.patient_router import router as carefusion_patient_router
+from services.carefusion.provider_router import router as carefusion_provider_router
 from services.marketing.routes import router as marketing_router
 from services.storage.storage_router import router as storage_router
 from services.metriport.metriport_router import router as metriport_router
@@ -292,6 +295,9 @@ app.include_router(fleet_router)
 app.include_router(founder_ops_router)
 app.include_router(legal_portal_router)
 app.include_router(patient_portal_router)
+app.include_router(patient_billing_router)
+app.include_router(carefusion_patient_router)
+app.include_router(carefusion_provider_router)
 app.include_router(notifications_router)
 app.include_router(marketing_router)
 app.include_router(ocr_router)
