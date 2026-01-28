@@ -76,7 +76,7 @@ def _create_integration_task(session_uuid: str, title: str, integration: str, or
         db = SessionLocal()
         task = BusinessOpsTask(
             title=title,
-            owner="CareFusion Telemed",
+            owner="Telehealth",
             priority="Normal",
             task_metadata={"session_uuid": session_uuid, "integration": integration},
             org_id=org_id,

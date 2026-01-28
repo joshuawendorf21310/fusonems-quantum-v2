@@ -1,14 +1,82 @@
 "use client"
 
-import { useState } from "react"
+import { useState, FormEvent, ReactNode } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { apiFetch } from "@/lib/api"
-import { useAuth } from "@/lib/auth-context"
 
-export default function LoginPage() {
+interface SecurityFeature {
+  icon: ReactNode
+  title: string
+  description: string
+}
+
+interface EnterpriseLoginShellProps {
+  portalName: string
+  portalDescription: string
+  portalGradient: string
+  portalIcon: ReactNode
+  onSubmit: (email: string, password: string) => Promise<void>
+  redirectPath: string
+  showRememberMe?: boolean
+  showPasswordRecovery?: boolean
+  marketingTitle?: string
+  marketingSubtitle?: string
+  securityFeatures?: SecurityFeature[]
+}
+
+const defaultSecurityFeatures: SecurityFeature[] = [
+  {
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+      </svg>
+    ),
+    title: "Bank-Level Encryption",
+    description: "Your data is protected with 256-bit AES encryption"
+  },
+  {
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+      </svg>
+    ),
+    title: "HIPAA Compliant",
+    description: "Fully compliant with healthcare security standards"
+  },
+  {
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+      </svg>
+    ),
+    title: "Multi-Factor Authentication",
+    description: "Extra layer of security for your account"
+  },
+  {
+    icon: (
+      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+      </svg>
+    ),
+    title: "Real-Time Monitoring",
+    description: "24/7 security monitoring and threat detection"
+  }
+]
+
+export default function EnterpriseLoginShell({
+  portalName,
+  portalDescription,
+  portalGradient,
+  portalIcon,
+  onSubmit,
+  redirectPath,
+  showRememberMe = true,
+  showPasswordRecovery = true,
+  marketingTitle,
+  marketingSubtitle,
+  securityFeatures = defaultSecurityFeatures,
+}: EnterpriseLoginShellProps) {
   const router = useRouter()
-  const { isAuthenticated } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -16,78 +84,27 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  if (isAuthenticated) {
-    router.push("/dashboard")
-    return null
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError(null)
 
     try {
-      const response = await apiFetch<{ access_token: string }>(
-        "/auth/login",
-        {
-          method: "POST",
-          body: JSON.stringify({ email, password }),
-        }
-      )
-      localStorage.setItem("token", response.access_token)
+      await onSubmit(email, password)
       if (rememberMe) {
         localStorage.setItem("remember_email", email)
       }
-      router.push("/dashboard")
+      router.push(redirectPath)
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Login failed. Please try again.")
+      setError(err.message || "Authentication failed. Please try again.")
     } finally {
       setLoading(false)
     }
   }
 
-  const securityFeatures = [
-    {
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-        </svg>
-      ),
-      title: "Military-Grade Security",
-      description: "Bank-level 256-bit AES encryption protecting your data"
-    },
-    {
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-        </svg>
-      ),
-      title: "HIPAA Compliant",
-      description: "Fully compliant with healthcare security standards"
-    },
-    {
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-      ),
-      title: "99.9% Uptime",
-      description: "Cloud infrastructure with automatic failover"
-    },
-    {
-      icon: (
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      ),
-      title: "24/7 Monitoring",
-      description: "Real-time threat detection and security monitoring"
-    }
-  ]
-
   return (
     <div className="min-h-screen bg-zinc-950 flex">
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-orange-600 to-red-600 relative overflow-hidden">
+      <div className={`hidden lg:flex lg:w-1/2 bg-gradient-to-br ${portalGradient} relative overflow-hidden`}>
         <div className="absolute inset-0 bg-black/20"></div>
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
         
@@ -103,16 +120,14 @@ export default function LoginPage() {
 
           <div className="space-y-8">
             <div className="space-y-4">
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm">
-                <svg className="w-12 h-12 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
+              <div className={`inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm`}>
+                {portalIcon}
               </div>
               <h1 className="text-5xl font-bold leading-tight">
-                Enterprise EMS Platform
+                {marketingTitle || `Welcome to ${portalName}`}
               </h1>
               <p className="text-xl text-white/80 max-w-md">
-                The complete solution for emergency medical services, fire departments, and HEMS operations.
+                {marketingSubtitle || portalDescription}
               </p>
             </div>
 
@@ -146,13 +161,16 @@ export default function LoginPage() {
               </svg>
               <span>Back to Home</span>
             </Link>
-            <h1 className="text-3xl font-bold text-white">FusionEMS Quantum</h1>
-            <p className="text-gray-400">Enterprise EMS Platform</p>
+            <div className={`inline-flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-br ${portalGradient} mb-4`}>
+              {portalIcon}
+            </div>
+            <h1 className="text-3xl font-bold text-white">{portalName}</h1>
+            <p className="text-gray-400">{portalDescription}</p>
           </div>
 
           <div className="hidden lg:block">
-            <h2 className="text-3xl font-bold text-white mb-2">Welcome Back</h2>
-            <p className="text-gray-400">Sign in to your account to continue</p>
+            <h2 className="text-3xl font-bold text-white mb-2">Sign In</h2>
+            <p className="text-gray-400">Enter your credentials to access your account</p>
           </div>
 
           {error && (
@@ -218,24 +236,28 @@ export default function LoginPage() {
             </div>
 
             <div className="flex items-center justify-between">
-              <label className="flex items-center space-x-2 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-orange-500 focus:ring-2 focus:ring-orange-500 focus:ring-offset-0 cursor-pointer"
-                />
-                <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">Remember me</span>
-              </label>
-              <Link href="/password-recovery" className="text-sm text-orange-500 hover:text-orange-400 transition-colors font-medium">
-                Forgot password?
-              </Link>
+              {showRememberMe && (
+                <label className="flex items-center space-x-2 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-orange-500 focus:ring-2 focus:ring-orange-500 focus:ring-offset-0 cursor-pointer"
+                  />
+                  <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">Remember me</span>
+                </label>
+              )}
+              {showPasswordRecovery && (
+                <Link href="/password-recovery" className="text-sm text-orange-500 hover:text-orange-400 transition-colors font-medium">
+                  Forgot password?
+                </Link>
+              )}
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 px-4 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-orange-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              className={`w-full py-3 px-4 bg-gradient-to-r ${portalGradient} text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-orange-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2`}
             >
               {loading ? (
                 <>
@@ -251,13 +273,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="pt-6 border-t border-zinc-800 space-y-4">
-            <p className="text-center text-sm text-gray-400">
-              Don't have an account?{" "}
-              <Link href="/register" className="text-orange-500 hover:text-orange-400 font-medium transition-colors">
-                Create one
-              </Link>
-            </p>
+          <div className="pt-6 border-t border-zinc-800">
             <p className="text-center text-sm text-gray-500">
               Secure enterprise authentication · FusionEMS Quantum
             </p>

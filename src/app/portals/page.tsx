@@ -44,6 +44,16 @@ const internalPortals = [
     link: "/hems"
   },
   {
+    name: "Telehealth Portal",
+    icon: "telehealth",
+    purpose: "Remote clinical consultation and telemedicine",
+    users: "Physicians, nurse practitioners, telehealth coordinators",
+    scope: ["Video consultations", "Patient assessments", "Documentation", "Remote clinical support"],
+    notes: "Clinical telemedicine only, no dispatch or billing access",
+    gradient: "from-purple-600 to-pink-600",
+    link: "/telehealth"
+  },
+  {
     name: "Pilot Portal",
     icon: "pilot",
     purpose: "Flight crew operational view",
@@ -122,18 +132,6 @@ const publicPortals = [
   }
 ]
 
-const externalSystems = [
-  {
-    name: "CareFusion",
-    icon: "external",
-    purpose: "Hospital clinical and medication management system",
-    relationship: "External, independent system",
-    rules: ["No shared authentication", "No embedded UI", "No shared database", "Interaction only via approved interfaces"],
-    notes: "Treated as external clinical environment, not an EMS module",
-    gradient: "from-gray-700 to-gray-600"
-  }
-]
-
 const getIcon = (icon: string) => {
   const icons: Record<string, React.ReactNode> = {
     cad: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>,
@@ -142,6 +140,7 @@ const getIcon = (icon: string) => {
     hems: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>,
     pilot: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>,
     compliance: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>,
+    telehealth: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>,
     admin: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>,
     facility: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>,
     provider: <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>,
@@ -394,60 +393,6 @@ export default function PortalsPage() {
                     </span>
                   </div>
                 </Link>
-              ))}
-            </div>
-          </section>
-
-          <section className="mb-20">
-            <div className="mb-8">
-              <div className="flex items-center gap-3 mb-3">
-                <span className="text-orange-500 font-mono text-sm">04</span>
-                <div className="flex-1 h-px bg-gradient-to-r from-orange-500/50 to-transparent"></div>
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-black text-white mb-2">
-                External Clinical Systems
-              </h2>
-              <p className="text-gray-400">
-                Independent systems with controlled interoperability — not part of the platform
-              </p>
-            </div>
-
-            <div className="grid gap-4">
-              {externalSystems.map((system, i) => (
-                <div
-                  key={i}
-                  className="p-6 rounded-2xl bg-white/[0.02] border border-white/5"
-                >
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${system.gradient} flex items-center justify-center text-white shrink-0`}>
-                      {getIcon(system.icon)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-white mb-1">
-                        {system.name}
-                      </h3>
-                      <p className="text-sm text-gray-400">{system.purpose}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        <span className="text-gray-400 font-medium">Relationship:</span> {system.relationship}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mb-4">
-                    <p className="text-xs font-medium text-gray-400 mb-2">Key Rules:</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {system.rules.map((rule, idx) => (
-                        <span key={idx} className="px-2 py-0.5 rounded bg-white/5 text-xs text-gray-400">
-                          {rule}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="pt-3 border-t border-white/5">
-                    <p className="text-xs text-gray-500 italic">{system.notes}</p>
-                  </div>
-                </div>
               ))}
             </div>
           </section>
