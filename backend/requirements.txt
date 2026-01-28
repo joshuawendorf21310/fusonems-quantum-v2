@@ -8,6 +8,7 @@ python-multipart
 passlib[bcrypt]
 argon2-cffi
 python-jose
+pyjwt
 httpx
 pytest
 pydantic-settings>=2.0

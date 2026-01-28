@@ -78,6 +78,7 @@ from services.fire.fire_911_transport_router import router as fire_911_transport
 from services.fire.fire_scheduling_router import router as fire_scheduling_router
 from services.fire.fire_rms_router import router as fire_rms_router
 from services.telehealth.telehealth_router import router as telehealth_router
+from services.telehealth.jitsi_router import router as jitsi_video_router
 from services.schedule.schedule_router import router as schedule_router
 from services.scheduling.scheduling_router import router as scheduling_module_router
 from services.scheduling.predictive_router import router as predictive_scheduling_router
@@ -258,6 +259,7 @@ app.include_router(telnyx_router)
 app.include_router(telnyx_ivr_router)
 app.include_router(lob_router)
 app.include_router(telehealth_router)
+app.include_router(jitsi_video_router)
 app.include_router(automation_router)
 app.include_router(validation_router)
 app.include_router(compliance_router)
