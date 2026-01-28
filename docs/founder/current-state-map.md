@@ -40,18 +40,18 @@
 
 ## Frontend Pages / Components (Docs, Comms, Legal, Founder)
 - Document Studio:
-  - `frontend/src/pages/DocumentStudio.jsx`
-  - `frontend/src/components/Sidebar.jsx` (nav entry `/documents`)
+  - `next-fusionems/src/pages/DocumentStudio.jsx`
+  - `next-fusionems/src/components/Sidebar.jsx` (nav entry `/documents`)
 - Communications:
-  - `frontend/src/pages/Communications.jsx`
-  - `frontend/src/pages/modules/Communications.jsx`
-  - `frontend/src/components/Sidebar.jsx` (nav entry `/communications`)
+  - `next-fusionems/src/pages/Communications.jsx`
+  - `next-fusionems/src/pages/modules/Communications.jsx`
+  - `next-fusionems/src/components/Sidebar.jsx` (nav entry `/communications`)
 - Legal:
-  - `frontend/src/pages/LegalPortal.jsx`
-  - `frontend/src/pages/HemsQA.jsx` (legal hold visibility)
-  - `frontend/src/components/LegalHoldBanner.jsx`
-  - `frontend/src/components/Sidebar.jsx` (nav entry `/legal-portal`)
+  - `next-fusionems/src/pages/LegalPortal.jsx`
+  - `next-fusionems/src/pages/HemsQA.jsx` (legal hold visibility)
+  - `next-fusionems/src/components/LegalHoldBanner.jsx`
+  - `next-fusionems/src/components/Sidebar.jsx` (nav entry `/legal-portal`)
 - Founder:
-  - `frontend/src/pages/FounderDashboard.jsx`
-  - `frontend/src/pages/FounderOps.jsx`
-  - `frontend/src/components/Sidebar.jsx` (nav entry `/founder`, `/founder-ops`)
+  - `next-fusionems/src/pages/FounderDashboard.jsx`
+  - `next-fusionems/src/pages/FounderOps.jsx`
+  - `next-fusionems/src/components/Sidebar.jsx` (nav entry `/founder`, `/founder-ops`)

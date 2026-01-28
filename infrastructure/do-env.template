@@ -1,0 +1,37 @@
+# DigitalOcean App Platform Environment Template
+# Backend (RUN_TIME)
+DATABASE_URL=postgresql://user:password@host:5432/fusonems
+JWT_SECRET_KEY=change-me
+ALLOWED_ORIGINS=https://your-frontend-app.ondigitalocean.app
+ENV=production
+PYTHONUNBUFFERED=1
+DB_POOL_SIZE=10
+DB_MAX_OVERFLOW=20
+
+# Communications + Integrations
+TELNYX_API_KEY=
+TELNYX_NUMBER=
+TELNYX_CONNECTION_ID=
+TELNYX_MESSAGING_PROFILE_ID=
+TELNYX_PUBLIC_KEY=
+TELNYX_REQUIRE_SIGNATURE=true
+LOB_API_KEY=
+OFFICEALLY_FTP_HOST=
+OFFICEALLY_FTP_USER=
+OFFICEALLY_FTP_PASSWORD=
+OFFICEALLY_FTP_PORT=21
+
+# Telehealth / Fire data domains
+TELEHEALTH_DATABASE_URL=
+TELEHEALTH_API_KEY=
+FIRE_DATABASE_URL=
+
+# OIDC
+OPENID_CLIENT_ID=
+OPENID_SECRET=
+
+# Storage / encryption
+STORAGE_ENCRYPTION_KEY=change-me
+
+# Frontend (RUN_TIME)
+VITE_API_URL=https://your-backend-app.ondigitalocean.app

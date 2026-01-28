@@ -28,7 +28,7 @@ def record_audit(
     decision_packet: Optional[dict[str, Any]] = None,
 ) -> None:
     audit = ForensicAuditLog(
-        org_id=user.org_id,
+        org_id=str(user.org_id),
         classification=classification,
         training_mode=training_mode,
         actor_email=user.email,

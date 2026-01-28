@@ -18,7 +18,7 @@ backend/
   models/          # SQLAlchemy models
   services/        # API routers by module
   tests/           # pytest tests
-frontend/
+next-fusionems/
   src/
     components/
     context/
@@ -47,7 +47,7 @@ uvicorn main:app --reload --host 127.0.0.1 --port 8000
 
 ### Frontend
 ```bash
-cd frontend
+cd next-fusionems
 npm install
 npm run dev
 ```
@@ -88,7 +88,7 @@ pytest
 
 ### Frontend
 ```bash
-cd frontend
+cd next-fusionems
 npm run test
 ```
 

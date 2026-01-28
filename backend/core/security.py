@@ -15,6 +15,7 @@ from models.device_trust import DeviceTrust
 from models.scheduling import Shift
 from models.organization import Organization
 from models.user import User, UserRole
+from models.auth_session import AuthSession
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
@@ -28,15 +29,18 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> tuple[str, datetime]:
+    """Create JWT access token. Returns tuple of (token, expiration_datetime)"""
     to_encode = data.copy()
     if "sub" in to_encode:
         to_encode["sub"] = str(to_encode["sub"])
     expire = datetime.now(timezone.utc) + (
         expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm="HS256")
+    to_encode.update({"exp": expire, "iat": datetime.utcnow()})
+    # sid and jti should be provided in data dict
+    token = jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm="HS256")
+    return token, expire
 
 
 def _resolve_token(request: Request, token: Optional[str]) -> Optional[str]:
@@ -67,15 +71,47 @@ def get_current_user(
         payload = jwt.decode(resolved_token, settings.JWT_SECRET_KEY, algorithms=["HS256"])
         user_id = payload.get("sub")
         token_org = payload.get("org")
+        token_jti = payload.get("jti")
         request_mfa = payload.get("mfa", False)
         device_trusted = payload.get("device_trusted", True)
         on_shift = payload.get("on_shift", True)
         if user_id is None:
             raise credentials_exception
         try:
-            user_id = int(user_id)
-        except (TypeError, ValueError) as exc:
-            raise credentials_exception from exc
+            user_id = uuid.UUID(str(user_id))
+        except (TypeError, ValueError):
+            user_id = str(user_id)
+        
+        # Validate session if jti is present
+        if token_jti:
+            session = db.query(AuthSession).filter(AuthSession.jwt_jti == token_jti).first()
+            if not session:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Session not found",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            
+            # Check if session is revoked
+            if session.revoked_at is not None:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Session has been revoked",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            
+            # Check if session is expired
+            if session.expires_at < datetime.utcnow():
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Session has expired",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            
+            # Update last_seen_at
+            session.last_seen_at = datetime.utcnow()
+            db.commit()
+            
     except JWTError as exc:
         raise credentials_exception from exc
     user = db.query(User).filter(User.id == user_id).first()
@@ -87,9 +123,10 @@ def get_current_user(
     if not org:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Organization missing")
     if request is not None:
-        request.state.org_lifecycle = org.lifecycle_state
+        request.state.org_lifecycle = getattr(org, "lifecycle_state", "ACTIVE")
+        org_training_mode = getattr(org, "training_mode", None)
         request.state.training_mode = (
-            org.training_mode == "ENABLED" or getattr(user, "training_mode", False)
+            org_training_mode == "ENABLED" or getattr(user, "training_mode", False)
         )
         request.state.mfa_verified = bool(request_mfa)
         device_id = request.headers.get("x-device-id", "")
@@ -125,7 +162,7 @@ def get_current_user(
                 .first()
             )
         request.state.on_shift = bool(active_shift) if shifts_exist else True
-    lifecycle = org.lifecycle_state or "ACTIVE"
+    lifecycle = getattr(org, "lifecycle_state", None) or "ACTIVE"
     if lifecycle == "TERMINATED":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="ORG_TERMINATED")
     if lifecycle == "SUSPENDED":

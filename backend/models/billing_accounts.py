@@ -12,7 +12,7 @@ class BillingCustomer(Base):
     __tablename__ = "billing_customers"
 
     id = Column(String, primary_key=True, default=_uuid)
-    org_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    org_id = Column(String, ForeignKey("organizations.id"), nullable=False, index=True)
     customer_type = Column(String, default="agency")
     display_name = Column(String, nullable=False)
     email = Column(String, default="")
@@ -26,7 +26,7 @@ class BillingInvoice(Base):
     __tablename__ = "billing_invoices"
 
     id = Column(String, primary_key=True, default=_uuid)
-    org_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    org_id = Column(String, ForeignKey("organizations.id"), nullable=False, index=True)
     invoice_number = Column(String, nullable=False, index=True)
     customer_id = Column(String, ForeignKey("billing_customers.id"), nullable=False)
     encounter_id = Column(String, default="")
@@ -49,7 +49,7 @@ class BillingInvoiceLine(Base):
     __tablename__ = "billing_invoice_lines"
 
     id = Column(String, primary_key=True, default=_uuid)
-    org_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    org_id = Column(String, ForeignKey("organizations.id"), nullable=False, index=True)
     invoice_id = Column(String, ForeignKey("billing_invoices.id"), nullable=False, index=True)
     description = Column(String, default="")
     code = Column(String, default="")
@@ -64,7 +64,7 @@ class BillingPayment(Base):
     __tablename__ = "billing_payments"
 
     id = Column(String, primary_key=True, default=_uuid)
-    org_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    org_id = Column(String, ForeignKey("organizations.id"), nullable=False, index=True)
     invoice_id = Column(String, ForeignKey("billing_invoices.id"), nullable=False, index=True)
     provider = Column(String, default="stripe")
     provider_payment_id = Column(String, default="")
@@ -80,7 +80,7 @@ class BillingLedgerEntry(Base):
     __tablename__ = "billing_ledger_entries"
 
     id = Column(String, primary_key=True, default=_uuid)
-    org_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    org_id = Column(String, ForeignKey("organizations.id"), nullable=False, index=True)
     entry_type = Column(String, default="debit")
     account = Column(String, default="AR")
     amount = Column(Integer, default=0)
@@ -95,7 +95,7 @@ class BillingWebhookReceipt(Base):
     __tablename__ = "billing_webhook_receipts"
 
     id = Column(String, primary_key=True, default=_uuid)
-    org_id = Column(Integer, ForeignKey("organizations.id"), nullable=True, index=True)
+    org_id = Column(String, ForeignKey("organizations.id"), nullable=True, index=True)
     provider = Column(String, default="stripe")
     event_id = Column(String, nullable=False, index=True, unique=True)
     event_type = Column(String, default="")

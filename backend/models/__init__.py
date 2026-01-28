@@ -1,5 +1,6 @@
 from models.ai_console import AiInsight
 from models.ai_registry import AiOutputRegistry
+from models.auth_session import AuthSession
 from models.automation import WorkflowRule, WorkflowTask
 from models.billing import BillingRecord, PriorAuthRequest
 from models.billing_accounts import (
@@ -25,6 +26,21 @@ from models.billing_exports import (
     BillingPatientStatement,
     PaymentPosting,
     RemittanceAdvice,
+)
+from models.billing_batch5 import (
+    BillingAppeal,
+    BillingClaim,
+    BillingClaimEvent,
+    BillingContact,
+    BillingContactAttempt,
+    BillingDenial,
+    BillingDocument,
+    BillingFacility,
+    BillingInvoiceEvent,
+    BillingInvoiceItem,
+    BillingPatientAccount,
+    BillingPaymentEvent,
+    BillingPortalToken,
 )
 from models.builders import BuilderRegistry, BuilderChangeLog
 from models.business_ops import BusinessOpsTask
@@ -114,9 +130,16 @@ from models.communications import (
     CommsRingGroup,
     CommsRoutingPolicy,
     CommsTask,
+    CommsTemplate,
     CommsThread,
     CommsTranscript,
     CommsVoicemail,
+)
+from models.communications_batch5 import (
+    CommsDeliveryAttempt,
+    CommsEvent,
+    CommsProvider,
+    CommsTemplate,
 )
 from models.documents import DocumentTemplate, DocumentRecord
 from models.email import EmailAttachmentLink, EmailLabel, EmailMessage, EmailMessageLabel, EmailThread
@@ -349,6 +372,7 @@ from models.collections_governance import (
 __all__ = [
     "AiInsight",
     "AiOutputRegistry",
+    "AuthSession",
     "WorkflowRule",
     "WorkflowTask",
     "BillingRecord",
@@ -399,6 +423,10 @@ __all__ = [
     "CommsTranscript",
     "CommsBroadcast",
     "CommsTask",
+    "CommsEvent",
+    "CommsDeliveryAttempt",
+    "CommsProvider",
+    "CommsTemplate",
     "EmailThread",
     "EmailMessage",
     "EmailLabel",
@@ -502,6 +530,10 @@ __all__ = [
     "TelehealthMessage",
     "TelehealthParticipant",
     "TelehealthSession",
+    "CarefusionLedgerEntry",
+    "CarefusionClaim",
+    "CarefusionPayerRouting",
+    "CarefusionAuditEvent",
     "User",
     "UserRole",
     "Organization",

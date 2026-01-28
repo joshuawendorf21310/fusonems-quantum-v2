@@ -91,6 +91,21 @@ class CommsTask(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
+class CommsTemplate(Base):
+    __tablename__ = "comms_templates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    org_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    name = Column(String, nullable=False)
+    channel = Column(String, default="sms")
+    subject = Column(String, default="")
+    body = Column(Text, nullable=False)
+    tags = Column(JSON, nullable=False, default=list)
+    is_active = Column(Boolean, default=True)
+    training_mode = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
 class CommsCallEvent(Base):
     __tablename__ = "comms_call_events"
 

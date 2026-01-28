@@ -1,10 +1,7 @@
 import os
 from fastapi import FastAPI, Request
-from urllib.parse import urlparse
-from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from core.config import settings, validate_settings_runtime
-from sqlalchemy import text
+from fastapi.responses import JSONResponse
 
 from core.database import (
     Base,
