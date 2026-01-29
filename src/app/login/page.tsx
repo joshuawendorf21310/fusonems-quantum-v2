@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { apiFetch } from "@/lib/api"
@@ -15,6 +15,14 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const storedEmail = localStorage.getItem("remember_email")
+    if (storedEmail) {
+      setEmail(storedEmail)
+      setRememberMe(true)
+    }
+  }, [])
 
   if (isAuthenticated) {
     router.push("/dashboard")
@@ -37,6 +45,8 @@ export default function LoginPage() {
       localStorage.setItem("token", response.access_token)
       if (rememberMe) {
         localStorage.setItem("remember_email", email)
+      } else {
+        localStorage.removeItem("remember_email")
       }
       router.push("/dashboard")
     } catch (err: any) {
@@ -201,6 +211,8 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
                 >
                   {showPassword ? (

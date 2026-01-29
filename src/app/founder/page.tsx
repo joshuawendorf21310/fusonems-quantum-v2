@@ -5,9 +5,9 @@ import { useEffect, useMemo, useState } from "react"
 
 import Sidebar from "@/components/layout/Sidebar"
 import Topbar from "@/components/layout/Topbar"
-import { 
-  SystemHealthWidget, 
-  StorageQuotaWidget, 
+import {
+  SystemHealthWidget,
+  StorageQuotaWidget,
   RecentActivityWidget,
   BuilderSystemsWidget,
   FailedOperationsWidget,
@@ -20,8 +20,6 @@ import {
   ReportingDashboardWidget,
   ProtocolsDashboardWidget
 } from "@/components/founder"
-            {/* Protocols Management - Import, Review, Tag, Search */}
-            <ProtocolsDashboardWidget />
 import { apiFetch } from "@/lib/api"
 
 type ModuleHealth = {
@@ -114,6 +112,9 @@ export default function FounderPage() {
 
             {/* Reporting & Analytics - System-wide Reports & Compliance */}
             <ReportingDashboardWidget />
+
+            {/* Protocols Management - Import, Review, Tag, Search */}
+            <ProtocolsDashboardWidget />
 
             {/* Critical Metrics Grid */}
             <div className="platform-card-grid">

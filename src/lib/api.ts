@@ -23,11 +23,20 @@ if (typeof window !== "undefined") {
       .find((row) => row.startsWith("csrf_token="))
       ?.split("=")[1]
     if (csrfToken) {
-    const existingHeaders = config.headers ?? {}
-    config.headers = {
-      ...(existingHeaders as Record<string, unknown>),
-      "X-CSRF-Token": csrfToken,
-    } as unknown as AxiosRequestHeaders
+      const existingHeaders = config.headers ?? {}
+      config.headers = {
+        ...(existingHeaders as Record<string, unknown>),
+        "X-CSRF-Token": csrfToken,
+      } as unknown as AxiosRequestHeaders
+    }
+
+    const authToken = localStorage.getItem("token")
+    if (authToken) {
+      const existingHeaders = config.headers ?? {}
+      config.headers = {
+        ...(existingHeaders as Record<string, unknown>),
+        Authorization: `Bearer ${authToken}`,
+      } as unknown as AxiosRequestHeaders
     }
     return config
   })
@@ -65,17 +74,22 @@ interface ApiFetchOptions {
   method?: AxiosRequestConfig["method"]
   body?: string
   headers?: AxiosRequestConfig["headers"]
+  credentials?: RequestCredentials
+  withCredentials?: boolean
 }
 
 export async function apiFetch<T = unknown>(
   path: string,
   options: ApiFetchOptions = {}
 ): Promise<T> {
+  const withCredentials =
+    options.withCredentials ?? (options.credentials ? options.credentials === "include" : undefined)
   const response: AxiosResponse<T> = await apiClient.request({
     url: path,
     method: options.method || "GET",
     data: options.body ? JSON.parse(options.body) : undefined,
     headers: options.headers,
+    withCredentials,
   })
 
   return response.data
