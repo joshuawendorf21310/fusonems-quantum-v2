@@ -1,8 +1,12 @@
-
-
 import enum
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, JSON, String, func
+import uuid
+from datetime import datetime
+from typing import Any
+
+from sqlalchemy import (Boolean, Column, DateTime, Float, ForeignKey, Integer,
+                        JSON, String, func)
 from sqlalchemy.dialects.postgresql import UUID
+
 from core.database import Base
 
 # Document extraction snapshot for AI/deterministic extraction
@@ -11,30 +15,6 @@ class TransportDocType(str, enum.Enum):
     AOB = "AOB"
     ABD = "ABD"
     FACESHEET = "FACESHEET"
-
-class TransportDocumentSnapshot(Base):
-    __tablename__ = "transport_document_snapshots"
-    id = Column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
-    org_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
-    trip_id = Column(Integer, ForeignKey("transport_trips.id"), nullable=False, index=True)
-    doc_type = Column(String, nullable=False, index=True)
-    file_id = Column(String, nullable=True)
-    extracted_json = Column(JSON, nullable=False)
-    confidence_json = Column(JSON, nullable=False)
-    evidence_json = Column(JSON, nullable=False)
-    warnings_json = Column(JSON, nullable=True)
-    provider = Column(String, nullable=False, default="deterministic")
-    created_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
-
-
-
-from datetime import datetime
-from typing import Any
-
-from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, JSON, String, func
-
-from core.database import Base
 
 
 class TransportTrip(Base):
@@ -90,3 +70,19 @@ class TransportLeg(Base):
     distance_miles = Column(Float, nullable=True)
     recorded_at = Column(DateTime(timezone=True), server_default=func.now())
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class TransportDocumentSnapshot(Base):
+    __tablename__ = "transport_document_snapshots"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    trip_id = Column(Integer, ForeignKey("transport_trips.id"), nullable=False, index=True)
+    doc_type = Column(String, nullable=False, index=True)
+    file_id = Column(String, nullable=True)
+    extracted_json = Column(JSON, nullable=False)
+    confidence_json = Column(JSON, nullable=False)
+    evidence_json = Column(JSON, nullable=False)
+    warnings_json = Column(JSON, nullable=True)
+    provider = Column(String, nullable=False, default="deterministic")
+    created_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)

@@ -1,9 +1,17 @@
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Numeric, String, Text, func
 
-from core.database import TelehealthBase
+from core.database import Base
+
+TELEHEALTH_SCHEMA = "telehealth"
+SCHEMA_ARGS = {"schema": TELEHEALTH_SCHEMA}
+SCHEMA_PREFIX = f"{TELEHEALTH_SCHEMA}."
 
 
-class TelehealthSession(TelehealthBase):
+class _TelehealthMixin:
+    __table_args__ = SCHEMA_ARGS
+
+
+class TelehealthSession(_TelehealthMixin, Base):
     __tablename__ = "telehealth_sessions"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -26,7 +34,7 @@ class TelehealthSession(TelehealthBase):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
-class TelehealthParticipant(TelehealthBase):
+class TelehealthParticipant(_TelehealthMixin, Base):
     __tablename__ = "telehealth_participants"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -39,7 +47,7 @@ class TelehealthParticipant(TelehealthBase):
     joined_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
-class TelehealthMessage(TelehealthBase):
+class TelehealthMessage(_TelehealthMixin, Base):
     __tablename__ = "telehealth_messages"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -52,7 +60,7 @@ class TelehealthMessage(TelehealthBase):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
-class TelehealthProvider(TelehealthBase):
+class TelehealthProvider(_TelehealthMixin, Base):
     __tablename__ = "telehealth_providers"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -76,7 +84,7 @@ class TelehealthProvider(TelehealthBase):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
-class TelehealthPatient(TelehealthBase):
+class TelehealthPatient(_TelehealthMixin, Base):
     __tablename__ = "telehealth_patients"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -101,7 +109,7 @@ class TelehealthPatient(TelehealthBase):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
-class TelehealthAppointment(TelehealthBase):
+class TelehealthAppointment(_TelehealthMixin, Base):
     __tablename__ = "telehealth_appointments"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -109,9 +117,9 @@ class TelehealthAppointment(TelehealthBase):
     classification = Column(String, default="PHI")
     training_mode = Column(Boolean, default=False)
     appointment_id = Column(String, nullable=False, unique=True, index=True)
-    patient_id = Column(String, ForeignKey("telehealth_patients.patient_id"), nullable=False, index=True)
-    provider_id = Column(String, ForeignKey("telehealth_providers.provider_id"), nullable=False, index=True)
-    session_uuid = Column(String, ForeignKey("telehealth_sessions.session_uuid"), nullable=True, index=True)
+    patient_id = Column(String, ForeignKey(f"{SCHEMA_PREFIX}telehealth_patients.patient_id"), nullable=False, index=True)
+    provider_id = Column(String, ForeignKey(f"{SCHEMA_PREFIX}telehealth_providers.provider_id"), nullable=False, index=True)
+    session_uuid = Column(String, ForeignKey(f"{SCHEMA_PREFIX}telehealth_sessions.session_uuid"), nullable=True, index=True)
     appointment_type = Column(String, default="consultation")
     reason_for_visit = Column(Text, nullable=False)
     scheduled_start = Column(DateTime(timezone=True), nullable=False, index=True)
@@ -127,7 +135,7 @@ class TelehealthAppointment(TelehealthBase):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
-class TelehealthVisit(TelehealthBase):
+class TelehealthVisit(_TelehealthMixin, Base):
     __tablename__ = "telehealth_visits"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -135,10 +143,10 @@ class TelehealthVisit(TelehealthBase):
     classification = Column(String, default="PHI")
     training_mode = Column(Boolean, default=False)
     visit_id = Column(String, nullable=False, unique=True, index=True)
-    appointment_id = Column(String, ForeignKey("telehealth_appointments.appointment_id"), nullable=False, index=True)
-    patient_id = Column(String, ForeignKey("telehealth_patients.patient_id"), nullable=False, index=True)
-    provider_id = Column(String, ForeignKey("telehealth_providers.provider_id"), nullable=False, index=True)
-    session_uuid = Column(String, ForeignKey("telehealth_sessions.session_uuid"), nullable=True, index=True)
+    appointment_id = Column(String, ForeignKey(f"{SCHEMA_PREFIX}telehealth_appointments.appointment_id"), nullable=False, index=True)
+    patient_id = Column(String, ForeignKey(f"{SCHEMA_PREFIX}telehealth_patients.patient_id"), nullable=False, index=True)
+    provider_id = Column(String, ForeignKey(f"{SCHEMA_PREFIX}telehealth_providers.provider_id"), nullable=False, index=True)
+    session_uuid = Column(String, ForeignKey(f"{SCHEMA_PREFIX}telehealth_sessions.session_uuid"), nullable=True, index=True)
     chief_complaint = Column(Text, nullable=False)
     history_of_present_illness = Column(Text, default="")
     vital_signs = Column(Text, default="")
@@ -158,14 +166,14 @@ class TelehealthVisit(TelehealthBase):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
-class ProviderAvailability(TelehealthBase):
+class ProviderAvailability(_TelehealthMixin, Base):
     __tablename__ = "provider_availability"
 
     id = Column(Integer, primary_key=True, index=True)
     org_id = Column(Integer, nullable=False, index=True)
     classification = Column(String, default="PHI")
     training_mode = Column(Boolean, default=False)
-    provider_id = Column(String, ForeignKey("telehealth_providers.provider_id"), nullable=False, index=True)
+    provider_id = Column(String, ForeignKey(f"{SCHEMA_PREFIX}telehealth_providers.provider_id"), nullable=False, index=True)
     day_of_week = Column(Integer, nullable=False)
     start_time = Column(String, nullable=False)
     end_time = Column(String, nullable=False)
@@ -176,7 +184,7 @@ class ProviderAvailability(TelehealthBase):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
-class TelehealthPrescription(TelehealthBase):
+class TelehealthPrescription(_TelehealthMixin, Base):
     __tablename__ = "telehealth_prescriptions"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -184,9 +192,9 @@ class TelehealthPrescription(TelehealthBase):
     classification = Column(String, default="PHI")
     training_mode = Column(Boolean, default=False)
     prescription_id = Column(String, nullable=False, unique=True, index=True)
-    visit_id = Column(String, ForeignKey("telehealth_visits.visit_id"), nullable=False, index=True)
-    patient_id = Column(String, ForeignKey("telehealth_patients.patient_id"), nullable=False, index=True)
-    provider_id = Column(String, ForeignKey("telehealth_providers.provider_id"), nullable=False, index=True)
+    visit_id = Column(String, ForeignKey(f"{SCHEMA_PREFIX}telehealth_visits.visit_id"), nullable=False, index=True)
+    patient_id = Column(String, ForeignKey(f"{SCHEMA_PREFIX}telehealth_patients.patient_id"), nullable=False, index=True)
+    provider_id = Column(String, ForeignKey(f"{SCHEMA_PREFIX}telehealth_providers.provider_id"), nullable=False, index=True)
     medication_name = Column(String, nullable=False)
     dosage = Column(String, nullable=False)
     quantity = Column(String, nullable=False)
