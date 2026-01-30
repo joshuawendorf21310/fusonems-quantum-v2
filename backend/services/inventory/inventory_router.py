@@ -695,7 +695,7 @@ def get_controlled_report(
     )
     if item_id:
         query = query.filter(InventoryControlledLog.item_id == item_id)
-    logs = query.order_by(InventoryControlledLog.created_at).all()
+    logs = query.order_by(InventoryControlledLog.created_at).limit(1000).all()  # Limit to prevent memory issues
 
     items = scoped_query(db, InventoryItem, user.org_id, request.state.training_mode).filter(
         InventoryItem.is_controlled == True
@@ -853,7 +853,7 @@ def list_recalls(
     query = scoped_query(db, InventoryRecall, user.org_id, request.state.training_mode)
     if status:
         query = query.filter(InventoryRecall.status == status)
-    recalls = query.order_by(InventoryRecall.created_at.desc()).all()
+    recalls = query.order_by(InventoryRecall.created_at.desc()).limit(500).all()  # Limit to prevent memory issues
     return [model_snapshot(recall) for recall in recalls]
 
 
@@ -1176,7 +1176,7 @@ def get_turnover_analytics(
             item_usage[log.item_id] = 0
         item_usage[log.item_id] += log.quantity_used
 
-    items = scoped_query(db, InventoryItem, user.org_id, request.state.training_mode).all()
+    items = scoped_query(db, InventoryItem, user.org_id, request.state.training_mode).limit(1000).all()  # Limit to prevent memory issues
     item_map = {i.id: i for i in items}
 
     turnover = []

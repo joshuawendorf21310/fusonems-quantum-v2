@@ -362,6 +362,15 @@ def create_incident(
     db.add(incident)
     db.commit()
     db.refresh(incident)
+    
+    # Service orchestration - ensure all services work together
+    try:
+        from services.integration.orchestrator import ServiceOrchestrator
+        ServiceOrchestrator.on_cad_incident_created(db, incident, user.id)
+    except Exception as e:
+        logger.error(f"Orchestrator error during CAD incident creation: {e}", exc_info=True)
+        # Continue even if orchestrator fails
+    
     _record_timeline(db, incident, incident.status, user.id, notes="Incident created")
     audit_and_event(
         db=db,

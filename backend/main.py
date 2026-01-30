@@ -91,6 +91,7 @@ from services.automation.automation_router import router as automation_router
 from services.validation.validation_router import router as validation_router
 from services.events.event_router import router as event_router
 from services.time.time_router import router as time_router
+from services.weather.weather_router import router as weather_router
 from services.workflows.workflow_router import router as workflow_router
 from services.legal.legal_router import router as legal_router
 from services.ai_registry.ai_registry_router import router as ai_registry_router
@@ -124,7 +125,7 @@ from services.patient_portal.patient_portal_router import router as patient_port
 from services.patient_portal.patient_billing_router import router as patient_billing_router
 from services.carefusion.patient_router import router as carefusion_patient_router
 from services.carefusion.provider_router import router as carefusion_provider_router
-from services.marketing.routes import router as marketing_router
+from services.marketing.routes import router as marketing_router, contact_router
 from services.storage.storage_router import router as storage_router
 from services.founder_documents_router import router as founder_documents_router
 from services.metriport.metriport_router import router as metriport_router
@@ -240,8 +241,21 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[origin.strip() for origin in settings.ALLOWED_ORIGINS.split(",")],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    # Restrict to only the HTTP methods we actually use
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    # Restrict to only the headers we need
+    allow_headers=[
+        "Authorization",
+        "Content-Type",
+        "Accept",
+        "Origin",
+        "X-Requested-With",
+        "X-CSRF-Token",
+        "X-Device-ID",
+        "X-Client-Time",
+    ],
+    # Expose headers that the frontend needs to read
+    expose_headers=["X-Request-ID", "X-RateLimit-Remaining"],
 )
 app.include_router(socket_bridge_router)
 app.include_router(cad_router)
@@ -281,6 +295,7 @@ app.include_router(fire_scheduling_router)
 app.include_router(fire_rms_router)
 app.include_router(event_router)
 app.include_router(time_router)
+app.include_router(weather_router)
 app.include_router(workflow_router)
 app.include_router(legal_router)
 app.include_router(ai_registry_router)
@@ -314,6 +329,7 @@ app.include_router(carefusion_patient_router)
 app.include_router(carefusion_provider_router)
 app.include_router(notifications_router)
 app.include_router(marketing_router)
+app.include_router(contact_router)
 app.include_router(ocr_router)
 app.include_router(ai_console_router)
 app.include_router(founder_email_router)
@@ -373,10 +389,32 @@ async def startup() -> None:
         from services.cad.socket_bridge import get_socket_bridge
         bridge = get_socket_bridge()
         register_bridge_event_handlers(bridge)
-        logger.info("✓ Socket.io bridge initialized and connected")
+        
+        # Ensure connection is established
+        if not bridge.connected:
+            logger.warning("Socket bridge initialized but not connected - will retry in background")
+        else:
+            logger.info("✓ Socket.io bridge initialized and connected to CAD backend")
+            
+        # Start background reconnection task if not connected
+        if not bridge.connected:
+            async def reconnect_task():
+                import asyncio
+                for attempt in range(5):
+                    await asyncio.sleep(5 * (attempt + 1))  # Exponential backoff
+                    try:
+                        await bridge.connect()
+                        if bridge.connected:
+                            logger.info("✓ Socket bridge reconnected successfully")
+                            break
+                    except Exception as e:
+                        logger.warning(f"Reconnection attempt {attempt + 1} failed: {e}")
+            
+            asyncio.create_task(reconnect_task())
+            
     except Exception as e:
         logger.error("Failed to initialize socket bridge: %s", e)
-        logger.warning("Application will continue without real-time CAD integration")
+        logger.warning("Application will continue without real-time CAD integration - services will work independently")
     
     if settings.ENV.lower() == "test":
         if _running_under_pytest():

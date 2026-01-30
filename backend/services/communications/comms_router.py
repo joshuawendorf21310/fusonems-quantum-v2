@@ -1566,7 +1566,8 @@ def send_email_message(
         )
         event.status = "sent"
         db.commit()
-        _record_attempt(db, event, "postmark", "sent", result)
+        # Using SMTP (Mailu) as primary email transport - Postmark is optional
+        _record_attempt(db, event, "smtp", "sent", result)
     except HTTPException as exc:
         event.status = "failed"
         event.error = str(exc.detail)

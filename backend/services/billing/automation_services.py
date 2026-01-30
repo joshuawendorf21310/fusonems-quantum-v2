@@ -81,12 +81,13 @@ class Claim837PGenerator:
         if not submission:
             return {"error": "Submission not found"}
         
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             try:
                 response = await client.post(
                     clearinghouse_url,
                     content=submission.content,
-                    headers={"Content-Type": "application/x12"}
+                    headers={"Content-Type": "application/x12"},
+                    timeout=30.0
                 )
                 
                 submission.status = "SUBMITTED"
@@ -230,11 +231,12 @@ class NEMSISSubmissionService:
     ) -> Dict:
         endpoint = self._get_state_endpoint(state_code)
         
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=60.0) as client:
             try:
                 response = await client.post(
                     endpoint,
                     content=xml_content,
+                    timeout=60.0,
                     headers={"Content-Type": "application/xml"}
                 )
                 

@@ -336,11 +336,12 @@ def notify_email(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.founder, UserRole.ops_admin)),
 ):
-    # Reuse the existing email transport pipeline rather than adding a new vendor.
-    if not settings.POSTMARK_SERVER_TOKEN:
+    # Email transport uses SMTP/IMAP (Mailu) as primary method
+    # Postmark is optional - check SMTP configuration instead
+    if not settings.SMTP_HOST or not settings.SMTP_USERNAME or not settings.SMTP_PASSWORD:
         raise HTTPException(
             status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail="Email transport pipeline is not configured for this tenant",
+            detail="Email transport (SMTP) is not configured. Please configure SMTP_HOST, SMTP_USERNAME, and SMTP_PASSWORD.",
         )
     result = send_outbound(
         db=db,

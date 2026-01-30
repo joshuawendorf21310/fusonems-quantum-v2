@@ -65,7 +65,7 @@ def send_outbound(
         classification=payload.get("classification", "ops"),
         direction="outbound",
         status="queued",
-        sender=payload.get("sender", settings.POSTMARK_DEFAULT_SENDER),
+        sender=payload.get("sender", getattr(settings, "POSTMARK_DEFAULT_SENDER", None) or settings.SMTP_USERNAME or settings.FOUNDER_EMAIL),
         recipients=payload.get("recipients", []),
         cc=payload.get("cc", []),
         bcc=payload.get("bcc", []),

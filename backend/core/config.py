@@ -62,11 +62,12 @@ class Settings(BaseSettings):
     OFFICEALLY_SUBMITTER_ID: str = "FUSIONEMS001"
     OFFICEALLY_CONTACT_PHONE: str = "555-555-5555"
     OFFICEALLY_DEFAULT_NPI: str = "1234567890"
-    OFFICEALLY_FTP_HOST: str = ""
+    OFFICEALLY_FTP_HOST: str = "ftp10.officeally.com"
     OFFICEALLY_FTP_PORT: int = 22
     OFFICEALLY_FTP_USER: str = ""
     OFFICEALLY_FTP_PASSWORD: str = ""
-    OFFICEALLY_SFTP_DIRECTORY: str = "/claims/inbox"
+    OFFICEALLY_SFTP_DIRECTORY: str = "inbound"  # Submissions go to "inbound" folder
+    OFFICEALLY_SFTP_OUTBOUND_DIRECTORY: str = "outbound"  # Reports/ERA come from "outbound" folder
     
     # CAD Backend Socket.io Bridge
     CAD_BACKEND_URL: str = "http://localhost:3000"
@@ -102,6 +103,8 @@ class Settings(BaseSettings):
 
     # Facesheet request: optional URL to a PDF template sent when requesting facesheet from facility via fax
     FACESHEET_REQUEST_FAX_MEDIA_URL: Optional[str] = None
+    # Optional TeXML/IVR URL when facility answers the facesheet request call (POST /api/billing/facesheet/place-call)
+    FACESHEET_REQUEST_CALL_ANSWER_URL: Optional[str] = None
 
     # Ollama (AI biller helper, IVR voice agent, billing explain/chat)
     OLLAMA_SERVER_URL: str = "http://localhost:11434"
@@ -136,6 +139,15 @@ class Settings(BaseSettings):
     POSTMARK_SERVER_TOKEN: Optional[str] = None
     POSTMARK_ACCOUNT_TOKEN: Optional[str] = None
     POSTMARK_FROM_EMAIL: Optional[str] = None
+    
+    # Lob (Physical Mail - Paper Statements)
+    LOB_API_KEY: Optional[str] = None
+    LOB_FROM_ADDRESS_NAME: str = "Fusion EMS Billing"
+    LOB_FROM_ADDRESS_LINE1: Optional[str] = None
+    LOB_FROM_ADDRESS_CITY: Optional[str] = None
+    LOB_FROM_ADDRESS_STATE: Optional[str] = None
+    LOB_FROM_ADDRESS_ZIP: Optional[str] = None
+    LOB_ENABLED: bool = False
 
     model_config = SettingsConfigDict(
         extra="allow",
@@ -145,17 +157,63 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
+# Known insecure default values that should NEVER be used in production
+_INSECURE_DEFAULTS = {
+    "JWT_SECRET_KEY": {"dev-secret", "secret", "change-me", "changeme", "your-secret-key"},
+    "STORAGE_ENCRYPTION_KEY": {"dev-storage", "storage", "change-me", "changeme"},
+    "DOCS_ENCRYPTION_KEY": {"dev-docs", "docs", "change-me", "changeme"},
+    "CAD_BACKEND_AUTH_TOKEN": {"fastapi-bridge-secure-token-change-in-production", "change-me", "changeme"},
+}
+
 def validate_settings_runtime(_settings: Optional[Settings] = None) -> None:
+    """
+    Validate settings at runtime. In production, ensures:
+    1. Required secrets are present
+    2. Secrets are not using known insecure default values
+    3. Secrets meet minimum length requirements
+    """
     s = _settings or settings
+    
     if s.ENV == "production":
-        missing = []
-        for key in [
+        errors = []
+        
+        # Check required settings are present
+        required_keys = [
             "DATABASE_URL",
             "JWT_SECRET_KEY",
             "STORAGE_ENCRYPTION_KEY",
             "DOCS_ENCRYPTION_KEY",
-        ]:
-            if not getattr(s, key, None):
-                missing.append(key)
-        if missing:
-            raise RuntimeError(f"Missing required production settings: {missing}")
+        ]
+        
+        for key in required_keys:
+            value = getattr(s, key, None)
+            if not value:
+                errors.append(f"{key} is required in production")
+                continue
+            
+            # Check for insecure defaults
+            insecure_values = _INSECURE_DEFAULTS.get(key, set())
+            if value.lower() in {v.lower() for v in insecure_values}:
+                errors.append(f"{key} is using an insecure default value - please set a secure secret")
+            
+            # Check minimum length for secret keys (at least 32 characters recommended)
+            if key in {"JWT_SECRET_KEY", "STORAGE_ENCRYPTION_KEY", "DOCS_ENCRYPTION_KEY"}:
+                if len(value) < 32:
+                    errors.append(f"{key} should be at least 32 characters for security (currently {len(value)})")
+        
+        # Check CAD_BACKEND_AUTH_TOKEN if CAD is being used
+        if s.CAD_BACKEND_URL and s.CAD_BACKEND_URL != "http://localhost:3000":
+            token = s.CAD_BACKEND_AUTH_TOKEN
+            insecure_tokens = _INSECURE_DEFAULTS.get("CAD_BACKEND_AUTH_TOKEN", set())
+            if token.lower() in {v.lower() for v in insecure_tokens}:
+                errors.append("CAD_BACKEND_AUTH_TOKEN is using an insecure default value")
+        
+        # Check database URL isn't SQLite in production
+        if s.DATABASE_URL.startswith("sqlite"):
+            errors.append("SQLite is not recommended for production - use PostgreSQL")
+        
+        if errors:
+            raise RuntimeError(
+                f"Production configuration errors:\n" + 
+                "\n".join(f"  - {e}" for e in errors)
+            )

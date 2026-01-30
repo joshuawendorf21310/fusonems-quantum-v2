@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { apiFetch } from "@/lib/api";
 import Link from "next/link";
+import { WeatherOverlay } from "@/components/weather";
 
 interface Incident {
   id: string;

@@ -21,7 +21,7 @@ const moduleCards = [
   {
     title: "Operations",
     description: "Scheduling, crew readiness, and operational analytics.",
-    href: "/operations",
+    href: "/modules/operations",
   },
   {
     title: "Analytics",

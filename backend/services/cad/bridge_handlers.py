@@ -72,8 +72,17 @@ async def handle_incident_status_updated(data: Dict[str, Any]):
         
         # Sync with ePCR system
         if status == 'completed':
-            # Trigger ePCR finalization workflow
+            # Trigger ePCR finalization workflow and billing
             logger.info(f"Incident {incident_id} completed, triggering ePCR workflow")
+            try:
+                from services.integration.orchestrator import ServiceOrchestrator
+                db = next(get_db())
+                try:
+                    ServiceOrchestrator.on_transport_completed(db, str(incident_id), None)
+                finally:
+                    db.close()
+            except Exception as e:
+                logger.error(f"Orchestrator error: {e}", exc_info=True)
             
         elif status == 'cancelled':
             # Handle cancelled incidents
@@ -150,28 +159,40 @@ async def handle_transport_completed(data: Dict[str, Any]):
     """
     Handle transport completion from CAD backend.
     Create billing record and trigger claims workflow.
+    Uses ServiceOrchestrator to ensure all services work together.
     """
+    # Validate required fields
+    incident_id = data.get('incidentId')
+    if not incident_id:
+        logger.error("Missing incidentId in transport_completed event")
+        return
+    
+    epcr_id = data.get('epcrId')
+    billing_data = data.get('billingData', {})
+    
+    logger.info(
+        "Transport completed",
+        extra={
+            "incident_id": incident_id,
+            "epcr_id": epcr_id,
+        }
+    )
+    
+    # Use orchestrator to ensure all services work together
+    db = None
     try:
-        incident_id = data.get('incidentId')
-        epcr_id = data.get('epcrId')
-        billing_data = data.get('billingData', {})
+        db = next(get_db())
         
-        logger.info(f"Transport completed: Incident {incident_id}, ePCR {epcr_id}")
-        
-        # Create billing record
-        # This is a critical integration point between CAD and Billing
-        
+        # Use orchestrator for unified service integration
         try:
-            # Get database session
-            db = next(get_db())
-            
-            # Check if billing record already exists
-            existing = db.query(BillingRecord).filter_by(
-                incident_id=incident_id
-            ).first()
-            
+            from services.integration.orchestrator import ServiceOrchestrator
+            ServiceOrchestrator.on_transport_completed(db, str(incident_id), epcr_id)
+            logger.info(f"Orchestrator processed transport completion for incident {incident_id}")
+        except Exception as orchestrator_error:
+            logger.error(f"Orchestrator error: {orchestrator_error}", exc_info=True)
+            # Fallback to direct billing record creation
+            existing = db.query(BillingRecord).filter_by(incident_id=incident_id).first()
             if not existing:
-                # Create new billing record
                 billing_record = BillingRecord(
                     incident_id=incident_id,
                     epcr_id=epcr_id,
@@ -181,23 +202,17 @@ async def handle_transport_completed(data: Dict[str, Any]):
                 )
                 db.add(billing_record)
                 db.commit()
-                
-                logger.info(f"Billing record created for incident {incident_id}")
-                
-                # Trigger billing workflow
-                # This could include:
-                # - Validation of billing data
-                # - Insurance verification
-                # - Claims submission preparation
-                
-            else:
-                logger.info(f"Billing record already exists for incident {incident_id}")
-                
-        except Exception as db_error:
-            logger.error(f"Database error creating billing record: {db_error}", exc_info=True)
+                logger.info(f"Fallback: Created billing record {billing_record.id}")
             
     except Exception as e:
-        logger.error(f"Error handling transport completed: {e}", exc_info=True)
+        logger.error(
+            "Error handling transport completed",
+            extra={"incident_id": incident_id, "error": str(e)},
+            exc_info=True
+        )
+    finally:
+        if db:
+            db.close()
 
 
 async def handle_metrics_updated(data: Dict[str, Any]):

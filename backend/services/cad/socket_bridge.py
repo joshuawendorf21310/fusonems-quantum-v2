@@ -162,15 +162,27 @@ class SocketBridge:
             
         try:
             logger.info(f"Connecting to CAD backend at {self.cad_url}...")
-            await self.sio.connect(
-                self.cad_url,
-                auth={'token': self.auth_token} if self.auth_token else None,
-                transports=['websocket', 'polling']
+            # Add timeout to prevent hanging
+            import asyncio
+            await asyncio.wait_for(
+                self.sio.connect(
+                    self.cad_url,
+                    auth={'token': self.auth_token} if self.auth_token else None,
+                    transports=['websocket', 'polling'],
+                    wait_timeout=10  # 10 second timeout
+                ),
+                timeout=15.0  # Overall timeout
             )
+            logger.info(f"✓ Successfully connected to CAD backend at {self.cad_url}")
+        except asyncio.TimeoutError:
+            self.last_error = "Connection timeout"
+            logger.error(f"Connection to CAD backend timed out after 15 seconds")
+            raise
         except Exception as e:
             self.last_error = str(e)
             logger.error(f"Failed to connect to CAD backend: {e}", exc_info=True)
-            raise
+            # Don't raise - allow graceful degradation
+            logger.warning("Application will continue without CAD backend connection")
             
     async def disconnect(self):
         """Disconnect from CAD backend"""

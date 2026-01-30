@@ -479,10 +479,15 @@ def list_pcrs(
     total = query.count()
     total_pages = max(1, (total + limit - 1) // limit)
     offset = (page - 1) * limit
-    records = query.order_by(EpcrRecord.created_at.desc()).offset(offset).limit(limit).all()
+    # Fix N+1 query: Use joinedload to eagerly load patient data
+    records = query.options(joinedload(EpcrRecord.patient)).order_by(EpcrRecord.created_at.desc()).offset(offset).limit(limit).all()
     pcrs = []
     for r in records:
-        patient = db.query(Patient).filter(Patient.id == r.patient_id, Patient.org_id == user.org_id).first()
+        # Patient is already loaded via joinedload, no need to query again
+        patient = r.patient if hasattr(r, 'patient') else None
+        # Fallback: if relationship not available, query once and cache
+        if not patient and r.patient_id:
+            patient = db.query(Patient).filter(Patient.id == r.patient_id, Patient.org_id == user.org_id).first()
         name = f"{patient.first_name} {patient.last_name}".strip() if patient else "Unknown"
         cf = r.custom_fields or {}
         pcrs.append(
@@ -724,6 +729,15 @@ def finalize_record(
     record.finalized_by = user.id
     db.add(validation_entry)
     db.commit()
+    # Service orchestration - ensure all services work together
+    try:
+        from services.integration.orchestrator import ServiceOrchestrator
+        ServiceOrchestrator.on_epcr_finalized(db, record, user.id)
+    except Exception as e:
+        logger.error(f"Orchestrator error during ePCR finalization: {e}", exc_info=True)
+        # Continue even if orchestrator fails - don't block finalization
+    
+    # Legacy service calls (kept for backward compatibility)
     AISuggestions.suggest_protocol(record)
     NEMSISExporter.export_record_to_nemsis(record, db=db)
     OfflineSyncManager.queue_record(db, record)

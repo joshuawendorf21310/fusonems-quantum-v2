@@ -39,20 +39,73 @@ class OfficeAllySftpTransport:
         self.port = port
         self.username = username
         self.password = password
-        self.remote_dir = remote_dir or "/"
+        self.remote_dir = remote_dir or "inbound"  # Default to "inbound" for Office Ally
         self._paramiko = paramiko_module
+        self._sftp = None
+        self._transport = None
+
+    def _connect(self):
+        """Establish SFTP connection"""
+        if self._transport is None or not self._transport.is_active():
+            self._transport = self._paramiko.Transport((self.host, self.port))
+            self._transport.connect(username=self.username, password=self.password)
+            self._sftp = self._paramiko.SFTPClient.from_transport(self._transport)
+            # Cache SSH key as requested by Office Ally
+            self._transport.set_missing_host_key_policy(self._paramiko.AutoAddPolicy())
 
     def upload_file(self, filename: str, payload: str) -> dict[str, Any]:
-        transport = self._paramiko.Transport((self.host, self.port))
+        """Upload file to Office Ally inbound folder"""
+        self._connect()
         try:
-            transport.connect(username=self.username, password=self.password)
-            sftp = self._paramiko.SFTPClient.from_transport(transport)
-            remote_path = os.path.join(self.remote_dir, filename)
-            with sftp.file(remote_path, "w") as handle:
+            # Ensure directory exists
+            try:
+                self._sftp.chdir(self.remote_dir)
+            except IOError:
+                # Directory doesn't exist, try to create it
+                try:
+                    self._sftp.mkdir(self.remote_dir)
+                except:
+                    pass  # May already exist
+            
+            remote_path = os.path.join(self.remote_dir, filename).replace("\\", "/")
+            with self._sftp.file(remote_path, "w") as handle:
                 handle.write(payload)
             return {"path": remote_path, "method": "sftp"}
         finally:
-            transport.close()
+            self.close()
+
+    def list_files(self, directory: str) -> list[dict[str, Any]]:
+        """List files in a directory"""
+        self._connect()
+        try:
+            files = []
+            for item in self._sftp.listdir_attr(directory):
+                files.append({
+                    "filename": item.filename,
+                    "size": item.st_size,
+                    "modified": item.st_mtime,
+                })
+            return files
+        finally:
+            self.close()
+
+    def download_file(self, remote_path: str) -> bytes:
+        """Download file from Office Ally"""
+        self._connect()
+        try:
+            with self._sftp.file(remote_path, "r") as handle:
+                return handle.read()
+        finally:
+            self.close()
+
+    def close(self):
+        """Close SFTP connection"""
+        if self._sftp:
+            self._sftp.close()
+            self._sftp = None
+        if self._transport:
+            self._transport.close()
+            self._transport = None
 
 
 class LocalOfficeAllyTransport:
@@ -78,7 +131,8 @@ class OfficeAllyClient:
         if not claims:
             return {"batch_id": "", "submitted": 0, "details": []}
         batch_id = f"oa-{self.org_id}-{int(utc_now().timestamp())}"
-        transport = self._build_transport()
+        # Use inbound directory for claim submissions
+        transport = self._build_transport(directory=settings.OFFICEALLY_SFTP_DIRECTORY or "inbound")
         summary: list[dict[str, Any]] = []
         for claim in claims:
             patient = self._get_patient(claim)
@@ -188,7 +242,32 @@ class OfficeAllyClient:
         user: User,
         remittance_id: Optional[int] = None,
     ) -> dict[str, Any]:
+        """Fetch remittances from Office Ally outbound folder (ERA/835 files)"""
         self._ensure_enabled()
+        
+        # First, try to download ERA/835 files from outbound folder
+        try:
+            transport = self._build_transport()
+            outbound_dir = getattr(settings, 'OFFICEALLY_SFTP_OUTBOUND_DIRECTORY', 'outbound')
+            
+            # List files in outbound directory
+            files = transport.list_files(outbound_dir)
+            
+            # Look for ERA/835 files (usually zip files)
+            era_files = [f for f in files if f['filename'].endswith('.zip') or '835' in f['filename']]
+            
+            for era_file in era_files:
+                remote_path = os.path.join(outbound_dir, era_file['filename']).replace("\\", "/")
+                file_data = transport.download_file(remote_path)
+                
+                # Process ERA file (would need ERA parser - placeholder for now)
+                logger.info(f"Downloaded ERA file: {era_file['filename']} ({len(file_data)} bytes)")
+                # TODO: Parse ERA/835 file and create RemittanceAdvice records
+                
+        except Exception as e:
+            logger.warning(f"Could not fetch ERA files from Office Ally: {e}")
+        
+        # Process existing remittance advices
         query = self.db.query(RemittanceAdvice).filter(RemittanceAdvice.org_id == self.org_id)
         if remittance_id is not None:
             query = query.filter(RemittanceAdvice.id == remittance_id)
@@ -219,7 +298,7 @@ class OfficeAllyClient:
             advice.payload.setdefault("processed_at", utc_now().isoformat())
             self.db.add(advice)
         self.db.commit()
-        return {"processed_claims": processed, "remittances": [advice.id for advice in advices]}
+        return {"processed_claims": processed, "remittances": [advice.id for advice in advices], "era_files_found": len(era_files) if 'era_files' in locals() else 0}
 
     def fetch_status(self, batch_id: str) -> dict[str, Any]:
         self._ensure_enabled()
@@ -317,10 +396,58 @@ class OfficeAllyClient:
         """
         from datetime import datetime
         
-        claim = bundle.get('claim_data', {})
-        provider = bundle.get('provider_data', {})
-        patient = bundle.get('patient_data', {})
-        payer = bundle.get('payer_data', {})
+        # Extract data from the actual bundle structure
+        claim_id = bundle.get('claim_id')
+        payer_name = bundle.get('payer', '')
+        demographics = bundle.get('demographics', {})
+        coding = bundle.get('coding', {})
+        
+        # Get claim from database to access full claim data
+        claim_obj = self.db.query(BillingClaim).filter_by(id=claim_id, org_id=self.org_id).first()
+        if not claim_obj:
+            raise ValueError(f"Claim {claim_id} not found")
+        
+        # Extract patient data
+        patient = {
+            'first_name': demographics.get('first_name', ''),
+            'last_name': demographics.get('last_name', ''),
+            'dob': demographics.get('dob', ''),
+            'gender': demographics.get('gender', 'U'),
+            'subscriber_id': demographics.get('subscriber_id', ''),
+            'middle_name': demographics.get('middle_name', ''),
+        }
+        
+        # Extract claim data from claim object and coding
+        # Convert total_charge_cents to dollars
+        total_charge_cents = getattr(claim_obj, 'total_charge_cents', 0) or 0
+        total_charge_dollars = total_charge_cents / 100.0 if total_charge_cents else 0.0
+        
+        claim = {
+            'total_charge': f"{total_charge_dollars:.2f}",
+            'service_count': 1,  # Default to 1 service line if not specified
+            'diagnoses': coding.get('diagnosis_codes', []) or claim_obj.demographics_snapshot.get('diagnoses', []) or [],
+            'service_date_from': getattr(claim_obj, 'service_date_from', None) or utc_now(),
+            'service_lines': coding.get('service_lines', []) or [],
+        }
+        
+        # Provider data (from settings - should be enhanced to use org settings)
+        provider = {
+            'name': settings.OFFICEALLY_SUBMITTER_NAME,
+            'npi': settings.OFFICEALLY_DEFAULT_NPI,
+            'contact_name': 'BILLING DEPT',
+            'contact_phone': settings.OFFICEALLY_CONTACT_PHONE,
+            'taxonomy_code': '207Q00000X',  # EMS Provider taxonomy
+            'address': {},  # TODO: Get from organization settings
+        }
+        
+        # Payer data
+        payer = {
+            'name': payer_name,
+            'interchange_id': 'OFFICEALLY',
+            'trading_partner_id': 'OFFICEALLY',
+            'receiver_id': 'OFFICEALLY',
+            'payer_id': payer_name.upper(),  # Simplified - should map to actual payer IDs
+        }
         
         # Control numbers
         isa_control_number = f"{self.org_id:09d}"
@@ -375,8 +502,19 @@ class OfficeAllyClient:
         segments.append(f"NM1*PR*2*{payer.get('name', 'MEDICARE')}**PI*{payer.get('payer_id', 'MEDICARE')}")
         
         # Subscriber Demographic Information
-        if patient.get('dob'):
-            segments.append(f"DMG*D8*{patient['dob'].strftime('%Y%m%d')}*{patient.get('gender', 'U')}")
+        dob = patient.get('dob')
+        if dob:
+            # Handle string dates
+            if isinstance(dob, str):
+                try:
+                    from datetime import datetime as dt
+                    dob_date = dt.strptime(dob, '%Y-%m-%d')
+                except:
+                    dob_date = None
+            else:
+                dob_date = dob
+            if dob_date:
+                segments.append(f"DMG*D8*{dob_date.strftime('%Y%m%d')}*{patient.get('gender', 'U')}")
         
         # 2000C - Patient Hierarchical Level (same as subscriber)
         segments.append(f"HL*3*2*23*0")  
@@ -386,7 +524,10 @@ class OfficeAllyClient:
         segments.append(f"NM1*QC*1*{patient.get('last_name', 'PATIENT')}*{patient.get('first_name', 'JOHN')}*{patient.get('middle_name', '')}")
         
         # 2300 - Claim Information
-        segments.append(f"CLM*{claim.get('total_charge', '0.00').replace('.', '').replace(',', '')}*{claim.get('service_count', 1)}***11:B:1*Y*A*Y*Y")
+        # Format charge amount: remove decimal point for EDI (e.g., "100.00" -> "10000")
+        charge_amount = claim.get('total_charge', '0.00').replace('.', '').replace(',', '')
+        service_count = len(claim.get('service_lines', [])) or claim.get('service_count', 1)
+        segments.append(f"CLM*{charge_amount}*{service_count}***11:B:1*Y*A*Y*Y")
         
         # 2300 - Health Care Diagnosis Code
         diagnoses = claim.get('diagnoses', [])
@@ -443,7 +584,8 @@ class OfficeAllyClient:
             "checked_at": record.created_at.isoformat() if record.created_at else None,
         }
 
-    def _build_transport(self):
+    def _build_transport(self, directory: Optional[str] = None):
+        """Build SFTP transport. Defaults to inbound directory for submissions."""
         if settings.OFFICEALLY_FTP_HOST and settings.OFFICEALLY_FTP_USER:
             try:
                 import paramiko
@@ -451,12 +593,14 @@ class OfficeAllyClient:
                 logger.error("Paramiko unavailable for SFTP transport: %s", exc)
                 raise RuntimeError("Paramiko is required for Office Ally SFTP transport. Install with: pip install paramiko")
             
+            remote_dir = directory or settings.OFFICEALLY_SFTP_DIRECTORY or "inbound"
+            
             return OfficeAllySftpTransport(
                 settings.OFFICEALLY_FTP_HOST,
                 settings.OFFICEALLY_FTP_PORT,
                 settings.OFFICEALLY_FTP_USER,
                 settings.OFFICEALLY_FTP_PASSWORD,
-                settings.OFFICEALLY_SFTP_DIRECTORY,
+                remote_dir,
                 paramiko_module=paramiko,
             )
         else:

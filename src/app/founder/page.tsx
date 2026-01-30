@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 
 import Sidebar from "@/components/layout/Sidebar"
 import Topbar from "@/components/layout/Topbar"
@@ -23,6 +24,8 @@ import {
 import FounderAIChat from "@/components/founder/FounderAIChat"
 import FounderScreenShare from "@/components/founder/FounderScreenShare"
 import { apiFetch } from "@/lib/api"
+import { useAuth } from "@/lib/auth-context"
+import { ProtectedRoute, RoleGate } from "@/lib/protected-route"
 
 type ModuleHealth = {
   module_key: string
@@ -41,26 +44,61 @@ type FounderOverview = {
 }
 
 export default function FounderPage() {
+  const router = useRouter()
+  const { user, isAuthenticated, loading: authLoading } = useAuth()
   const [overview, setOverview] = useState<FounderOverview | null>(null)
   const [error, setError] = useState<string>("")
+  const [loading, setLoading] = useState(true)
+
+  // Check authentication and role
+  useEffect(() => {
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        router.push("/login?redirect=/founder")
+        return
+      }
+      if (user && user.role !== "founder" && user.role !== "admin" && user.role !== "superadmin") {
+        router.push("/dashboard")
+        return
+      }
+    }
+  }, [isAuthenticated, authLoading, user, router])
 
   useEffect(() => {
+    if (!isAuthenticated || authLoading) return
+    
     let mounted = true
+    setLoading(true)
     apiFetch<FounderOverview>("/api/founder/overview")
       .then((data) => {
         if (mounted) {
           setOverview(data)
+          setError("")
         }
       })
-      .catch(() => {
+      .catch((err: any) => {
         if (mounted) {
-          setError("Unable to load founder overview")
+          const status = err.response?.status
+          if (status === 401 || status === 403) {
+            setError("Access denied. You need founder permissions to access this page.")
+            // Redirect to login after a delay
+            setTimeout(() => {
+              router.push("/login?redirect=/founder")
+            }, 2000)
+          } else {
+            setError("Unable to load founder overview. Please try again.")
+          }
+        }
+      })
+      .finally(() => {
+        if (mounted) {
+          setLoading(false)
         }
       })
     return () => {
       mounted = false
     }
-  }, [])
+  }, [isAuthenticated, authLoading, router])
 
   const queueItems = useMemo(() => {
     if (!overview) return []
@@ -73,11 +111,38 @@ export default function FounderPage() {
   }, [overview])
 
   const [activeTab, setActiveTab] = useState('overview');
+
+  // Show loading state while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    )
+  }
+
+  // Show access denied if not authenticated or wrong role
+  if (!isAuthenticated || (user && user.role !== "founder" && user.role !== "admin" && user.role !== "superadmin")) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-white mb-4">Access Denied</h1>
+          <p className="text-gray-400 mb-6">You need founder permissions to access this page.</p>
+          <Link href="/login" className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+            Go to Login
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
-      <Sidebar />
-      <main className="ml-64">
-        <Topbar />
+    <ProtectedRoute>
+      <RoleGate allowedRoles={["founder", "admin", "superadmin"]}>
+        <div className="min-h-screen bg-[#0a0a0a]">
+          <Sidebar />
+          <main className="ml-64">
+            <Topbar />
         <div className="p-8 max-w-7xl mx-auto">
           <nav className="flex gap-2 mb-8">
             <button
@@ -259,5 +324,7 @@ export default function FounderPage() {
         </div>
       </main>
     </div>
+      </RoleGate>
+    </ProtectedRoute>
   )
 }

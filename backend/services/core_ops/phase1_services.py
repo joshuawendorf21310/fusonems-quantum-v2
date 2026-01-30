@@ -226,12 +226,14 @@ class GeocodingService:
         return None
 
     async def _geocode_with_nominatim(self, address: str) -> Optional[Dict]:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=10.0) as client:
             try:
                 response = await client.get(
                     "https://nominatim.openstreetmap.org/search",
                     params={
                         "q": address,
+                    },
+                    timeout=10.0
                         "format": "json",
                         "limit": 1
                     },

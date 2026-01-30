@@ -1,4 +1,7 @@
+"use client"
+
 import Link from "next/link"
+import { useEffect } from "react"
 import Logo from "@/components/Logo"
 import TrustBadge from "@/components/marketing/TrustBadge"
 import {
@@ -18,6 +21,41 @@ import {
 } from "lucide-react"
 
 export default function HomePage() {
+  // Handle smooth scrolling for hash links
+  useEffect(() => {
+    const handleHashClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      const link = target.closest('a[href^="#"]') as HTMLAnchorElement
+      if (link) {
+        const hash = link.getAttribute('href')
+        if (hash && hash.startsWith('#')) {
+          e.preventDefault()
+          const id = hash.substring(1)
+          const element = document.getElementById(id)
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            // Update URL without jumping
+            window.history.pushState(null, '', hash)
+          }
+        }
+      }
+    }
+
+    // Handle initial hash on page load
+    if (window.location.hash) {
+      const id = window.location.hash.substring(1)
+      setTimeout(() => {
+        const element = document.getElementById(id)
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }, 100)
+    }
+
+    document.addEventListener('click', handleHashClick)
+    return () => document.removeEventListener('click', handleHashClick)
+  }, [])
+
   return (
     <div className="homepage-wrapper">
       <div className="bg-motion" aria-hidden>
@@ -32,12 +70,12 @@ export default function HomePage() {
             <Logo variant="headerLockup" active />
           </Link>
           <nav className="quick-nav" aria-label="Primary">
-            <Link href="/#modules" className="nav-item">Modules</Link>
-            <Link href="/#fusioncare" className="nav-item">FusionCare</Link>
-            <Link href="/#transport-link" className="nav-item">Transport Link</Link>
+            <Link href="#modules" className="nav-item">Modules</Link>
+            <Link href="#fusioncare" className="nav-item">FusionCare</Link>
+            <Link href="#transport-link" className="nav-item">Transport Link</Link>
             <Link href="/portals" className="nav-item">Architecture</Link>
-            <Link href="/#stats" className="nav-item">Performance</Link>
-            <Link href="/#contact" className="nav-item">Contact</Link>
+            <Link href="#stats" className="nav-item">Performance</Link>
+            <Link href="#contact" className="nav-item">Contact</Link>
             <Link href="/billing" className="nav-item nav-item--pay">Pay a Bill</Link>
           </nav>
           <div className="top-bar-actions">

@@ -7,7 +7,8 @@
     ],
     "allowJs": true,
     "skipLibCheck": true,
-    "strict": false,
+    // Enable strict mode for better type safety
+    "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
@@ -27,7 +28,11 @@
       ]
     },
     "target": "ES2017",
-    "strictNullChecks": true
+    // Additional type safety options
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": false,
+    "forceConsistentCasingInFileNames": true
   },
   "include": [
     "next-env.d.ts",

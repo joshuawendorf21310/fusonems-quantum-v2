@@ -26,26 +26,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const loadUserFromToken = (tokenToLoad: string | null) => {
+    if (!tokenToLoad) {
+      setUser(null)
+      setToken(null)
+      return
+    }
+    
+    try {
+      const payload = JSON.parse(atob(tokenToLoad.split(".")[1]))
+      setUser({
+        id: payload.sub,
+        email: payload.email || "",
+        full_name: payload.full_name || "",
+        organization_name: payload.org_name || "",
+        role: payload.role || "user",
+        org_id: payload.org,
+      })
+      setToken(tokenToLoad)
+    } catch (err) {
+      localStorage.removeItem("token")
+      setUser(null)
+      setToken(null)
+    }
+  }
+
   useEffect(() => {
     const storedToken = localStorage.getItem("token")
-    if (storedToken) {
-      setToken(storedToken)
-      try {
-        const payload = JSON.parse(atob(storedToken.split(".")[1]))
-        setUser({
-          id: payload.sub,
-          email: payload.email || "",
-          full_name: payload.full_name || "",
-          organization_name: payload.org_name || "",
-          role: payload.role || "user",
-          org_id: payload.org,
-        })
-      } catch (err) {
-        localStorage.removeItem("token")
-        setToken(null)
+    loadUserFromToken(storedToken)
+    setLoading(false)
+
+    // Listen for storage changes (e.g., login from another tab)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "token") {
+        loadUserFromToken(e.newValue)
       }
     }
-    setLoading(false)
+    window.addEventListener("storage", handleStorageChange)
+
+    // Poll for token changes (in case login happens in same tab)
+    let lastToken = storedToken
+    const interval = setInterval(() => {
+      const currentToken = localStorage.getItem("token")
+      if (currentToken !== lastToken) {
+        lastToken = currentToken
+        loadUserFromToken(currentToken)
+      }
+    }, 1000)
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange)
+      clearInterval(interval)
+    }
   }, [])
 
   const logout = () => {

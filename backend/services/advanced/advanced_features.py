@@ -53,7 +53,7 @@ class FHIRClient:
         self.auth_token = auth_token
 
     async def get_patient(self, patient_id: str) -> Dict:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             headers = {"Accept": "application/fhir+json"}
             if self.auth_token:
                 headers["Authorization"] = f"Bearer {self.auth_token}"
@@ -61,6 +61,7 @@ class FHIRClient:
             try:
                 response = await client.get(
                     f"{self.base_url}/Patient/{patient_id}",
+                    timeout=30.0,
                     headers=headers
                 )
                 
@@ -88,7 +89,7 @@ class FHIRClient:
             }
         }
         
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             headers = {
                 "Content-Type": "application/fhir+json",
                 "Accept": "application/fhir+json"

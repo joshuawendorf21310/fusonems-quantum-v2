@@ -1,0 +1,17 @@
+# DigitalOcean Spaces Configuration Template
+# Fill in your values and add to .env file
+
+SPACES_ENDPOINT=https://REGION.digitaloceanspaces.com
+SPACES_REGION=REGION
+SPACES_BUCKET=BUCKET_NAME
+SPACES_ACCESS_KEY=ACCESS_KEY_ID
+SPACES_SECRET_KEY=SECRET_ACCESS_KEY
+SPACES_CDN_ENDPOINT=
+
+# Example:
+# SPACES_ENDPOINT=https://nyc3.digitaloceanspaces.com
+# SPACES_REGION=nyc3
+# SPACES_BUCKET=fusonems-storage
+# SPACES_ACCESS_KEY=DO1234567890ABCDEF
+# SPACES_SECRET_KEY=abc123def456ghi789jkl012mno345pqr678stu901vwx234yz
+# SPACES_CDN_ENDPOINT=

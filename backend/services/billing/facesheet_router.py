@@ -60,3 +60,17 @@ def send_facesheet_request_fax(
     patient = get_scoped_record(db, request, Patient, payload.epcr_patient_id, user, resource_label="epcr")
     service = FacesheetRetriever(db, user.org_id)
     return service.send_facesheet_request_fax(patient)
+
+
+@router.post("/place-call")
+def place_facesheet_request_call(
+    payload: FacesheetRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin, UserRole.billing)),
+):
+    """Place an outbound call to the facility to request a facesheet. Call after /request when details.outbound_call_available is true. Use FACESHEET_REQUEST_CALL_ANSWER_URL for TeXML/IVR when they answer."""
+    require_telnyx_enabled()
+    patient = get_scoped_record(db, request, Patient, payload.epcr_patient_id, user, resource_label="epcr")
+    service = FacesheetRetriever(db, user.org_id)
+    return service.start_facesheet_request_call(patient)

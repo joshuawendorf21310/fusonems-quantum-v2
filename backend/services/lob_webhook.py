@@ -6,7 +6,8 @@ router = APIRouter(prefix="/api/lob", tags=["Lob Webhook"])
 
 
 def _get_lob_client():
-    api_key = os.environ.get("LOB_API_KEY")
+    from core.config import settings
+    api_key = os.environ.get("LOB_API_KEY") or settings.LOB_API_KEY
     if not api_key:
         raise HTTPException(status_code=412, detail="LOB API key not configured")
     if hasattr(lob, "Lob"):

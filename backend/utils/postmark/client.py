@@ -155,12 +155,14 @@ async def create_sender_signature(
         payload["ReturnPathDomain"] = return_path_domain
     
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
                 f"{POSTMARK_BASE_URL}/senders",
                 headers={
                     "Accept": "application/json",
                     "Content-Type": "application/json",
+                },
+                timeout=30.0
                     "X-Postmark-Account-Token": settings.POSTMARK_ACCOUNT_TOKEN or settings.POSTMARK_SERVER_TOKEN or "",
                 },
                 json=payload,

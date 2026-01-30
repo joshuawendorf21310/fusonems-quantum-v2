@@ -64,6 +64,12 @@ class FacesheetRetriever:
             out["outbound_fax_available"] = True
             out["facility_fax"] = facility.fax_number
             out["facility_name"] = facility.facility_name
+        facility_call = self._facility_for_facesheet_call(patient)
+        if facility_call:
+            out["outbound_call_available"] = True
+            out["facility_phone"] = facility_call.phone_number
+            if not out.get("facility_name"):
+                out["facility_name"] = facility_call.facility_name
         return out
 
     def _facility_for_facesheet_fax(self, patient: Patient) -> FacilityContact | None:
@@ -81,6 +87,28 @@ class FacesheetRetriever:
             self.db.query(FacilityContact)
             .filter(FacilityContact.org_id == self.org_id, FacilityContact.active == True)
             .filter(FacilityContact.fax_number != "", FacilityContact.fax_number.isnot(None))
+        )
+        if destination:
+            fac = q.filter(FacilityContact.facility_name.ilike(f"%{destination}%")).first()
+            if fac:
+                return fac
+        return q.filter(FacilityContact.department.in_(["records", "billing"])).first()
+
+    def _facility_for_facesheet_call(self, patient: Patient) -> FacilityContact | None:
+        """Look up FacilityContact with phone_number for outbound call (same destination logic as fax)."""
+        destination = None
+        latest = (
+            self.db.query(EpcrRecord)
+            .filter(EpcrRecord.patient_id == patient.id, EpcrRecord.org_id == self.org_id)
+            .order_by(EpcrRecord.id.desc())
+            .first()
+        )
+        if latest and getattr(latest, "patient_destination", None):
+            destination = (latest.patient_destination or "").strip()
+        q = (
+            self.db.query(FacilityContact)
+            .filter(FacilityContact.org_id == self.org_id, FacilityContact.active == True)
+            .filter(FacilityContact.phone_number != "", FacilityContact.phone_number.isnot(None))
         )
         if destination:
             fac = q.filter(FacilityContact.facility_name.ilike(f"%{destination}%")).first()
@@ -152,3 +180,49 @@ class FacesheetRetriever:
         except Exception as e:
             logger.exception("Facesheet request fax failed for patient_id=%s", patient.id)
             raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Fax send failed: {e}") from e
+
+    def start_facesheet_request_call(self, patient: Patient) -> dict[str, Any]:
+        """Place an outbound call to the facility (records/billing) to request a facesheet. Call connects to facility; use TeXML/IVR for AI script when they answer."""
+        facility = self._facility_for_facesheet_call(patient)
+        if not facility or not (getattr(facility, "phone_number", None) or "").strip():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No facility phone number found for this patient. Add a FacilityContact with phone_number for the destination.",
+            )
+        if not getattr(settings, "TELNYX_API_KEY", None):
+            raise HTTPException(status_code=status.HTTP_412_PRECONDITION_FAILED, detail="Telnyx API key not configured")
+        try:
+            import telnyx
+        except ImportError:
+            raise HTTPException(status_code=status.HTTP_412_PRECONDITION_FAILED, detail="Telnyx SDK not installed")
+        telnyx.api_key = settings.TELNYX_API_KEY
+        connection_id = getattr(settings, "TELNYX_CONNECTION_ID", None) or getattr(settings, "TELNYX_FAX_CONNECTION_ID", None)
+        if not connection_id:
+            raise HTTPException(
+                status_code=status.HTTP_412_PRECONDITION_FAILED,
+                detail="TELNYX_CONNECTION_ID not set for outbound voice.",
+            )
+        to_number = (facility.phone_number or "").strip()
+        from_number = (getattr(settings, "TELNYX_FROM_NUMBER", None) or "").strip()
+        if not from_number:
+            raise HTTPException(status_code=status.HTTP_412_PRECONDITION_FAILED, detail="TELNYX_FROM_NUMBER not set")
+        answer_url = (getattr(settings, "FACESHEET_REQUEST_CALL_ANSWER_URL", None) or "").strip()
+        try:
+            params: dict[str, Any] = {
+                "connection_id": connection_id,
+                "to": to_number,
+                "from_": from_number,
+            }
+            if answer_url:
+                params["answer_url"] = answer_url
+            response = telnyx.Call.create(**params)
+            logger.info("Facesheet request call placed to %s for patient_id=%s", to_number, patient.id)
+            return {
+                "status": "initiated",
+                "facility_name": getattr(facility, "facility_name", ""),
+                "to": to_number,
+                "provider_id": getattr(response, "id", None),
+            }
+        except Exception as e:
+            logger.exception("Facesheet request call failed for patient_id=%s", patient.id)
+            raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=f"Call failed: {e}") from e

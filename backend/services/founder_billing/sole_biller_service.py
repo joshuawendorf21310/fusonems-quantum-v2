@@ -32,7 +32,9 @@ class SoleBillerService:
     def __init__(self, db: Session, config: SoleBillerConfig):
         self.db = db
         self.config = config
-        self.lob_client = lob.Client(api_key=config.lob_api_key) if config.lob_api_key else None
+        # Use config.lob_api_key if set, otherwise fall back to settings.LOB_API_KEY
+        lob_api_key = config.lob_api_key or settings.LOB_API_KEY
+        self.lob_client = lob.Client(api_key=lob_api_key) if lob_api_key else None
     
     def generate_statement(
         self,
@@ -269,11 +271,11 @@ class SoleBillerService:
                     "address_zip": patient.zip_code
                 },
                 from_address={
-                    "name": "Fusion EMS Billing",
-                    "address_line1": "123 Medical Plaza",
-                    "address_city": "Healthcare City",
-                    "address_state": "CA",
-                    "address_zip": "90210"
+                    "name": settings.LOB_FROM_ADDRESS_NAME or "Fusion EMS Billing",
+                    "address_line1": settings.LOB_FROM_ADDRESS_LINE1 or "123 Medical Plaza",
+                    "address_city": settings.LOB_FROM_ADDRESS_CITY or "Healthcare City",
+                    "address_state": settings.LOB_FROM_ADDRESS_STATE or "CA",
+                    "address_zip": settings.LOB_FROM_ADDRESS_ZIP or "90210"
                 },
                 file=html_content,
                 color=self.config.lob_api_key and True,

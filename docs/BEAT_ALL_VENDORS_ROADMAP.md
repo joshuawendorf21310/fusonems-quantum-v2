@@ -80,7 +80,7 @@
 | CAD incidents, units, dispatch | Done / Partial | P0 | incident_router, cad_router. |
 | Active incidents, unit status for dashboard | Done | P0 | |
 | **Voice dictation / speech-to-text** for PCR | Done | P0 | NarrativeWithDictation on ePCR new page narrative; Web Speech API. |
-| **Weather overlay** (MDT/map) | Not started | P1 | Critical for HEMS; absent in incumbents. |
+| **Weather overlay** (MDT/map) | Done | P1 | `GET /api/weather/current`; WeatherOverlay on CAD; Open-Meteo. |
 | **Traffic data** (routing) | Not started | P2 | |
 | **Hospital bed availability** (real-time) | Not started | P1 | No vendors have it. |
 | Geofencing, auto-status by location | Partial | P1 | MDT PWA. |
@@ -189,9 +189,9 @@ Use this to track “complete all enhancements, visuals, security.”
 5. ~~**Founder terminology builder**~~ — Done: `/founder/terminology` page; list/add/edit/delete ICD-10, SNOMED, RXNorm; AI suggest; wire to ePCR suggest API.
 6. ~~**AI suggests in ePCR**~~ — Done: `POST /api/epcr/terminology/suggest`; do_suggest_terminology.
 7. ~~**Outbound fax send**~~ — Done: `POST /api/billing/facesheet/send-fax`; FacesheetRetriever.send_facesheet_request_fax; FACESHEET_REQUEST_FAX_MEDIA_URL.
-8. **Outbound call to facility** (facesheet) — When facility phone exists, trigger Telnyx outbound call with AI script.
-9. **Voice dictation** — Speech-to-text for PCR narrative (browser or app); wire to ePCR narrative field.
-10. **Weather overlay** — MDT or map: weather layer (e.g. API); HEMS differentiation.
+8. ~~**Outbound call to facility** (facesheet)~~ — Done: `POST /api/billing/facesheet/place-call`; FACESHEET_REQUEST_CALL_ANSWER_URL for TeXML/IVR.
+9. ~~**Voice dictation**~~ — Done: NarrativeWithDictation on ePCR new page.
+10. ~~**Weather overlay**~~ — Done: `GET /api/weather/current` (Open-Meteo); WeatherOverlay on CAD dashboard.
 
 ---
 

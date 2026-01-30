@@ -1,12 +1,17 @@
-from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel, EmailStr
+from fastapi import APIRouter, HTTPException, Depends, Request
+from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
+import re
 from sqlalchemy.orm import Session
 from core.database import get_db
 from core.logger import logger
+from core.config import settings
 
 router = APIRouter(prefix="/api/v1", tags=["marketing"])
+
+# Simple in-memory storage for contact submissions
+_contact_submissions: list[dict] = []
 
 
 class DemoRequest(BaseModel):
@@ -105,4 +110,106 @@ async def marketing_health_check():
         "status": "healthy",
         "service": "marketing-api",
         "timestamp": datetime.utcnow().isoformat()
+    }
+
+
+class ContactSubmission(BaseModel):
+    name: str
+    email: str
+    organization: Optional[str] = None
+    subject: Optional[str] = None
+    message: str
+    timestamp: Optional[str] = None
+    
+    @field_validator('name')
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        v = str(v or '').strip()[:100]
+        if len(v) < 2:
+            raise ValueError('Name must be at least 2 characters')
+        return v
+    
+    @field_validator('email')
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        v = str(v or '').strip().lower()[:254]
+        if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', v):
+            raise ValueError('Invalid email address')
+        return v
+    
+    @field_validator('message')
+    @classmethod
+    def validate_message(cls, v: str) -> str:
+        v = str(v or '').strip()[:5000]
+        if len(v) < 10:
+            raise ValueError('Message must be at least 10 characters')
+        return v
+
+
+# Also register as /api/contact for frontend compatibility
+@router.post("/contact")
+async def submit_contact_v1(
+    submission: ContactSubmission,
+    request: Request,
+):
+    """
+    Handle public contact form submissions.
+    """
+    return await _process_contact_submission(submission, request)
+
+
+# Primary contact endpoint at /api/contact
+contact_router = APIRouter(prefix="/api/contact", tags=["Contact"])
+
+@contact_router.post("")
+async def submit_contact(
+    submission: ContactSubmission,
+    request: Request,
+):
+    """
+    Handle public contact form submissions.
+    """
+    return await _process_contact_submission(submission, request)
+
+
+async def _process_contact_submission(submission: ContactSubmission, request: Request):
+    """Process contact form submission."""
+    
+    # Rate limiting check (simple IP-based)
+    client_ip = request.client.host if request.client else "unknown"
+    recent_from_ip = sum(
+        1 for s in _contact_submissions[-100:]
+        if s.get("client_ip") == client_ip
+    )
+    if recent_from_ip >= 5:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many submissions. Please try again later."
+        )
+    
+    # Create submission record
+    submission_record = {
+        "id": len(_contact_submissions) + 1,
+        "name": submission.name,
+        "email": submission.email,
+        "organization": submission.organization,
+        "subject": submission.subject,
+        "message": submission.message,
+        "client_ip": client_ip,
+        "user_agent": request.headers.get("user-agent", "")[:500],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    
+    _contact_submissions.append(submission_record)
+    
+    # Log submission
+    logger.info(
+        f"[CONTACT FORM] New submission from {submission.name} <{submission.email}> "
+        f"(org: {submission.organization or 'N/A'})"
+    )
+    
+    return {
+        "ok": True,
+        "message": "Thank you for your message. We'll get back to you soon.",
+        "reference_id": submission_record["id"],
     }
