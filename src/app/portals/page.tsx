@@ -154,7 +154,7 @@ const getIcon = (icon: string) => {
 
 export default function PortalsPage() {
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="min-h-screen bg-[#0a0a0a] relative z-10" data-page="portals-architecture">
       <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-[#0a0a0a]/95 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-7xl mx-auto h-full px-6 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
