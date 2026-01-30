@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
     SESSION_COOKIE_NAME: str = "session"
     CSRF_COOKIE_NAME: str = "csrf_token"
+    LOCAL_AUTH_ENABLED: bool = True  # Enable local username/password authentication
 
     # Stripe (patient payments, checkout, subscriptions, webhooks)
     stripe_secret_key: str = ""

@@ -8,15 +8,17 @@ import { ArrowLeft, Mail, Phone, Calendar, Award, Clock, FileText, TrendingUp } 
 
 export default function PersonnelProfilePage() {
   const params = useParams();
+  const id = params?.id as string | undefined;
   const [person, setPerson] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`/api/hr/personnel/${params.id}`, { credentials: "include" })
+    if (!id) return;
+    fetch(`/api/hr/personnel/${id}`, { credentials: "include" })
       .then((r) => r.ok && r.json())
       .then((data) => setPerson(data))
       .finally(() => setLoading(false));
-  }, [params.id]);
+  }, [id]);
 
   if (loading) return <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center"><div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div></div>;
   if (!person) return <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6"><div className="text-center">Personnel not found</div></div>;

@@ -78,6 +78,39 @@ export default function CADDashboard() {
     }
   };
 
+  const handleCreateIncident = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setNewIncidentSubmitting(true);
+    setNewIncidentError(null);
+    try {
+      await apiFetch("/api/cad/incidents", {
+        method: "POST",
+        body: JSON.stringify(newIncidentForm),
+      });
+      setNewIncidentOpen(false);
+      setNewIncidentForm({
+        requesting_facility: "",
+        receiving_facility: "",
+        transport_type: "IFT",
+        priority: "Routine",
+        scheduled_time: "",
+        notes: "",
+      });
+      loadDashboardData();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to create incident";
+      setNewIncidentError(message);
+    } finally {
+      setNewIncidentSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDashboardData();
+    const interval = setInterval(loadDashboardData, 30000);
+    return () => clearInterval(interval);
+  }, [loadDashboardData]);
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
       <div className="max-w-7xl mx-auto">

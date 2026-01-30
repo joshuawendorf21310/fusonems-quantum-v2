@@ -76,7 +76,7 @@ const FIRE_CHECKS: CheckItem[] = [
 function DVIRClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const preselectedVehicle = searchParams.get("vehicle");
+  const preselectedVehicle = searchParams?.get("vehicle") ?? null;
 
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<string>(preselectedVehicle || "");

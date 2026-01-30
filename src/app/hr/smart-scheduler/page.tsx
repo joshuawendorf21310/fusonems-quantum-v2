@@ -45,7 +45,7 @@ const generateMockSchedule = (): ScheduleSlot[] => {
           score: Math.floor(80 + Math.random() * 15),
           reason: 'Low fatigue, skill match, availability confirmed'
         } : undefined,
-        conflicts: emp?.fatigueScore > 70 ? ['High fatigue risk'] : undefined
+        conflicts: (emp?.fatigueScore ?? 0) > 70 ? ['High fatigue risk'] : undefined
       })
     }
   }

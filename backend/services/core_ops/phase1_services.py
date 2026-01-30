@@ -232,11 +232,10 @@ class GeocodingService:
                     "https://nominatim.openstreetmap.org/search",
                     params={
                         "q": address,
-                    },
-                    timeout=10.0
                         "format": "json",
                         "limit": 1
                     },
+                    timeout=10.0,
                     headers={"User-Agent": "FusionEMS-Quantum/1.0"}
                 )
                 

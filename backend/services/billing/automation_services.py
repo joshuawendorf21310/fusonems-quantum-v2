@@ -87,7 +87,7 @@ class Claim837PGenerator:
                     clearinghouse_url,
                     content=submission.content,
                     headers={"Content-Type": "application/x12"},
-                    timeout=30.0
+                    timeout=30.0,
                 )
                 
                 submission.status = "SUBMITTED"

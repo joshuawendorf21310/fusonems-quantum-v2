@@ -18,6 +18,7 @@ interface FormData {
   patient_age: string;
   // Chief Complaint
   chief_complaint: string;
+  chief_complaint_code: string;
   complaint_onset: string;
   // Vitals
   bp_systolic: string;
