@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 
 const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
@@ -45,19 +44,16 @@ export function NemsisRecordActions({
   const [submitResult, setSubmitResult] = useState<SubmitResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedState, setSelectedState] = useState<string>("");
+  const [stateEndpoints, setStateEndpoints] = useState<StateEndpoint[]>([]);
 
-  const { data: stateEndpointsData } = useQuery({
-    queryKey: ["epcr", "state-endpoints"],
-    queryFn: () => apiFetch<StateEndpointsResponse>("/api/epcr/state-endpoints"),
-    staleTime: 60_000,
-  });
-
-  const stateEndpoints = stateEndpointsData?.state_endpoints ?? [];
+  useEffect(() => {
+    apiFetch<StateEndpointsResponse>("/api/epcr/state-endpoints")
+      .then((data) => setStateEndpoints(data?.state_endpoints ?? []))
+      .catch(() => setStateEndpoints([]));
+  }, []);
   const configuredStates = stateEndpoints.filter((s) => s.configured);
   const stateCode =
-    stateCodeProp ??
-    selectedState ||
-    (configuredStates[0]?.state_code ?? stateEndpoints[0]?.state_code ?? "WI");
+    stateCodeProp ?? (selectedState || (configuredStates[0]?.state_code ?? stateEndpoints[0]?.state_code ?? "WI"));
 
   const handleExportNemsis = async () => {
     setError(null);
