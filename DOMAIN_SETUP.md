@@ -4,10 +4,16 @@
 
 ### Your Apps Are Now Accessible At:
 
-**Main CAD Dashboard:**
+**Main site (marketing landing):**
 - http://fusionemsquantum.com
 - http://www.fusionemsquantum.com
-→ Proxies to port 3003 (Next.js)
+→ Proxies to port 3000 (Marketing Homepage)
+
+**Important:** The root path `/` must serve the marketing landing page (The Regulated EMS Operating System). Do **not** add nginx/hosting rewrites that send `/` to `/founder`; the founder/admin console is at `/founder`. A 502 at the root usually means the app on port 3000 is down or the proxy is pointing at the wrong upstream.
+
+**CAD Dashboard (Admin):**
+- http://cad.fusionemsquantum.com
+→ Proxies to port 3003 (CAD Next.js)
 
 **CrewLink PWA:**
 - http://crew.fusionemsquantum.com
@@ -19,7 +25,7 @@
 
 **Backend API:**
 - http://api.fusionemsquantum.com
-→ Proxies to port 3000 (when running)
+→ Proxies to port 8000 (FastAPI)
 
 ---
 

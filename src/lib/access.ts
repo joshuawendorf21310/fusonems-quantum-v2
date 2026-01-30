@@ -36,7 +36,7 @@ export function canAccessModule(moduleKey?: string, role?: string) {
 
 export function defaultRoleHome(role?: string) {
   if (role === "founder") {
-    return "/founder-ops"
+    return "/founder"
   }
   if (role === "investor") {
     return "/investor_demo"
