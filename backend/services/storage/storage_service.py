@@ -35,19 +35,19 @@ class UploadContext:
 
 
 class StorageService:
-    
+
     def __init__(self):
         self.bucket_name = settings.SPACES_BUCKET
         self.endpoint = settings.SPACES_ENDPOINT
         self.region = settings.SPACES_REGION
-        
+
         if not all([self.bucket_name, self.endpoint, self.region]):
             logger.warning("DigitalOcean Spaces not fully configured, storage operations may fail")
-        
+
         self.client = None
         if settings.SPACES_ACCESS_KEY and settings.SPACES_SECRET_KEY:
             self._init_client()
-    
+
     def _init_client(self):
         try:
             self.client = boto3.client(
@@ -62,11 +62,11 @@ class StorageService:
         except Exception as e:
             logger.error(f"Failed to initialize Spaces client: {e}")
             raise
-    
+
     def _ensure_client(self):
         if not self.client:
             raise RuntimeError("Storage service not properly configured. Check SPACES_* environment variables.")
-    
+
     def upload_file(
         self,
         file_data: bytes,
@@ -76,13 +76,13 @@ class StorageService:
         add_timestamp: bool = True
     ) -> FileMetadata:
         self._ensure_client()
-        
+
         if not validate_system(context.system):
             raise ValueError(f"Invalid system: {context.system}")
-        
+
         if not validate_object_type(context.system, context.object_type):
             raise ValueError(f"Invalid object_type '{context.object_type}' for system '{context.system}'")
-        
+
         file_path = build_storage_path(
             org_id=context.org_id,
             system=context.system,
@@ -91,7 +91,7 @@ class StorageService:
             filename=filename,
             add_timestamp=add_timestamp
         )
-        
+
         try:
             self.client.put_object(
                 Bucket=self.bucket_name,
@@ -108,9 +108,9 @@ class StorageService:
                     'object-id': context.object_id
                 }
             )
-            
+
             logger.info(f"File uploaded successfully: {file_path}")
-            
+
             metadata = FileMetadata(
                 file_path=file_path,
                 size=len(file_data),
@@ -118,13 +118,13 @@ class StorageService:
                 uploaded_at=datetime.utcnow(),
                 original_filename=filename
             )
-            
+
             return metadata
-            
+
         except ClientError as e:
             logger.error(f"Failed to upload file to Spaces: {e}")
             raise RuntimeError(f"File upload failed: {str(e)}")
-    
+
     def generate_signed_url(
         self,
         file_path: str,
@@ -132,7 +132,7 @@ class StorageService:
         context: Optional[UploadContext] = None
     ) -> str:
         self._ensure_client()
-        
+
         try:
             url = self.client.generate_presigned_url(
                 'get_object',
@@ -142,17 +142,17 @@ class StorageService:
                 },
                 ExpiresIn=expires_in
             )
-            
+
             logger.info(f"Generated signed URL for {file_path}, expires in {expires_in}s")
             return url
-            
+
         except ClientError as e:
             logger.error(f"Failed to generate signed URL: {e}")
             raise RuntimeError(f"Signed URL generation failed: {str(e)}")
-    
+
     def download_file(self, file_path: str) -> bytes:
         self._ensure_client()
-        
+
         try:
             response = self.client.get_object(
                 Bucket=self.bucket_name,
@@ -162,10 +162,10 @@ class StorageService:
         except ClientError as e:
             logger.error(f"Failed to download file from Spaces: {e}")
             raise RuntimeError(f"File download failed: {str(e)}")
-    
+
     def delete_file(self, file_path: str, context: Optional[UploadContext] = None) -> bool:
         self._ensure_client()
-        
+
         try:
             self.client.delete_object(
                 Bucket=self.bucket_name,
@@ -176,10 +176,10 @@ class StorageService:
         except ClientError as e:
             logger.error(f"Failed to delete file from Spaces: {e}")
             raise RuntimeError(f"File deletion failed: {str(e)}")
-    
+
     def file_exists(self, file_path: str) -> bool:
         self._ensure_client()
-        
+
         try:
             self.client.head_object(
                 Bucket=self.bucket_name,
@@ -190,10 +190,10 @@ class StorageService:
             if e.response['Error']['Code'] == '404':
                 return False
             raise
-    
+
     def get_file_metadata(self, file_path: str) -> Dict[str, Any]:
         self._ensure_client()
-        
+
         try:
             response = self.client.head_object(
                 Bucket=self.bucket_name,
@@ -208,17 +208,17 @@ class StorageService:
         except ClientError as e:
             logger.error(f"Failed to get file metadata: {e}")
             raise RuntimeError(f"Metadata retrieval failed: {str(e)}")
-    
+
     def list_files(self, prefix: str, max_keys: int = 1000) -> list[Dict[str, Any]]:
         self._ensure_client()
-        
+
         try:
             response = self.client.list_objects_v2(
                 Bucket=self.bucket_name,
                 Prefix=prefix,
                 MaxKeys=max_keys
             )
-            
+
             files = []
             for obj in response.get('Contents', []):
                 files.append({
@@ -226,7 +226,7 @@ class StorageService:
                     'size': obj['Size'],
                     'last_modified': obj['LastModified']
                 })
-            
+
             return files
         except ClientError as e:
             logger.error(f"Failed to list files: {e}")

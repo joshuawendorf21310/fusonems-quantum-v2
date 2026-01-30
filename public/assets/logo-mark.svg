@@ -1,0 +1,27 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!--
+    FusionEMS Quantum - Primary Mark
+    Flat geometry (no gradients / no filters) for government-safe usage.
+  -->
+  <rect width="512" height="512" rx="128" fill="none"/>
+
+  <!-- Outer ring -->
+  <circle cx="256" cy="256" r="170" stroke="#F4F6F8" stroke-width="22" />
+
+  <!-- Concentric rings -->
+  <circle cx="256" cy="256" r="120" stroke="#F4F6F8" stroke-width="12" opacity="0.85" />
+  <circle cx="256" cy="256" r="78" stroke="#F4F6F8" stroke-width="10" opacity="0.75" />
+
+  <!-- Central core -->
+  <circle cx="256" cy="256" r="18" fill="#B86B1E" />
+
+  <!-- Nodes (distributed responsibility) -->
+  <circle cx="256" cy="86" r="10" fill="#3A5A78" />
+  <circle cx="406" cy="256" r="10" fill="#3A5A78" />
+  <circle cx="256" cy="426" r="10" fill="#3A5A78" />
+  <circle cx="106" cy="256" r="10" fill="#3A5A78" />
+
+  <!-- Subtle breaks on the middle ring (modularity without fragmentation) -->
+  <path d="M256 136 A120 120 0 0 1 340 171" stroke="#0F1216" stroke-width="18" stroke-linecap="round"/>
+  <path d="M172 341 A120 120 0 0 1 256 376" stroke="#0F1216" stroke-width="18" stroke-linecap="round"/>
+</svg>

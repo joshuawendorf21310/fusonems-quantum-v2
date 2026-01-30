@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import { TerminologySuggest, NarrativeWithDictation } from "@/components/epcr";
 
 interface FormData {
   incident_number: string;
@@ -57,6 +58,7 @@ export default function NewPCRPage() {
     patient_gender: "",
     patient_age: "",
     chief_complaint: "",
+    chief_complaint_code: "",
     complaint_onset: "",
     bp_systolic: "",
     bp_diastolic: "",
@@ -87,11 +89,38 @@ export default function NewPCRPage() {
     setError(null);
 
     try {
-      const response = await apiFetch<{ id: string }>("/api/epcr/pcrs", {
+      const response = await apiFetch<{ id: number; record_id: number; patient_id: number; incident_number: string }>("/api/epcr/pcrs", {
         method: "POST",
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          incident_number: formData.incident_number,
+          unit: formData.unit,
+          response_date: formData.response_date,
+          response_time: formData.response_time,
+          patient_first_name: formData.patient_first_name,
+          patient_last_name: formData.patient_last_name,
+          patient_dob: formData.patient_dob,
+          patient_gender: formData.patient_gender,
+          patient_age: formData.patient_age,
+          chief_complaint: formData.chief_complaint,
+          chief_complaint_code: formData.chief_complaint_code || undefined,
+          complaint_onset: formData.complaint_onset,
+          bp_systolic: formData.bp_systolic,
+          bp_diastolic: formData.bp_diastolic,
+          heart_rate: formData.heart_rate,
+          respiratory_rate: formData.respiratory_rate,
+          oxygen_saturation: formData.oxygen_saturation,
+          temperature: formData.temperature,
+          glucose: formData.glucose,
+          level_of_consciousness: formData.level_of_consciousness,
+          assessment_findings: formData.assessment_findings,
+          interventions: formData.interventions,
+          medications: formData.medications,
+          narrative: formData.narrative,
+          disposition: formData.disposition,
+          destination_facility: formData.destination_facility,
+        })
       });
-      router.push(`/epcr/${response.id}`);
+      router.push(`/epcr/${response.record_id}`);
     } catch (err) {
       setError("Failed to create PCR. Please try again.");
       setLoading(false);
@@ -289,6 +318,30 @@ export default function NewPCRPage() {
                       />
                     </div>
                     <div>
+                      <TerminologySuggest
+                        query={formData.chief_complaint}
+                        codeSet="icd10"
+                        label="Suggest ICD-10 codes from chief complaint"
+                        onSelect={(code, description) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            chief_complaint_code: code,
+                          }))
+                        }
+                        selectedCode={formData.chief_complaint_code}
+                        selectedDescription={
+                          formData.chief_complaint_code
+                            ? undefined
+                            : undefined
+                        }
+                      />
+                      {formData.chief_complaint_code && (
+                        <div className="text-sm text-zinc-400 mt-1">
+                          Selected code: <span className="font-mono text-orange-400">{formData.chief_complaint_code}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div>
                       <label className="block text-sm font-medium mb-2">Onset</label>
                       <input
                         type="text"
@@ -467,14 +520,11 @@ export default function NewPCRPage() {
                   <h2 className="text-xl font-semibold mb-4">Narrative</h2>
                   <div>
                     <label className="block text-sm font-medium mb-2">Patient Care Narrative *</label>
-                    <textarea
-                      name="narrative"
+                    <NarrativeWithDictation
                       value={formData.narrative}
-                      onChange={handleChange}
+                      onChange={(text) => setFormData((prev) => ({ ...prev, narrative: text }))}
                       required
-                      rows={12}
-                      className="w-full bg-zinc-800 border border-zinc-700 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
-                      placeholder="Provide a comprehensive narrative of the call from dispatch to transfer of care..."
+                      append
                     />
                   </div>
                 </div>

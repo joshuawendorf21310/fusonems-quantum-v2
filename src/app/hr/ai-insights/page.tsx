@@ -153,7 +153,7 @@ export default function AIInsightsPage() {
             </div>
             
             <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={320} minHeight={160}>
                 <RadarChart data={radarData}>
                   <PolarGrid stroke="#475569" />
                   <PolarAngleAxis dataKey="metric" tick={{ fill: '#94a3b8', fontSize: 11 }} />

@@ -3,6 +3,28 @@
 import { UniversalEpcrForm } from "@/lib/epcr/form-renderer";
 import { emsSchema } from "@/lib/epcr/form-schema";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/api";
+
+function mapFormDataToQuickPCR(data: Record<string, unknown>) {
+  const str = (v: unknown) => (v != null ? String(v) : "");
+  return {
+    incident_number: str(data.incident_number) || `INC-${new Date().toISOString().slice(0, 19).replace(/[-:T]/g, "").slice(0, 14)}`,
+    patient_first_name: str(data.first_name),
+    patient_last_name: str(data.last_name),
+    patient_dob: str(data.date_of_birth),
+    patient_gender: str(data.gender),
+    patient_age: data.age != null ? str(data.age) : "",
+    chief_complaint: str(data.chief_complaint),
+    narrative: str(data.narrative),
+    destination_facility: str(data.destination_facility ?? data.patient_destination),
+    custom_fields: {
+      dispatch_datetime: data.dispatch_datetime,
+      scene_arrival_datetime: data.scene_arrival_datetime,
+      hospital_arrival_datetime: data.hospital_arrival_datetime,
+      ...(typeof data.custom_fields === "object" && data.custom_fields !== null ? (data.custom_fields as Record<string, unknown>) : {}),
+    },
+  };
+}
 
 export default function EmsEpcrCreatePage() {
   const router = useRouter();
@@ -12,8 +34,12 @@ export default function EmsEpcrCreatePage() {
       schema={emsSchema}
       onCancel={() => router.back()}
       onSubmit={async (data) => {
-        console.log("Submitting EMS ePCR:", data);
-        router.push("/epcr/tablet/ems");
+        const payload = mapFormDataToQuickPCR(data as Record<string, unknown>);
+        const res = await apiFetch<{ record_id: number; incident_number: string }>("/api/epcr/pcrs", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+        router.push(`/epcr/${res.record_id}`);
       }}
     />
   );

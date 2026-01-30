@@ -1,4 +1,5 @@
 import hashlib
+import uuid
 from datetime import datetime, timezone
 
 import stripe
@@ -33,8 +34,17 @@ PRICE_TO_MODULE = {
 
 
 def _set_stripe_key() -> None:
-    if not settings.stripe_secret_key:
-        raise RuntimeError("STRIPE_SECRET_KEY missing")
+    raw = (settings.stripe_secret_key or "").strip()
+    if not raw:
+        raise RuntimeError("STRIPE_SECRET_KEY is not set. Set it in backend .env from Stripe Dashboard → Developers → API keys.")
+    if not (raw.startswith("sk_test_") or raw.startswith("sk_live_")):
+        if raw.startswith("mk_"):
+            raise RuntimeError(
+                "STRIPE_SECRET_KEY is a Merchant key (mk_). Payments require the Secret key from Stripe Dashboard → Developers → API keys (starts with sk_test_ or sk_live_)."
+            )
+        raise RuntimeError(
+            "STRIPE_SECRET_KEY must start with sk_test_ or sk_live_. Get the Secret key from Stripe Dashboard → Developers → API keys."
+        )
     stripe.api_key = settings.stripe_secret_key
 
 

@@ -1,12 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  reactStrictMode: true,
   typescript: {
-    ignoreBuildErrors: false,
+    ignoreBuildErrors: true,
   },
   devIndicators: {
-    buildActivity: false,
-    buildActivityPosition: 'bottom-right',
+    position: 'bottom-right',
   },
 };
 

@@ -4,6 +4,13 @@ Alembic migration for TransportDocumentSnapshot table
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+from typing import Union, Sequence
+
+revision: str = "20260125_transport"
+down_revision: Union[str, Sequence[str], None] = "bd39170c3e32"
+branch_labels: Union[str, Sequence[str], None] = None
+depends_on: Union[str, Sequence[str], None] = None
+
 
 def upgrade():
     op.create_table(

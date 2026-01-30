@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
@@ -73,7 +73,7 @@ const FIRE_CHECKS: CheckItem[] = [
   { key: "thermal_camera_ok", label: "Thermal imaging camera", category: "fire" },
 ];
 
-export default function DVIRPage() {
+function DVIRClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedVehicle = searchParams.get("vehicle");
@@ -398,5 +398,13 @@ export default function DVIRPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function DVIRPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-zinc-950" />}>
+      <DVIRClient />
+    </Suspense>
   );
 }

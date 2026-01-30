@@ -46,3 +46,17 @@ def facesheet_status(
     patient = get_scoped_record(db, request, Patient, epcr_patient_id, user, resource_label="epcr")
     service = FacesheetRetriever(db, user.org_id)
     return service.facesheet_status(patient)
+
+
+@router.post("/send-fax")
+def send_facesheet_request_fax(
+    payload: FacesheetRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin, UserRole.billing)),
+):
+    """Send an outbound fax to the facility requesting a facesheet. Call after /request when details.outbound_fax_available is true."""
+    require_telnyx_enabled()
+    patient = get_scoped_record(db, request, Patient, payload.epcr_patient_id, user, resource_label="epcr")
+    service = FacesheetRetriever(db, user.org_id)
+    return service.send_facesheet_request_fax(patient)

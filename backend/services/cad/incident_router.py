@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from math import asin, cos, radians, sin, sqrt
-from typing import Literal
+from typing import List, Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
@@ -275,18 +275,62 @@ def _compose_crewlink_payload(incident: CADIncident, unit: Unit | None) -> dict[
     }
 
 
-@router.get("", response_model=list[IncidentResponse])
-def list_incidents(
+def _incident_to_dashboard(incident: CADIncident, db: Session) -> dict:
+    """Shape for dashboard/list: id, incident_number, incident_type, priority, status, address, created_at, assigned_units."""
+    unit_ids = [incident.assigned_unit_id] if incident.assigned_unit_id else []
+    units = db.query(Unit).filter(Unit.id.in_(unit_ids)).all() if unit_ids else []
+    return {
+        "id": incident.id,
+        "incident_number": f"T{incident.id:06d}",
+        "incident_type": incident.transport_type,
+        "priority": incident.priority,
+        "status": incident.status,
+        "address": incident.requesting_facility or "",
+        "created_at": incident.created_at.isoformat() if incident.created_at else "",
+        "assigned_units": [u.unit_identifier for u in units],
+    }
+
+
+@router.get("/active")
+def list_active_incidents(
     request: Request,
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
 ):
+    """Active incidents only (excludes completed/cancelled). For dashboard."""
     incidents = (
         scoped_query(db, CADIncident, user.org_id, request.state.training_mode)
+        .filter(CADIncident.status.in_(list(ACTIVE_INCIDENT_STATUSES)))
         .order_by(CADIncident.created_at.desc())
         .all()
     )
-    return incidents
+    return [_incident_to_dashboard(inc, db) for inc in incidents]
+
+
+@router.get("")
+def list_incidents(
+    request: Request,
+    page: int = 1,
+    limit: int = 20,
+    status_filter: Optional[str] = None,
+    priority_filter: Optional[str] = None,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher)),
+):
+    """List incidents with optional pagination and filters. Returns { incidents, total_pages }."""
+    query = scoped_query(db, CADIncident, user.org_id, request.state.training_mode)
+    if status_filter and status_filter != "all":
+        query = query.filter(CADIncident.status == status_filter)
+    if priority_filter and priority_filter != "all":
+        query = query.filter(CADIncident.priority == priority_filter)
+    total = query.count()
+    total_pages = max(1, (total + limit - 1) // limit)
+    offset = (page - 1) * limit
+    incidents = query.order_by(CADIncident.created_at.desc()).offset(offset).limit(limit).all()
+    return {
+        "incidents": [_incident_to_dashboard(inc, db) for inc in incidents],
+        "total_pages": total_pages,
+    }
 
 
 @router.post("", response_model=IncidentResponse, status_code=status.HTTP_201_CREATED)

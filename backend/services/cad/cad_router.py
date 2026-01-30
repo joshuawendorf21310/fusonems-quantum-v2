@@ -161,6 +161,34 @@ def list_calls(
     ).all()
 
 
+@router.get("/units/status")
+def get_units_status(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles()),
+):
+    """Unit status list for CAD dashboard: unit_id, status, current_incident?, last_updated."""
+    from models.cad import CADIncident
+    units = scoped_query(db, Unit, user.org_id, request.state.training_mode).order_by(
+        Unit.unit_identifier.asc()
+    ).all()
+    active_incidents = (
+        scoped_query(db, CADIncident, user.org_id, request.state.training_mode)
+        .filter(CADIncident.assigned_unit_id.isnot(None))
+        .all()
+    )
+    unit_to_incident = {inc.assigned_unit_id: inc for inc in active_incidents}
+    return [
+        {
+            "unit_id": u.unit_identifier,
+            "status": u.status or "Available",
+            "current_incident": str(unit_to_incident[u.id].id) if u.id in unit_to_incident else None,
+            "last_updated": u.last_update.isoformat() if u.last_update else "",
+        }
+        for u in units
+    ]
+
+
 @router.get("/units")
 def get_units(
     request: Request,

@@ -18,6 +18,14 @@ export const apiClient = axios.create({
 
 if (typeof window !== "undefined") {
   apiClient.interceptors.request.use((config) => {
+    const token = localStorage.getItem("token")
+    if (token) {
+      const existingHeaders = config.headers ?? {}
+      config.headers = {
+        ...(existingHeaders as Record<string, unknown>),
+        Authorization: `Bearer ${token}`,
+      } as unknown as AxiosRequestHeaders
+    }
     const csrfToken = document.cookie
       .split("; ")
       .find((row) => row.startsWith("csrf_token="))
@@ -27,15 +35,6 @@ if (typeof window !== "undefined") {
       config.headers = {
         ...(existingHeaders as Record<string, unknown>),
         "X-CSRF-Token": csrfToken,
-      } as unknown as AxiosRequestHeaders
-    }
-
-    const authToken = localStorage.getItem("token")
-    if (authToken) {
-      const existingHeaders = config.headers ?? {}
-      config.headers = {
-        ...(existingHeaders as Record<string, unknown>),
-        Authorization: `Bearer ${authToken}`,
       } as unknown as AxiosRequestHeaders
     }
     return config
@@ -89,7 +88,10 @@ export async function apiFetch<T = unknown>(
     method: options.method || "GET",
     data: options.body ? JSON.parse(options.body) : undefined,
     headers: options.headers,
-    withCredentials,
+    withCredentials:
+      options.credentials === "omit"
+        ? false
+        : options.withCredentials ?? (options.credentials ? options.credentials === "include" : undefined),
   })
 
   return response.data

@@ -29,7 +29,6 @@ from models.billing_exports import (
 )
 from models.billing_batch5 import (
     BillingAppeal,
-    BillingClaim,
     BillingClaimEvent,
     BillingContact,
     BillingContactAttempt,
@@ -87,10 +86,31 @@ from models.fire_rms import (
     ApparatusMaintenanceRecord,
     FireIncidentSupplement,
 )
+# ensure EPCR tables are loaded before patient portal models
+from models.epcr import Patient, MasterPatient, MasterPatientLink, MasterPatientMerge, NEMSISValidationResult, PatientStateTimeline, NarrativeVersion
+from models.epcr_core import (
+    EpcrAssessment,
+    EpcrIntervention,
+    EpcrMedication,
+    EpcrNarrative,
+    EpcrOcrSnapshot,
+    EpcrRecord,
+    EpcrTimeline,
+    EpcrVitals,
+    OfflineSyncQueue,
+    PreArrivalNotification,
+    ProtocolPathway,
+    ProviderCertification,
+    CertificationType,
+    EpcrValidationRule,
+    EpcrVisibilityRule,
+    EpcrSchematronRule,
+)
+from models.epcr_ems import EpcrEmsRecord
+from models.epcr_fire import EpcrFireRecord
+from models.epcr_hems import EpcrHemsRecord
 # New Patient Portal Models
 from models.patient_portal import (
-    PatientPortalAccount,
-    PatientPortalMessage,
     PatientBill,
     PatientPayment,
     PatientPaymentPlan,
@@ -145,9 +165,9 @@ from models.communications_batch5 import (
     CommsDeliveryAttempt,
     CommsEvent,
     CommsProvider,
-    CommsTemplate,
 )
 from models.documents import DocumentTemplate, DocumentRecord
+from models.founder_documents import FounderDocumentFile, FounderDocumentFolder
 from models.email import EmailAttachmentLink, EmailLabel, EmailMessage, EmailMessageLabel, EmailThread
 from models.fax import FaxRecord, FaxAttachment
 from models.quantum_documents import (
@@ -201,28 +221,6 @@ from models.inventory import InventoryItem, InventoryMovement, InventoryRigCheck
 from models.fleet import FleetInspection, FleetMaintenance, FleetTelemetry, FleetVehicle
 from models.founder_ops import DataGovernanceRule, IncidentCommand, PricingPlan, PwaDistribution
 from models.exports import CarefusionExportSnapshot, DataExportManifest, OrphanRepairAction
-from models.epcr import Patient, MasterPatient, MasterPatientLink, MasterPatientMerge, NEMSISValidationResult, PatientStateTimeline, NarrativeVersion
-from models.epcr_core import (
-    EpcrAssessment,
-    EpcrIntervention,
-    EpcrMedication,
-    EpcrNarrative,
-    EpcrOcrSnapshot,
-    EpcrRecord,
-    EpcrTimeline,
-    EpcrVitals,
-    OfflineSyncQueue,
-    PreArrivalNotification,
-    ProtocolPathway,
-    ProviderCertification,
-    CertificationType,
-    EpcrValidationRule,
-    EpcrVisibilityRule,
-    EpcrSchematronRule,
-)
-from models.epcr_ems import EpcrEmsRecord
-from models.epcr_fire import EpcrFireRecord
-from models.epcr_hems import EpcrHemsRecord
 from models.fire import (
     FireApparatus,
     FireApparatusInventory,
@@ -231,7 +229,6 @@ from models.fire import (
     FireIncident,
     FireIncidentApparatus,
     FireIncidentPersonnel,
-    FirePersonnel,
     FirePreventionRecord,
     FireTrainingRecord,
     FireIncidentTimeline,
@@ -258,6 +255,8 @@ from models.telehealth import (
 )
 from models.user import User, UserRole
 from models.validation import DataValidationIssue, ValidationRule
+from models.terminology_builder import TerminologyEntry
+from models.nemsis_watch import NemsisVersionWatch
 from models.compliance import ForensicAuditLog
 from models.support import SupportInteraction, SupportMirrorEvent, SupportSession
 from models.notifications import InAppNotification, NotificationPreference
@@ -560,6 +559,8 @@ __all__ = [
     "UserRole",
     "Organization",
     "DataValidationIssue",
+    "TerminologyEntry",
+    "NemsisVersionWatch",
     "FireIncident",
     "FireApparatus",
     "FireApparatusInventory",

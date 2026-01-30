@@ -37,17 +37,37 @@ type CallQueueEntry = {
   created_at?: string
 }
 
+type SpeedMetrics = {
+  avg_hours_claim_to_submitted: number
+  min_hours_claim_to_submitted: number
+  max_hours_claim_to_submitted: number
+  first_pass_rate: number
+  submitted_mtd: number
+  pending_count: number
+}
+
 export default function BillingDashboard() {
   const [summary, setSummary] = useState<ConsoleSummary | null>(null)
   const [readyClaims, setReadyClaims] = useState<ClaimReady[]>([])
   const [callQueue, setCallQueue] = useState<CallQueueEntry[]>([])
+  const [speed, setSpeed] = useState<SpeedMetrics | null>(null)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     fetchSummary()
     fetchReadyClaims()
     fetchCallQueue()
+    fetchSpeed()
   }, [])
+
+  const fetchSpeed = async () => {
+    try {
+      const data = await apiFetch<SpeedMetrics>("/billing/console/speed")
+      setSpeed(data)
+    } catch (error) {
+      console.error(error)
+    }
+  }
 
   const fetchSummary = async () => {
     setLoading(true)
@@ -95,10 +115,13 @@ export default function BillingDashboard() {
             <div>
               <p className="section-title" style={{ margin: 0 }}>Billing Dashboard</p>
               <p className="section-subtitle">Live status for claims, AI, facesheets, and calls.</p>
+              <p style={{ margin: "0.35rem 0 0", fontSize: "0.85rem", color: "rgba(255,124,41,0.9)" }}>
+                You&apos;re the only biller—AI does as much as possible. One queue, no round-robin.
+              </p>
             </div>
             <button
               type="button"
-              onClick={fetchSummary}
+              onClick={() => { fetchSummary(); fetchSpeed(); }}
               style={{
                 borderRadius: 8,
                 border: "1px solid rgba(255,255,255,0.3)",
@@ -111,6 +134,37 @@ export default function BillingDashboard() {
               Refresh
             </button>
           </header>
+          {speed != null && (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+                gap: "1rem",
+                marginTop: "1.25rem",
+                padding: "1rem",
+                borderRadius: 12,
+                background: "rgba(12,12,12,0.8)",
+                border: "1px solid rgba(255,124,41,0.2)",
+              }}
+            >
+              <div>
+                <p style={{ margin: 0, color: "#bbb", fontSize: "0.8rem" }}>Avg claim → submitted</p>
+                <strong style={{ fontSize: "1.2rem", color: "var(--accent-orange)" }}>{speed.avg_hours_claim_to_submitted}h</strong>
+              </div>
+              <div>
+                <p style={{ margin: 0, color: "#bbb", fontSize: "0.8rem" }}>First-pass rate</p>
+                <strong style={{ fontSize: "1.2rem", color: "var(--success)" }}>{(speed.first_pass_rate * 100).toFixed(0)}%</strong>
+              </div>
+              <div>
+                <p style={{ margin: 0, color: "#bbb", fontSize: "0.8rem" }}>Submitted (MTD)</p>
+                <strong style={{ fontSize: "1.2rem", color: "#f7f6f3" }}>{speed.submitted_mtd}</strong>
+              </div>
+              <div>
+                <p style={{ margin: 0, color: "#bbb", fontSize: "0.8rem" }}>Pending</p>
+                <strong style={{ fontSize: "1.2rem", color: "#f7f6f3" }}>{speed.pending_count}</strong>
+              </div>
+            </div>
+          )}
           <div
             style={{
               display: "grid",

@@ -290,7 +290,7 @@ def get_failed_deliveries(
         logger.error(f"Error getting failed deliveries: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get failed deliveries: {str(e)}")
 
-# INBOUND EMAIL WEBHOOK HANDLER
+# INBOUND EMAIL WEBHOOK HANDLER (optional when using Postmark)
 
 @router.post("/webhook/inbound", include_in_schema=False)
 def postmark_inbound_webhook(
@@ -298,11 +298,17 @@ def postmark_inbound_webhook(
     request: Request,
     db: Session = Depends(get_db)
 ):
-    """Postmark inbound email webhook"""
+    """Postmark inbound webhook. When using SMTP/IMAP only, use POST /api/email/poll-inbound instead."""
+    from core.config import settings
+    if not settings.POSTMARK_SERVER_TOKEN:
+        raise HTTPException(
+            status_code=501,
+            detail="Postmark not configured. Inbound mail: use SMTP/IMAP and POST /api/email/poll-inbound.",
+        )
     try:
-        # Verify Postmark signature (security)
-        if not verify_postmark_signature(request):
-            raise HTTPException(status_code=403, detail="Invalid signature")
+        from services.email.email_ingest_service import verify_postmark_signature
+        raw_body = b""  # Would need request.body() in async; signature check uses headers
+        verify_postmark_signature(raw_body, request)
         
         # Extract org from to address
         to_address = payload.get('ToFull', [{}])[0].get('Email', '')

@@ -1,7 +1,9 @@
 import os
+from urllib.parse import urlparse
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
 
 from core.database import (
     Base,
@@ -13,7 +15,8 @@ from core.database import (
     get_hems_engine,
     get_telehealth_engine,
 )
-from utils.logger import logger
+from core.config import settings, validate_settings_runtime
+from core.logger import logger
 from utils.time import compute_drift_seconds, parse_device_time, utc_now
 from models import (
     AiInsight,
@@ -43,6 +46,7 @@ from services.billing.prior_auth_router import router as prior_auth_router
 from services.billing.stripe_router import router as stripe_router
 from services.business_ops.business_ops_router import router as business_ops_router
 from services.cad.cad_router import router as cad_router
+from services.cad.incident_router import router as cad_incident_router
 from services.cad.tracking_router import router as tracking_router
 from services.cad.socket_router import router as socket_bridge_router
 from services.compliance.compliance_router import router as compliance_router
@@ -108,6 +112,7 @@ from services.communications.comms_router import router as comms_router, webhook
 from services.communications.sms_webhook import router as sms_webhook_router
 from services.notifications.notification_router import router as notifications_router
 from services.epcr.ocr_router import router as ocr_router
+from services.ai_chat import router as ai_chat_router
 # from services.training.training_center_router import router as training_center_router  # Temporarily disabled
 from services.narcotics.narcotics_router import router as narcotics_router
 from services.medication.medication_router import router as medication_router
@@ -121,6 +126,7 @@ from services.carefusion.patient_router import router as carefusion_patient_rout
 from services.carefusion.provider_router import router as carefusion_provider_router
 from services.marketing.routes import router as marketing_router
 from services.storage.storage_router import router as storage_router
+from services.founder_documents_router import router as founder_documents_router
 from services.metriport.metriport_router import router as metriport_router
 from services.metriport.metriport_webhooks import router as metriport_webhooks_router
 from services.routing.routes import router as routing_router
@@ -137,14 +143,19 @@ from services.billing.patient_balance_router import router as patient_balance_ro
 from services.billing.payment_plan_router import router as payment_plan_router
 from services.billing.denial_alert_router import router as denial_alert_router
 from services.founder.briefing_router import router as briefing_router
+from services.founder.terminology_router import router as founder_terminology_router
+from services.founder.import_export_router import router as founder_import_export_router
 
 from services.transportlink import transport_ai_router
 from services.crewlink.crewlink_router import router as crewlink_router
 from services.events.event_handlers import register_event_handlers
 from services.cad.socket_bridge import initialize_socket_bridge, shutdown_socket_bridge
 from services.cad.bridge_handlers import register_bridge_event_handlers
+from services.screen_share import router as screen_share_router
 
 app = FastAPI(title="FusonEMS Quantum Platform", version="2.0")
+app.include_router(ai_chat_router)
+app.include_router(screen_share_router)
 
 
 def _should_bootstrap_schema() -> bool:
@@ -234,6 +245,7 @@ app.add_middleware(
 )
 app.include_router(socket_bridge_router)
 app.include_router(cad_router)
+app.include_router(cad_incident_router)
 app.include_router(tracking_router)
 app.include_router(epcr_router)
 app.include_router(master_patient_router)
@@ -315,6 +327,9 @@ app.include_router(founder_reporting_router)
 app.include_router(founder_fax_router)
 app.include_router(intelligent_fax_router)
 app.include_router(founder_router)
+app.include_router(founder_terminology_router)
+app.include_router(founder_import_export_router)
+# Note: cron_router integration is temporarily disabled until cron endpoints are implemented
 app.include_router(investor_demo_router)
 app.include_router(oidc_router)
 app.include_router(device_router)
@@ -324,6 +339,7 @@ app.include_router(business_ops_router)
 app.include_router(transport_ai_router)
 app.include_router(crewlink_router)
 app.include_router(storage_router)
+app.include_router(founder_documents_router)
 app.include_router(metriport_router)
 app.include_router(metriport_webhooks_router)
 app.include_router(routing_router)
@@ -395,3 +411,40 @@ def root():
 def healthz():
     logger.info("healthz handler invoked")
     return {"status": "online"}
+
+
+@app.get("/health")
+def health():
+    """Load balancer / monitoring health check (alias for healthz)."""
+    return {"status": "ok"}
+
+
+@app.get("/api/health/telnyx")
+def health_telnyx():
+    """Probe Telnyx API (no auth). Returns configured status and balance if API key is set."""
+    configured = bool(settings.TELNYX_API_KEY and settings.TELNYX_FROM_NUMBER)
+    out = {
+        "configured": configured,
+        "telnyx_number": settings.TELNYX_FROM_NUMBER or None,
+        "status": "missing_credentials" if not configured else None,
+        "probe": "telnyx_balance",
+    }
+    if not configured:
+        return out
+    try:
+        import telnyx
+        client = telnyx.Telnyx(api_key=settings.TELNYX_API_KEY)
+        resp = client.balance.retrieve()
+        data = getattr(resp, "data", resp)
+        out["status"] = "ok"
+        out["balance"] = getattr(data, "available_credit", getattr(data, "balance", None))
+        out["record_type"] = getattr(data, "record_type", None)
+    except ImportError as exc:
+        out["status"] = "error"
+        out["error"] = "telnyx package not installed"
+        logger.warning("Telnyx health check: %s", exc)
+    except Exception as exc:
+        out["status"] = "error"
+        out["error"] = str(exc)
+        logger.warning("Telnyx API probe failed: %s", exc)
+    return out

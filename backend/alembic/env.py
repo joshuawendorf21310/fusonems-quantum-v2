@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
@@ -8,8 +9,16 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Force DATABASE_URL from env (same as app)
+# Load .env so DATABASE_URL is set when running alembic from CLI
 db_url = os.environ.get("DATABASE_URL")
+if not db_url:
+    try:
+        from dotenv import load_dotenv
+        env_path = Path(__file__).resolve().parent.parent / ".env"
+        load_dotenv(env_path)
+        db_url = os.environ.get("DATABASE_URL")
+    except Exception:
+        pass
 if db_url:
     config.set_main_option("sqlalchemy.url", db_url)
 

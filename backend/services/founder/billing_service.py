@@ -302,24 +302,25 @@ class FounderBillingService:
                 "current_date": datetime.utcnow().isoformat()
             }
             
-            # Create prompt for Ollama
-            system_prompt = """You are an expert medical billing AI assistant for NEMSIS compliance and EMS billing. 
-            You help with billing questions, denials, insurance issues, and billing process optimization. 
-            Provide clear, actionable advice based on current billing data and best practices.
-            Always be professional and focus on compliance and revenue optimization."""
+            # Solo biller, new to billing: AI does as much as possible and explains everything in plain language
+            system_prompt = """You are a friendly billing coach for a solo biller who is new to medical billing.
+            Your job is to:
+            1. Do as much of the thinking and next-step planning as possible so they can focus on following your guidance.
+            2. Explain everything in plain language. Define any jargon (e.g. denial, EOB, 837P, NEMSIS) the first time you use it.
+            3. Give clear "what to do next" steps when relevant. Keep answers practical and actionable.
+            4. Be encouraging and concise. Use short paragraphs. If something is optional or advanced, say so.
+            5. Base advice on the billing context provided. When you suggest an action, say where to click or what to do in the system when possible."""
             
-            user_prompt = f"""
-            Current billing context: {json.dumps(context, indent=2)}
+            user_prompt = f"""Current billing context: {json.dumps(context, default=str, indent=2)}
             
-            User question: {question}
+            Question: {question}
             
-            Please provide a helpful, professional response focusing on actionable billing advice. """
+            Answer in plain language, explain any terms, and say what to do next if relevant."""
             
-            # Generate response using Ollama
             response = await self.ollama_client.generate_response(
                 prompt=user_prompt,
                 system_prompt=system_prompt,
-                model="llama3.1:8b"
+                model="llama3.2"
             )
             
             return response or "I'm sorry, I couldn't process your billing question. Please try again."
@@ -327,3 +328,24 @@ class FounderBillingService:
         except Exception as e:
             logger.error(f"Error generating billing AI chat response: {e}")
             return "I'm experiencing an issue. Please try asking your billing question again."
+
+    async def explain_billing_topic(self, topic: str, context: Optional[str] = None) -> str:
+        """Explain a billing term or concept in plain language for someone new to billing."""
+        try:
+            system_prompt = """You are a billing coach for someone brand new to medical/EMS billing.
+            Explain the topic in plain language. Define any jargon. Use 1–3 short paragraphs.
+            If the topic is a screen or workflow (e.g. 'denials page', 'what to do next'), say what each part means and what they should do step by step.
+            Be encouraging and practical. No fluff."""
+            user_prompt = f"Explain this for someone new to billing: {topic}"
+            if context:
+                user_prompt += f"\n\nThey are currently: {context}"
+            user_prompt += "\n\nGive a clear, short explanation."
+            response = await self.ollama_client.generate_response(
+                prompt=user_prompt,
+                system_prompt=system_prompt,
+                model="llama3.2",
+            )
+            return response or f"I don't have an explanation for '{topic}' right now. Try asking in the billing chat."
+        except Exception as e:
+            logger.error(f"Error in explain_billing_topic: {e}")
+            return "Explanation unavailable. Try the billing AI chat with your question."

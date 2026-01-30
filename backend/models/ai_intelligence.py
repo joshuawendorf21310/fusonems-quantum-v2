@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship
 from datetime import datetime, date
 from enum import Enum
 from core.database import Base
+from models.cad import Call, Unit
 
 
 class PredictionConfidence(str, Enum):
@@ -105,7 +106,7 @@ class OptimalUnitPlacement(Base):
     recommendation_timestamp = Column(DateTime, nullable=False, index=True)
     
     # Current State
-    current_unit_id = Column(Integer, ForeignKey("units.id"), nullable=False)
+    current_unit_id = Column(Integer, ForeignKey("cad_units.id"), nullable=False)
     current_location = Column(String)
     current_station = Column(String)
     
@@ -144,7 +145,7 @@ class AIDocumentationAssistant(Base):
     __tablename__ = "ai_documentation_assistant"
     
     id = Column(Integer, primary_key=True, index=True)
-    call_id = Column(Integer, ForeignKey("calls.id"), nullable=False)
+    call_id = Column(Integer, ForeignKey("cad_calls.id"), nullable=False)
     
     # AI-Generated Content
     ai_generated_narrative = Column(Text)
@@ -293,7 +294,7 @@ class VideoConferenceSession(Base):
     participants = Column(JSON)  # [{"user_id": 1, "role": "Paramedic"}, {"user_id": 2, "role": "Medical Director"}]
     
     # Related To
-    call_id = Column(Integer, ForeignKey("calls.id"), nullable=True)
+    call_id = Column(Integer, ForeignKey("cad_calls.id"), nullable=True)
     qa_case_id = Column(Integer, ForeignKey("qa_cases.id"), nullable=True)
     
     # Video Platform
@@ -423,7 +424,7 @@ class PointsTransaction(Base):
     
     reason = Column(String, nullable=False)  # "Call Completed", "Documentation Quality", "Badge Earned"
     
-    related_call_id = Column(Integer, ForeignKey("calls.id"))
+    related_call_id = Column(Integer, ForeignKey("cad_calls.id"))
     related_badge_id = Column(Integer, ForeignKey("performance_badges.id"))
     
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -456,7 +457,7 @@ class VoiceCommand(Base):
     execution_result = Column(Text)
     
     # Context
-    call_id = Column(Integer, ForeignKey("calls.id"))
+    call_id = Column(Integer, ForeignKey("cad_calls.id"))
     epcr_id = Column(Integer, ForeignKey("epcr_records.id"))
     
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -467,7 +468,7 @@ class VoiceToTextVitals(Base):
     __tablename__ = "voice_to_text_vitals"
     
     id = Column(Integer, primary_key=True, index=True)
-    call_id = Column(Integer, ForeignKey("calls.id"), nullable=False)
+    call_id = Column(Integer, ForeignKey("cad_calls.id"), nullable=False)
     
     # Voice Input
     voice_transcript = Column(Text, nullable=False)
@@ -500,7 +501,7 @@ class AIProtocolRecommendation(Base):
     __tablename__ = "ai_protocol_recommendations"
     
     id = Column(Integer, primary_key=True, index=True)
-    call_id = Column(Integer, ForeignKey("calls.id"), nullable=False)
+    call_id = Column(Integer, ForeignKey("cad_calls.id"), nullable=False)
     
     # Patient Data Analysis
     chief_complaint = Column(String)
@@ -535,7 +536,7 @@ class DrugInteractionCheck(Base):
     __tablename__ = "drug_interaction_checks"
     
     id = Column(Integer, primary_key=True, index=True)
-    call_id = Column(Integer, ForeignKey("calls.id"), nullable=False)
+    call_id = Column(Integer, ForeignKey("cad_calls.id"), nullable=False)
     
     # Medications Being Administered
     proposed_medication = Column(String, nullable=False)
@@ -566,7 +567,7 @@ class DifferentialDiagnosisAssistant(Base):
     __tablename__ = "differential_diagnosis_assistant"
     
     id = Column(Integer, primary_key=True, index=True)
-    call_id = Column(Integer, ForeignKey("calls.id"), nullable=False)
+    call_id = Column(Integer, ForeignKey("cad_calls.id"), nullable=False)
     
     # Patient Presentation
     chief_complaint = Column(String, nullable=False)

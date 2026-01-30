@@ -1,0 +1,53 @@
+services:
+  redis:
+    image: redis:alpine
+    restart: always
+
+  front:
+    image: ghcr.io/mailu/nginx:1.9
+    restart: always
+    env_file: .env.mailu
+    ports:
+      - "8090:80"
+      - "9443:443"
+    volumes:
+      - mailu_cert:/certs
+      - mailu_overrides:/overrides
+
+  admin:
+    image: ghcr.io/mailu/admin:1.9
+    restart: always
+    env_file: .env.mailu
+    volumes:
+      - mailu_data:/data
+
+  imap:
+    image: ghcr.io/mailu/dovecot:1.9
+    restart: always
+    env_file: .env.mailu
+    volumes:
+      - mailu_mail:/mail
+      - mailu_overrides:/overrides
+
+  smtp:
+    image: ghcr.io/mailu/postfix:1.9
+    restart: always
+    env_file: .env.mailu
+    volumes:
+      - mailu_mail:/mail
+      - mailu_overrides:/overrides
+
+  antispam:
+    image: ghcr.io/mailu/rspamd:1.9
+    restart: always
+    env_file: .env.mailu
+    volumes:
+      - mailu_filter:/var/lib/rspamd
+      - mailu_overrides:/overrides
+
+volumes:
+  mailu_mail:
+  mailu_data:
+  mailu_cert:
+  mailu_filter:
+  mailu_overrides:

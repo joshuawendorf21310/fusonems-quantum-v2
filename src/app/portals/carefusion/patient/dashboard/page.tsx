@@ -21,7 +21,7 @@ interface Provider {
   rating: number
 }
 
-export default function CareFusionPatientDashboard() {
+export default function FusionCarePatientDashboard() {
   const router = useRouter()
   const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([])
   const [featuredProviders, setFeaturedProviders] = useState<Provider[]>([])
@@ -78,7 +78,7 @@ export default function CareFusionPatientDashboard() {
           <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-cyan-500 to-blue-500 bg-clip-text text-transparent">
             Patient Portal
           </h1>
-          <p className="text-zinc-400">Welcome to your CareFusion healthcare dashboard</p>
+          <p className="text-zinc-400">Welcome to your FusionCare healthcare dashboard</p>
         </div>
 
         {/* Quick Actions */}

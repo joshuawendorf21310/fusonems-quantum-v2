@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import Link from "next/link"
@@ -17,7 +17,7 @@ interface Payment {
   created_at: string
 }
 
-export default function PaymentsPage() {
+function PaymentsClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, logout } = useAuth()
@@ -239,5 +239,13 @@ export default function PaymentsPage() {
         )}
       </main>
     </div>
+  )
+}
+
+export default function PaymentsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-zinc-950" />}>
+      <PaymentsClient />
+    </Suspense>
   )
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { addEscalation, getThread } from "@/lib/core/commsStore"
 import { audit } from "@/lib/core/audit"
+import type { AwaitableRouteContext } from "@/lib/route-context"
 
 const bodySchema = z.object({
   reason: z.string().min(3),

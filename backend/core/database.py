@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, declarative_base, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from core.config import settings
+from core.logger import logger
 
 
 def _connect_args(database_url: str) -> dict[str, object]:
@@ -119,11 +120,8 @@ HemsSessionLocal = get_hems_session_factory()
 
 
 def get_db():
-    print("get_db invoked", flush=True)
     session_factory = get_session_factory()
-    print("session factory retrieved", session_factory, flush=True)
     db = session_factory()
-    print("session created", db, flush=True)
     try:
         yield db
     finally:
@@ -131,12 +129,8 @@ def get_db():
 
 
 def get_telehealth_db():
-    # Debug: telehealth session factory creation
-    print("get_telehealth_db invoked", flush=True)
     session_factory = get_telehealth_session_factory()
-    print("telehealth session factory retrieved", session_factory, flush=True)
     db = session_factory()
-    print("telehealth session created", db, flush=True)
     try:
         yield db
     finally:
@@ -144,11 +138,8 @@ def get_telehealth_db():
 
 
 def get_fire_db():
-    print("get_fire_db invoked", flush=True)
     session_factory = get_fire_session_factory()
-    print("fire session factory retrieved", session_factory, flush=True)
     db = session_factory()
-    print("fire session created", db, flush=True)
     try:
         yield db
     finally:
@@ -156,28 +147,25 @@ def get_fire_db():
 
 
 def get_hems_db():
-    print("get_hems_db invoked", flush=True)
     session_factory = get_hems_session_factory()
-    print("hems session factory retrieved", session_factory, flush=True)
     db = session_factory()
-    print("hems session created", db, flush=True)
     try:
         yield db
     finally:
         db.close()
 
 
-def SessionLocal() -> Session:
+def create_session() -> Session:
     return get_session_factory()()
 
 
-def TelehealthSessionLocal() -> Session:
+def create_telehealth_session() -> Session:
     return get_telehealth_session_factory()()
 
 
-def FireSessionLocal() -> Session:
+def create_fire_session() -> Session:
     return get_fire_session_factory()()
 
 
-def HemsSessionLocal() -> Session:
+def create_hems_session() -> Session:
     return get_hems_session_factory()()

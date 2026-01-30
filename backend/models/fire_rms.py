@@ -19,7 +19,7 @@ class HydrantStatus(str, Enum):
 
 
 class FirePersonnel(Base):
-    __tablename__ = "fire_rms_personnel"
+    __tablename__ = "fire_personnel"
     
     id = Column(Integer, primary_key=True, index=True)
     org_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
@@ -308,4 +308,3 @@ class FireIncidentSupplement(Base):
     training_mode = Column(Boolean, default=False)
     classification = Column(String, default="OPS")
     created_at = Column(DateTime, default=datetime.utcnow)
-

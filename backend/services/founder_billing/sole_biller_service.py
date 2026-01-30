@@ -8,8 +8,10 @@ from models.founder_billing import (
     StatementLifecycleState, DeliveryChannel, AIActionType
 )
 import lob
-import requests
 from jinja2 import Template
+
+from core.config import settings
+from services.email.email_transport_service import send_smtp_email_simple
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +33,6 @@ class SoleBillerService:
         self.db = db
         self.config = config
         self.lob_client = lob.Client(api_key=config.lob_api_key) if config.lob_api_key else None
-        self.postmark_api_key = config.postmark_api_key
     
     def generate_statement(
         self,
@@ -211,49 +212,30 @@ class SoleBillerService:
         return successes / len(channel_deliveries)
     
     def _send_via_email(self, statement: PatientStatement, delivery: StatementDelivery) -> bool:
-        """Send statement via Postmark email."""
-        if not self.postmark_api_key:
-            logger.error("Postmark API key not configured")
-            delivery.failure_reason = "Postmark API key not configured"
+        """Send statement via SMTP (Mailu/self-hosted)."""
+        if not settings.SMTP_HOST or not settings.SMTP_USERNAME or not settings.SMTP_PASSWORD:
+            logger.error("SMTP not configured")
+            delivery.failure_reason = "SMTP settings not configured"
             return False
-        
+
         patient = statement.patient
         if not patient.email:
             delivery.failure_reason = "Patient email not available"
             return False
-        
+
         try:
-            # Generate statement HTML
             html_content = self._generate_statement_html(statement)
-            
-            # Send via Postmark
-            response = requests.post(
-                "https://api.postmarkapp.com/email",
-                headers={
-                    "Accept": "application/json",
-                    "Content-Type": "application/json",
-                    "X-Postmark-Server-Token": self.postmark_api_key
-                },
-                json={
-                    "From": "billing@fusionems.com",
-                    "To": patient.email,
-                    "Subject": f"Statement #{statement.statement_number} - Balance Due: ${statement.balance_due:.2f}",
-                    "HtmlBody": html_content,
-                    "MessageStream": "outbound",
-                    "TrackOpens": True,
-                    "TrackLinks": "HtmlOnly"
-                }
+            subject = f"Statement #{statement.statement_number} - Balance Due: ${statement.balance_due:.2f}"
+            from_addr = settings.BILLING_FROM_EMAIL or settings.SMTP_FROM_EMAIL or settings.SMTP_USERNAME
+            send_smtp_email_simple(
+                to=patient.email,
+                subject=subject,
+                html_body=html_content,
+                from_addr=from_addr,
             )
-            
-            if response.status_code == 200:
-                data = response.json()
-                delivery.postmark_message_id = data.get("MessageID")
-                delivery.email_address = patient.email
-                return True
-            else:
-                delivery.failure_reason = f"Postmark error: {response.text}"
-                return False
-        
+            delivery.email_address = patient.email
+            delivery.postmark_message_id = None  # SMTP; no external message ID
+            return True
         except Exception as e:
             logger.error(f"Email send failed: {str(e)}")
             delivery.failure_reason = str(e)

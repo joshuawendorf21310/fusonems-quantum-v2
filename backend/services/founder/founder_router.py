@@ -523,10 +523,75 @@ def builders_health(
     user: User = Depends(require_roles(UserRole.founder, UserRole.ops_admin)),
 ):
     from services.founder.system_health_service import SystemHealthService
-    
+
     builders = SystemHealthService.get_builder_systems_health(db, user.org_id)
-    
+
     return {
         "builders": builders,
         "timestamp": datetime.utcnow().isoformat()
     }
+
+
+# ---------- NEMSIS version watch: check for NEMSIS standard updates and notify founders ----------
+
+@router.get("/nemsis-watch/status")
+def nemsis_watch_status(
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.founder, UserRole.admin)),
+):
+    """Return last known NEMSIS version and last check time (no external fetch)."""
+    from services.founder.nemsis_watch_service import get_or_create_watch_row
+    row = get_or_create_watch_row(db)
+    return {
+        "last_known_version": row.last_known_version,
+        "last_checked_at": row.last_checked_at.isoformat() if row.last_checked_at else None,
+        "last_notified_version": row.last_notified_version,
+    }
+
+
+@router.post("/nemsis-watch/check")
+def nemsis_watch_check(
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.founder, UserRole.admin)),
+):
+    """Check nemsis.org for current version; if newer than last known, notify founders (in-app + email)."""
+    from services.founder.nemsis_watch_service import check_nemsis_version
+    return check_nemsis_version(db)
+
+
+# ---------- Founder AI Assistant: ChatGPT-like fix / add / enhance / suggest / self-heal ----------
+
+class AIAssistantChatRequest(BaseModel):
+    message: str
+    allow_self_heal: bool = False
+    history: list[dict[str, str]] | None = None
+
+
+@router.post("/ai-assistant/chat")
+async def ai_assistant_chat(
+    payload: AIAssistantChatRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.founder, UserRole.admin)),
+):
+    """Chat with the founder AI assistant. Optional self-heal runs safe actions (retry failed jobs, NEMSIS check)."""
+    from services.founder.ai_assistant_service import chat as ai_chat
+    result = await ai_chat(
+        db=db,
+        org_id=user.org_id,
+        user_message=payload.message.strip(),
+        allow_self_heal=payload.allow_self_heal,
+        history=payload.history,
+    )
+    audit_and_event(
+        db=db,
+        request=request,
+        user=user,
+        action="chat",
+        resource="founder_ai_assistant",
+        classification="OPS",
+        after_state={"allow_self_heal": payload.allow_self_heal, "actions_count": len(result.get("actions_taken", []))},
+        event_type="founder.ai_assistant.chat",
+        event_payload={"actions_taken": len(result.get("actions_taken", []))},
+    )
+    return result

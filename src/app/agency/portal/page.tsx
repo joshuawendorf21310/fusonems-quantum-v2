@@ -15,6 +15,11 @@ interface ThirdPartyAgency {
   total_accounts: number
   active_accounts: number
   messages_pending: number
+  state?: string
+  service_types?: string[]  // "ambulance" | "fire" | "hems"
+  base_charge_cents?: number | null
+  per_call_cents?: number | null
+  billing_interval?: string
 }
 
 interface AgencyMessage {
@@ -56,12 +61,12 @@ export default function AgencyPortalDashboard() {
   const fetchAgencyData = async () => {
     try {
       const [agenciesData, messagesData, analyticsData] = await Promise.all([
-        apiFetch<ThirdPartyAgency[]>("/api/agency-portal/agencies"),
-        apiFetch<AgencyMessage[]>("/api/agency-portal/messages?status=pending"),
-        apiFetch<AgencyAnalytics[]>("/api/agency-portal/analytics")
+        apiFetch<ThirdPartyAgency[]>("/api/agency/agencies"),
+        apiFetch<AgencyMessage[]>("/api/agency/messages?status=pending&all=true"),
+        apiFetch<AgencyAnalytics[]>("/api/agency/analytics")
       ])
       setAgencies(agenciesData)
-      setMessages(messagesData)
+      setMessages(Array.isArray(messagesData) ? messagesData : [])
       setAnalytics(analyticsData)
       setLoading(false)
     } catch (err) {
@@ -132,8 +137,16 @@ export default function AgencyPortalDashboard() {
                 Third-Party Billing Agency Portal
               </p>
               <h2 className="text-3xl font-bold text-white mb-2">Multi-Agency Management</h2>
-              <p className="text-gray-400">
-                10-step onboarding wizard, AI-powered messaging, operational analytics, and complete agency isolation.
+              <p className="text-gray-400 mb-2">
+                Ambulance, Fire & HEMS billing—10-step onboarding, AI-powered messaging, operational analytics, and complete agency isolation.
+              </p>
+              <div className="flex flex-wrap gap-2 mb-2">
+                <span className="px-2 py-0.5 rounded text-xs font-medium bg-orange-500/20 text-orange-300 border border-orange-500/30">Ambulance</span>
+                <span className="px-2 py-0.5 rounded text-xs font-medium bg-orange-500/20 text-orange-300 border border-orange-500/30">Fire</span>
+                <span className="px-2 py-0.5 rounded text-xs font-medium bg-orange-500/20 text-orange-300 border border-orange-500/30">HEMS</span>
+              </div>
+              <p className="text-orange-200/90 text-sm">
+                We started in Wisconsin; we're built to scale nationwide. Fair pricing: base + per transport—state by state.
               </p>
             </header>
 
@@ -170,6 +183,8 @@ export default function AgencyPortalDashboard() {
                   <thead className="bg-gray-950 border-b border-gray-800">
                     <tr>
                       <th className="text-left p-4 text-sm font-semibold text-gray-400">Agency Name</th>
+                      <th className="text-left p-4 text-sm font-semibold text-gray-400">State</th>
+                      <th className="text-left p-4 text-sm font-semibold text-gray-400">Service Types</th>
                       <th className="text-left p-4 text-sm font-semibold text-gray-400">Contact Email</th>
                       <th className="text-left p-4 text-sm font-semibold text-gray-400">Onboarding Status</th>
                       <th className="text-left p-4 text-sm font-semibold text-gray-400">Progress</th>
@@ -183,6 +198,20 @@ export default function AgencyPortalDashboard() {
                     {agencies.map((agency) => (
                       <tr key={agency.id} className="border-b border-gray-800 hover:bg-gray-800 transition cursor-pointer">
                         <td className="p-4 text-white font-semibold">{agency.agency_name}</td>
+                        <td className="p-4 text-gray-300 text-sm font-medium">{agency.state || "—"}</td>
+                        <td className="p-4">
+                          {(agency.service_types && agency.service_types.length > 0) ? (
+                            <div className="flex flex-wrap gap-1">
+                              {agency.service_types.map((t) => (
+                                <span key={t} className="px-2 py-0.5 rounded text-xs font-medium bg-gray-700 text-gray-300 capitalize">
+                                  {t}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-gray-500 text-sm">—</span>
+                          )}
+                        </td>
                         <td className="p-4 text-gray-400 text-sm">{agency.contact_email}</td>
                         <td className="p-4">
                           <span className={`px-2 py-1 rounded text-xs font-medium ${getOnboardingColor(agency.onboarding_status)}`}>

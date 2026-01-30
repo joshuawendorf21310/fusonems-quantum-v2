@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const params = await context.params
   try {
     const token = request.headers.get('Authorization')?.replace('Bearer ', '');
     if (!token) {

@@ -463,7 +463,7 @@ Functions:
 
 3. **Enhanced Vitals Panel**
    - No vitals entry form
-   - No Bluetooth device integration (monitor, glucometer, etc.)
+   - No Bluetooth device integration (we use OCR for equipment screens/vitals instead)
 
 4. **Crew Communication**
    - No unit-to-dispatch messaging

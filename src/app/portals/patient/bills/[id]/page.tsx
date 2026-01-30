@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
 import Link from "next/link"
+import { BILLING_EMAIL, BILLING_PHONE } from "@/lib/site-contact"
 
 interface Bill {
   id: number
@@ -221,8 +222,12 @@ export default function BillDetailPage() {
               <div className="space-y-3 text-sm">
                 <p className="text-zinc-400">
                   If you have questions about this bill, please contact our billing department at{" "}
-                  <a href="tel:1-800-555-0123" className="text-blue-400 hover:text-blue-300">
-                    1-800-555-0123
+                  <a href={`tel:${BILLING_PHONE.replace(/\D/g, "")}`} className="text-blue-400 hover:text-blue-300">
+                    {BILLING_PHONE}
+                  </a>
+                  {" "}or{" "}
+                  <a href={`mailto:${BILLING_EMAIL}`} className="text-blue-400 hover:text-blue-300">
+                    {BILLING_EMAIL}
                   </a>
                   .
                 </p>

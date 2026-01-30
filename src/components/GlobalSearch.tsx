@@ -26,7 +26,7 @@ const moduleColors: { [key: string]: string } = {
   Reports: 'bg-orange-500',
 };
 
-const filters = ['All', 'Patients', 'Bills', 'Units', 'Personnel', 'ePCR'];
+const filters = ['All', 'ePCR', 'CAD', 'Fleet', 'Bills', 'Personnel', 'Patients', 'Scheduling', 'Compliance', 'Reports'];
 
 const popularSearches = [
   'Active CAD Incidents',

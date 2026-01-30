@@ -3,6 +3,8 @@ from sqlalchemy.orm import relationship
 from datetime import datetime, date
 from enum import Enum
 from core.database import Base
+from models.epcr import Patient
+from models.cad import Call
 
 
 class MessageStatus(str, Enum):
@@ -26,7 +28,7 @@ class PatientPortalAccount(Base):
     __tablename__ = "patient_portal_accounts"
     
     id = Column(Integer, primary_key=True, index=True)
-    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
+    patient_id = Column(Integer, ForeignKey("epcr_patients.id"), nullable=False)
     
     email = Column(String, unique=True, nullable=False, index=True)
     phone = Column(String)
@@ -63,7 +65,7 @@ class PatientPortalMessage(Base):
     __tablename__ = "patient_portal_messages"
     
     id = Column(Integer, primary_key=True, index=True)
-    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
+    patient_id = Column(Integer, ForeignKey("epcr_patients.id"), nullable=False)
     
     subject = Column(String, nullable=False)
     message_body = Column(Text, nullable=False)
@@ -93,12 +95,12 @@ class MedicalRecordRequest(Base):
     __tablename__ = "medical_record_requests"
     
     id = Column(Integer, primary_key=True, index=True)
-    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
+    patient_id = Column(Integer, ForeignKey("epcr_patients.id"), nullable=False)
     
     request_type = Column(String, nullable=False)  # Full Records, Specific Incident, Date Range
     
     # Specific Incident
-    incident_id = Column(Integer, ForeignKey("calls.id"), nullable=True)
+    incident_id = Column(Integer, ForeignKey("cad_calls.id"), nullable=True)
     
     # Date Range
     date_range_start = Column(Date)
@@ -135,7 +137,7 @@ class PatientBillPayment(Base):
     __tablename__ = "patient_bill_payments"
     
     id = Column(Integer, primary_key=True, index=True)
-    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
+    patient_id = Column(Integer, ForeignKey("epcr_patients.id"), nullable=False)
     statement_id = Column(Integer, ForeignKey("patient_statements.id"), nullable=True)
     
     payment_amount = Column(Float, nullable=False)
@@ -178,7 +180,7 @@ class AppointmentRequest(Base):
     __tablename__ = "appointment_requests"
     
     id = Column(Integer, primary_key=True, index=True)
-    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
+    patient_id = Column(Integer, ForeignKey("epcr_patients.id"), nullable=False)
     
     appointment_type = Column(String, nullable=False)  # Follow-Up, Records Pickup, Billing Inquiry
     
@@ -212,7 +214,7 @@ class PatientPortalAccessLog(Base):
     __tablename__ = "patient_portal_access_logs"
     
     id = Column(Integer, primary_key=True, index=True)
-    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
+    patient_id = Column(Integer, ForeignKey("epcr_patients.id"), nullable=False)
     
     access_date = Column(DateTime, default=datetime.utcnow)
     
@@ -230,7 +232,7 @@ class PatientDocumentShare(Base):
     __tablename__ = "patient_document_shares"
     
     id = Column(Integer, primary_key=True, index=True)
-    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
+    patient_id = Column(Integer, ForeignKey("epcr_patients.id"), nullable=False)
     
     document_type = Column(String, nullable=False)  # ePCR, Statement, Lab Result, etc.
     document_id = Column(Integer, nullable=False)
@@ -261,7 +263,7 @@ class PatientPreference(Base):
     __tablename__ = "patient_preferences"
     
     id = Column(Integer, primary_key=True, index=True)
-    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
+    patient_id = Column(Integer, ForeignKey("epcr_patients.id"), nullable=False)
     
     # Communication Preferences
     preferred_contact_method = Column(String)  # Email, Phone, SMS, Portal
@@ -288,8 +290,8 @@ class PatientSurveyResponse(Base):
     __tablename__ = "patient_survey_responses"
     
     id = Column(Integer, primary_key=True, index=True)
-    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
-    call_id = Column(Integer, ForeignKey("calls.id"), nullable=True)
+    patient_id = Column(Integer, ForeignKey("epcr_patients.id"), nullable=False)
+    call_id = Column(Integer, ForeignKey("cad_calls.id"), nullable=True)
     
     survey_sent_at = Column(DateTime)
     survey_completed_at = Column(DateTime)

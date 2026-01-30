@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-
 export async function GET(
   request: NextRequest,
-  { params }: { params: { stationId: string } }
+  context: { params: Promise<{ stationId: string }> }
 ) {
   try {
+    const { stationId } = await context.params
     const token = request.headers.get('Authorization')?.replace('Bearer ', '');
     if (!token) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -18,7 +18,7 @@ export async function GET(
     if (start_date) params_obj.append('start_date', start_date);
     if (end_date) params_obj.append('end_date', end_date);
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/fire-mdt/analytics/station/${params.stationId}?${params_obj}`, {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/fire-mdt/analytics/station/${stationId}?${params_obj}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
 

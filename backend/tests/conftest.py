@@ -12,13 +12,18 @@ if str(backend_root) not in sys.path:
     sys.path.insert(0, str(backend_root))
 
 os.environ["ENV"] = "test"
-os.environ["DATABASE_URL"] = "sqlite:///:memory:"
-os.environ["TELEHEALTH_DATABASE_URL"] = "sqlite:///:memory:"
-os.environ["FIRE_DATABASE_URL"] = "sqlite:///:memory:"
-os.environ["HEMS_DATABASE_URL"] = "sqlite:///:memory:"
+TEST_DB_URL = "postgresql://postgres:postgres@localhost:5432/fusonems_test"
+os.environ["DATABASE_URL"] = TEST_DB_URL
+os.environ["TELEHEALTH_DATABASE_URL"] = TEST_DB_URL
+os.environ["FIRE_DATABASE_URL"] = TEST_DB_URL
+os.environ["HEMS_DATABASE_URL"] = TEST_DB_URL
 os.environ["JWT_SECRET_KEY"] = "test-secret"
 
-from core.database import Base, FireBase, HemsBase, TelehealthBase, get_engine
+from sqlalchemy import text
+
+from core.database import Base, FireBase, HemsBase, TelehealthBase, get_engine, get_hems_engine
+from models.user import User
+from models.organization import Organization
 from main import app
 
 
@@ -223,15 +228,26 @@ def _reset_schema():
     Base.metadata.drop_all(bind=engine)
     FireBase.metadata.drop_all(bind=engine)
     TelehealthBase.metadata.drop_all(bind=engine)
-    HemsBase.metadata.drop_all(bind=engine)
+    hems_engine = get_hems_engine()
+    HemsBase.metadata.drop_all(bind=hems_engine)
 
 
 def _prepare_schema():
     engine = get_engine()
+    with engine.begin() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
+    # Ensure HEMS schema exists before creating tables that reference it
+    hems_engine = get_hems_engine()
+    with hems_engine.begin() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS postgis"))
+        conn.execute(text("CREATE SCHEMA IF NOT EXISTS hems"))
+    # ensure org/user tables exist before dependent schemas
+    Organization.__table__.create(bind=engine, checkfirst=True)
+    User.__table__.create(bind=engine, checkfirst=True)
+    TelehealthBase.metadata.create_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     FireBase.metadata.create_all(bind=engine)
-    TelehealthBase.metadata.create_all(bind=engine)
-    HemsBase.metadata.create_all(bind=engine)
+    HemsBase.metadata.create_all(bind=hems_engine)
 
 
 def create_test_client():

@@ -7,9 +7,9 @@
 **Main site (marketing landing):**
 - http://fusionemsquantum.com
 - http://www.fusionemsquantum.com
-→ Proxies to port 3000 (Marketing Homepage)
+→ Proxies to **port 3000** (Next.js — this repo). `/api/` and `/auth/` are proxied to **port 8000** (FastAPI).
 
-**Important:** The root path `/` must serve the marketing landing page (The Regulated EMS Operating System). Do **not** add nginx/hosting rewrites that send `/` to `/founder`; the founder/admin console is at `/founder`. A 502 at the root usually means the app on port 3000 is down or the proxy is pointing at the wrong upstream.
+**Important:** The root path `/` must serve the marketing landing page (The Regulated EMS Operating System). Do **not** add nginx/hosting rewrites that send `/` to `/founder`; the founder/admin console is at `/founder`. Use `infrastructure/nginx/fusionemsquantum.conf` as the production nginx config for the main domain. A 502 at the root usually means the Next.js app on port 3000 is down or the proxy is pointing at the wrong upstream (e.g. 8000 instead of 3000).
 
 **CAD Dashboard (Admin):**
 - http://cad.fusionemsquantum.com
@@ -68,14 +68,17 @@ certbot --nginx -d fusionemsquantum.com -d www.fusionemsquantum.com -d crew.fusi
 
 ---
 
-## 📊 Running Services
+## 📊 Running Services (port matrix)
 
-- ✅ CAD Dashboard (port 3003) - Next.js
-- ✅ CrewLink PWA (port 3001) - Vite
-- ✅ MDT PWA (port 3002) - Vite
-- ✅ Nginx - Reverse proxy
-- ✅ PostgreSQL - Database
-- ✅ Redis - Cache
+| Port | Service | Used by |
+|------|---------|---------|
+| **3000** | Next.js (this repo) — marketing + app | fusionemsquantum.com (root, pages, static) |
+| **8000** | FastAPI backend | /api/, /auth/, api.fusionemsquantum.com |
+| 3001 | CrewLink PWA (Vite) | crew.fusionemsquantum.com |
+| 3002 | MDT PWA (Vite) | mdt.fusionemsquantum.com |
+| 3003 | CAD Dashboard | cad.fusionemsquantum.com |
+| Nginx | Reverse proxy | Use `infrastructure/nginx/fusionemsquantum.conf` for main domain |
+| PostgreSQL, Redis | Database / cache | Backend |
 
 ---
 

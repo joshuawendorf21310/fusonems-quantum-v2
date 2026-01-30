@@ -3,35 +3,10 @@ from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, JSON, Num
 from core.database import Base
 
 
-class PatientPortalAccount(Base):
-    __tablename__ = "patient_portal_accounts"
-
-    id = Column(Integer, primary_key=True, index=True)
-    org_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
-    patient_name = Column(String, nullable=False)
-    email = Column(String, default="")
-    phone = Column(String, default="")
-    date_of_birth = Column(DateTime(timezone=True), nullable=True)
-    address = Column(Text, default="")
-    status = Column(String, default="active")
-    preferences = Column(JSON, nullable=False, default=dict)
-    training_mode = Column(Boolean, default=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
-class PatientPortalMessage(Base):
-    __tablename__ = "patient_portal_messages"
 
-    id = Column(Integer, primary_key=True, index=True)
-    org_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
-    account_id = Column(Integer, ForeignKey("patient_portal_accounts.id"), nullable=False)
-    sender = Column(String, default="patient")
-    message = Column(String, nullable=False)
-    status = Column(String, default="new")
-    payload = Column(JSON, nullable=False, default=dict)
-    training_mode = Column(Boolean, default=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
 
 
 class PatientBill(Base):
@@ -56,7 +31,7 @@ class PatientBill(Base):
     due_date = Column(DateTime(timezone=True), nullable=True)
     insurance_claim_status = Column(String, default="pending")
     notes = Column(Text, default="")
-    metadata = Column(JSON, nullable=False, default=dict)
+    meta_data = Column(JSON, nullable=False, default=dict)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -79,7 +54,7 @@ class PatientPayment(Base):
     payment_method_last4 = Column(String, default="")
     failure_reason = Column(Text, default="")
     receipt_url = Column(String, default="")
-    metadata = Column(JSON, nullable=False, default=dict)
+    meta_data = Column(JSON, nullable=False, default=dict)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -104,7 +79,7 @@ class PatientPaymentPlan(Base):
     next_payment_date = Column(DateTime(timezone=True), nullable=True)
     status = Column(String, default="active")
     auto_pay_enabled = Column(Boolean, default=False)
-    metadata = Column(JSON, nullable=False, default=dict)
+    meta_data = Column(JSON, nullable=False, default=dict)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
@@ -121,6 +96,6 @@ class StripeCustomer(Base):
     email = Column(String, default="")
     name = Column(String, default="")
     default_payment_method = Column(String, default="")
-    metadata = Column(JSON, nullable=False, default=dict)
+    meta_data = Column(JSON, nullable=False, default=dict)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

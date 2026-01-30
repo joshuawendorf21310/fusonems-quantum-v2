@@ -1,7 +1,8 @@
 """
-Founder Email Service - Complete Postmark Integration
+Founder Email Service - SMTP/IMAP (Mailu/self-hosted).
 
-Provides:\n1. Founder dashboard email management\n2. Send/receive emails via Postmark\n3. Email communication tracking\n4. AI-assisted email composition\n5. Founder-focused email analytics
+Provides: Founder dashboard email management, send/receive via SMTP/IMAP,
+email tracking, AI-assisted composition, founder-focused analytics.
 """
 
 from typing import List, Dict, Any, Optional
@@ -9,19 +10,14 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, or_, and_
 
+from core.config import settings
 from models.email import EmailThread, EmailMessage, EmailLabel
 from models.user import User
 from models.organization import Organization
 from utils.logger import logger
-from utils.postmark.client import (
-    send_email, 
-    get_inbound_message, 
-    list_inbound_messages,
-    create_sender_signature,
-    get_server_info
-)
 from utils.write_ops import audit_and_event
 from services.ai import get_ai_assist_config
+from services.email.email_transport_service import send_smtp_email_simple
 
 
 class FounderEmailService:
@@ -41,6 +37,8 @@ class FounderEmailService:
         if org and hasattr(org, 'email_settings') and org.email_settings:
             self.from_address = org.email_settings.get('from_address')
             self.server_info = org.email_settings.get('server_info')
+        if not self.from_address:
+            self.from_address = getattr(settings, "FOUNDER_EMAIL", None) or settings.SMTP_USERNAME or settings.SMTP_FROM_EMAIL or (settings.SMTP_HOST and f"noreply@{settings.SMTP_HOST}") or "noreply@local"
     
     # FOUNDER DASHBOARD FUNCTIONS
     
@@ -197,12 +195,9 @@ class FounderEmailService:
         """Send email as founder"""
         
         if not self.from_address:
-            raise RuntimeError("Email not configured for this organization")
-        
-        # Create email thread if this is first message
+            raise RuntimeError("Email not configured for this organization (set org email_settings.from_address or SMTP_USERNAME)")
+
         thread = self._get_or_create_thread(sender, to_email, subject)
-        
-        # Create email message
         email_message = EmailMessage(
             org_id=self.org_id,
             thread_id=thread.id,
@@ -223,34 +218,27 @@ class FounderEmailService:
                 'template': template_name
             }
         )
-        
         if request:
             apply_training_mode(email_message, request)
-        
         self.db.add(email_message)
         self.db.commit()
         self.db.refresh(email_message)
-        
+
         try:
-            # Send via Postmark
-            response = send_email(
+            send_smtp_email_simple(
                 to=to_email,
-                from_address=self.from_address,
                 subject=subject,
-                body_text=body_text,
-                body_html=body_html,
+                html_body=body_html or body_text,
+                from_addr=self.from_address,
+                text_body=body_text or None,
                 cc=cc_emails,
                 bcc=bcc_emails,
                 reply_to=reply_to,
-                urgent=urgent
             )
-            
-            # Update with Postmark response
             email_message.status = 'delivered'
-            email_message.postmark_message_id = response.get('MessageID', '')
+            email_message.postmark_message_id = ''
             email_message.postmark_record_type = 'Outbound'
-            email_message.meta['postmark_response'] = response
-            
+            email_message.meta['transport'] = 'smtp'
             if request:
                 audit_and_event(
                     db=self.db,
@@ -267,21 +255,17 @@ class FounderEmailService:
                         'urgent': urgent
                     }
                 )
-            
             logger.info(f"Email sent from founder: {email_message.id} -> {to_email}")
-            
             return {
                 'success': True,
                 'message_id': email_message.id,
-                'postmark_id': response.get('MessageID', ''),
+                'postmark_id': '',
                 'thread_id': thread.id
             }
-            
         except Exception as e:
             email_message.status = 'failed'
             email_message.error_message = str(e)
             self.db.commit()
-            
             logger.error(f"Failed to send email: {e}")
             raise RuntimeError(f"Email send failed: {str(e)}")
     

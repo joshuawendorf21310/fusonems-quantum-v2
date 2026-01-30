@@ -14,22 +14,32 @@ from services.telnyx.helpers import billing_users, module_enabled
 
 
 class TelnyxIVRService:
+    # Dial 1 for billing questions, 2 for payment status, 3 for a person
     INTENT_MAP = {
-        "1": "payment_status",
-        "2": "claim_inquiry",
-        "3": "payer_question",
+        "1": "billing_questions",
+        "2": "payment_status",
+        "3": "speak_to_agent",
     }
+    IVR_MENU_TEXT = (
+        "Thanks for calling. "
+        "Press 1 for billing questions. "
+        "Press 2 for payment status. "
+        "Press 3 to speak with a representative."
+    )
 
     def __init__(self, db: Session, org_id: int):
         self.db = db
         self.org_id = org_id
         self.ai_client = OllamaClient()
 
+    def get_ivr_menu_text(self) -> str:
+        return self.IVR_MENU_TEXT
+
     def detect_caller_intent(self, payload: dict[str, Any]) -> tuple[str, str]:
         digits = payload.get("digits") or payload.get("dtmf") or ""
         transcript = (payload.get("speech_text") or payload.get("text") or "").lower()
         if digits:
-            intent = self.INTENT_MAP.get(digits[0], "general_inquiry")
+            intent = self.INTENT_MAP.get(str(digits)[0], "general_inquiry")
             reason = f"DTMF:{digits}"
         elif "payment" in transcript:
             intent, reason = "payment_status", "keyword:payment"
@@ -41,13 +51,31 @@ class TelnyxIVRService:
             intent, reason = "general_inquiry", "keyword:fallback"
         return intent, reason
 
-    def route_to_ai_agent(self, transcript: str, intent: str) -> dict[str, Any]:
-        prompt = (
-            f"Act as a Telnyx voice agent. Caller intent: {intent}. "
-            f"Transcript: {transcript or 'n/a'}. Provide a concise response with next steps."
+    def route_to_ai_biller_helper(self, transcript: str, intent: str) -> dict[str, Any]:
+        """Ollama as AI biller helper: human-like, short answers for TTS (sounds like a real person)."""
+        from core.config import settings
+        model = getattr(settings, "OLLAMA_IVR_MODEL", None) or "llama3.2"
+        system = (
+            "You are a friendly billing specialist on a live phone call. "
+            "Sound like a real human: use short sentences, a warm tone, and natural language. "
+            "Never say you're an AI, a bot, or an assistant. "
+            "Answer billing and payment questions briefly (1 to 3 sentences max) so it works well when read aloud. "
+            "If you don't know something, say you'll have someone follow up. "
+            "No bullet points, no markdown, no jargon."
         )
-        model = "neural-chat" if intent != "payer_question" else "dolphin-mixtral"
-        return self.ai_client.generate(prompt, model, temperature=0.3)
+        user_part = transcript.strip() if transcript else "The caller just chose an option and may ask a question next."
+        prompt = f"{system}\n\nCaller topic: {intent}. Caller said or selected: {user_part}\n\nYour brief, natural reply (one or two sentences):"
+        return self.ai_client.generate(prompt, model, temperature=0.4)
+
+    def route_to_ai_agent(self, transcript: str, intent: str) -> dict[str, Any]:
+        """Route to AI biller helper (Ollama) for human-like voice responses."""
+        result = self.route_to_ai_biller_helper(transcript, intent)
+        if result.get("status") == "ok" and result.get("response"):
+            text = (result["response"] or "").strip()
+            if len(text) > 400:
+                text = text[:397] + "..."
+            result["response"] = text
+        return result
 
     def record_call_summary(
         self,
@@ -107,6 +135,12 @@ class TelnyxIVRService:
 
 
 class TelnyxFaxHandler:
+    """
+    Inbound fax: Telnyx sends fax.received webhook to /api/telnyx/fax-received.
+    We store the fax, match patient from OCR/facesheet, sync patient data, and notify billers.
+    Outbound fax: Use comms API (POST /api/comms/send/fax) or mail_router send with channel=fax;
+    configure TELNYX_FAX_FROM_NUMBER and TELNYX_CONNECTION_ID (or FAX) for outbound.
+    """
     def __init__(self, db: Session, org_id: int):
         self.db = db
         self.org_id = org_id

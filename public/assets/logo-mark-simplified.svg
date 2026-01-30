@@ -1,0 +1,7 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Simplified Mark: central core + single ring -->
+  <circle cx="256" cy="256" r="165" stroke="#F4F6F8" stroke-width="22" />
+  <circle cx="256" cy="256" r="18" fill="#B86B1E" />
+  <circle cx="256" cy="86" r="10" fill="#3A5A78" />
+  <circle cx="406" cy="256" r="10" fill="#3A5A78" />
+</svg>

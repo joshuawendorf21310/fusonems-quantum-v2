@@ -1,6 +1,8 @@
 import { NavLink } from "react-router-dom"
 import PropTypes from "prop-types"
 import clsx from "clsx"
+import Link from "next/link"
+import Logo from "@/components/Logo"
 import { useAppData } from "../context/useAppData.js"
 import { useAuth } from "../context/useAuth.js"
 import { canAccessModule } from "../utils/access.js"
@@ -45,17 +47,13 @@ export default function Sidebar() {
 
   return (
     <aside className="sidebar" aria-label="Primary">
-      <div className="sidebar-brand">
-        <img
-          src="/assets/logo-icon.svg"
-          alt="FusonEMS"
-          className="sidebar-logo"
-        />
+      <Link href="/" className="sidebar-brand" aria-label="FusionEMS Quantum home">
+        <Logo variant="icon" width={40} height={40} className="sidebar-logo w-10 h-10" />
         <div className="sidebar-brand-text">
-          <span className="sidebar-title">FusonEMS</span>
+          <span className="sidebar-title">FusionEMS</span>
           <span className="sidebar-subtitle">Quantum</span>
         </div>
-      </div>
+      </Link>
 
       <nav className="sidebar-nav">
         <ul role="list">

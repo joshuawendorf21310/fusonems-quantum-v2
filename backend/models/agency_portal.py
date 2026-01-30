@@ -85,6 +85,15 @@ class ThirdPartyBillingAgency(Base):
     
     isolation_boundary = Column(String, nullable=False)
     
+    # Multi-state: Wisconsin-first, US-wide
+    state = Column(String(2), nullable=True, index=True)  # e.g. "WI", "IL"
+    # Service types: ambulance, fire, hems (JSON list, e.g. ["ambulance", "fire", "hems"])
+    service_types = Column(JSON, nullable=True)  # ["ambulance"] | ["fire"] | ["hems"] | any combination
+    # Fair pricing: base + per transport (cents)
+    base_charge_cents = Column(Integer, nullable=True)
+    per_call_cents = Column(Integer, nullable=True)
+    billing_interval = Column(String(20), nullable=True)  # e.g. "monthly"
+    
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

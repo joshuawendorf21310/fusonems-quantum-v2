@@ -217,6 +217,7 @@ export default function MyLearning() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
             className="bg-slate-900/50 backdrop-blur-lg border border-slate-800 rounded-2xl p-6"
+            style={{ minWidth: 320, minHeight: 160 }}
           >
             <div className="flex items-center gap-2 mb-6">
               <BarChart3 size={24} />

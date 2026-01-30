@@ -335,7 +335,7 @@ class FaxAuditLog(Base):
     # Action details
     action_type = Column(String, nullable=False, index=True)  # policy_check, resolution, send_attempt, receive, classify, match, review
     request_id = Column(String, nullable=False, index=True)  # UUID for tracking related actions
-    incident_id = Column(Integer, ForeignKey("incidents.id"), nullable=True, index=True)
+    incident_id = Column(Integer, ForeignKey("cad_incidents.id"), nullable=True, index=True)
     claim_id = Column(Integer, nullable=True)
     
     # Policy reference

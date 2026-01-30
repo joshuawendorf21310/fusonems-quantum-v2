@@ -1,18 +1,24 @@
 from sqlalchemy import Column, String, Integer, Float, Boolean, DateTime, Text, JSON, ForeignKey, Date, Time
 from datetime import datetime, date
-from core.database import Base
+from core.config import settings
+from core.database import HemsBase
+
+HEMS_SCHEMA = None if settings.DATABASE_URL.startswith("sqlite") else "hems"
+SCHEMA_PREFIX = f"{HEMS_SCHEMA}." if HEMS_SCHEMA else ""
+SCHEMA_ARGS = {"schema": HEMS_SCHEMA} if HEMS_SCHEMA else {}
 
 
-class HemsFlightLog(Base):
+class HemsFlightLog(HemsBase):
     """Flight hour logging for FAA compliance"""
     __tablename__ = "hems_flight_logs"
+    __table_args__ = SCHEMA_ARGS
     
     id = Column(Integer, primary_key=True, index=True)
     org_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
     
-    mission_id = Column(Integer, ForeignKey("hems_missions.id"), nullable=True)
-    aircraft_id = Column(Integer, ForeignKey("hems_aircraft.id"), nullable=False)
-    pilot_id = Column(Integer, ForeignKey("hems_crew.id"), nullable=False)
+    mission_id = Column(Integer, ForeignKey(f"{SCHEMA_PREFIX}hems_missions.id"), nullable=True)
+    aircraft_id = Column(Integer, ForeignKey(f"{SCHEMA_PREFIX}hems_aircraft.id"), nullable=False)
+    pilot_id = Column(Integer, ForeignKey(f"{SCHEMA_PREFIX}hems_crew.id"), nullable=False)
     
     flight_date = Column(Date, nullable=False)
     departure_airport = Column(String(4))
@@ -45,13 +51,14 @@ class HemsFlightLog(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
-class HemsAircraftMaintenance(Base):
+class HemsAircraftMaintenance(HemsBase):
     """Aircraft maintenance tracking for FAA Part 135"""
     __tablename__ = "hems_aircraft_maintenance"
+    __table_args__ = SCHEMA_ARGS
     
     id = Column(Integer, primary_key=True, index=True)
     org_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
-    aircraft_id = Column(Integer, ForeignKey("hems_aircraft.id"), nullable=False)
+    aircraft_id = Column(Integer, ForeignKey(f"{SCHEMA_PREFIX}hems_aircraft.id"), nullable=False)
     
     maintenance_type = Column(String, nullable=False)
     description = Column(Text, nullable=False)
@@ -81,13 +88,14 @@ class HemsAircraftMaintenance(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
-class HemsAirworthinessDirective(Base):
+class HemsAirworthinessDirective(HemsBase):
     """FAA Airworthiness Directive compliance tracking"""
     __tablename__ = "hems_airworthiness_directives"
+    __table_args__ = SCHEMA_ARGS
     
     id = Column(Integer, primary_key=True, index=True)
     org_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
-    aircraft_id = Column(Integer, ForeignKey("hems_aircraft.id"), nullable=False)
+    aircraft_id = Column(Integer, ForeignKey(f"{SCHEMA_PREFIX}hems_aircraft.id"), nullable=False)
     
     ad_number = Column(String, nullable=False, index=True)
     subject = Column(String, nullable=False)
@@ -114,9 +122,10 @@ class HemsAirworthinessDirective(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
-class HemsWeatherMinimums(Base):
+class HemsWeatherMinimums(HemsBase):
     """VFR/IFR weather minimums configuration"""
     __tablename__ = "hems_weather_minimums"
+    __table_args__ = SCHEMA_ARGS
     
     id = Column(Integer, primary_key=True, index=True)
     org_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
@@ -149,15 +158,16 @@ class HemsWeatherMinimums(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
-class HemsWeatherDecisionLog(Base):
+class HemsWeatherDecisionLog(HemsBase):
     """Weather decision documentation for each flight"""
     __tablename__ = "hems_weather_decision_logs"
+    __table_args__ = SCHEMA_ARGS
     
     id = Column(Integer, primary_key=True, index=True)
     org_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
     
-    mission_id = Column(Integer, ForeignKey("hems_missions.id"))
-    request_id = Column(Integer, ForeignKey("hems_flight_requests.id"))
+    mission_id = Column(Integer, ForeignKey(f"{SCHEMA_PREFIX}hems_missions.id"))
+    request_id = Column(Integer, ForeignKey(f"{SCHEMA_PREFIX}hems_flight_requests.id"))
     
     decision = Column(String, nullable=False)
     decision_time = Column(DateTime, default=datetime.utcnow)
@@ -194,13 +204,14 @@ class HemsWeatherDecisionLog(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
-class HemsPilotCurrency(Base):
+class HemsPilotCurrency(HemsBase):
     """Pilot currency and certification tracking for Part 135"""
     __tablename__ = "hems_pilot_currency"
+    __table_args__ = SCHEMA_ARGS
     
     id = Column(Integer, primary_key=True, index=True)
     org_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
-    pilot_id = Column(Integer, ForeignKey("hems_crew.id"), nullable=False, unique=True)
+    pilot_id = Column(Integer, ForeignKey(f"{SCHEMA_PREFIX}hems_crew.id"), nullable=False, unique=True)
     
     certificate_number = Column(String, nullable=False)
     certificate_type = Column(String)
@@ -249,13 +260,14 @@ class HemsPilotCurrency(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
-class HemsFlightDutyRecord(Base):
+class HemsFlightDutyRecord(HemsBase):
     """Part 135 flight/duty time tracking"""
     __tablename__ = "hems_flight_duty_records"
+    __table_args__ = SCHEMA_ARGS
     
     id = Column(Integer, primary_key=True, index=True)
     org_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
-    crew_id = Column(Integer, ForeignKey("hems_crew.id"), nullable=False)
+    crew_id = Column(Integer, ForeignKey(f"{SCHEMA_PREFIX}hems_crew.id"), nullable=False)
     
     duty_date = Column(Date, nullable=False)
     
@@ -285,9 +297,10 @@ class HemsFlightDutyRecord(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
-class HemsChecklist(Base):
+class HemsChecklist(HemsBase):
     """Pre-flight and post-flight checklist definitions"""
     __tablename__ = "hems_checklists"
+    __table_args__ = SCHEMA_ARGS
     
     id = Column(Integer, primary_key=True, index=True)
     org_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
@@ -308,18 +321,19 @@ class HemsChecklist(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
-class HemsChecklistCompletion(Base):
+class HemsChecklistCompletion(HemsBase):
     """Completed checklist records"""
     __tablename__ = "hems_checklist_completions"
+    __table_args__ = SCHEMA_ARGS
     
     id = Column(Integer, primary_key=True, index=True)
     org_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
     
     checklist_id = Column(Integer, ForeignKey("hems_checklists.id"), nullable=False)
-    mission_id = Column(Integer, ForeignKey("hems_missions.id"))
-    aircraft_id = Column(Integer, ForeignKey("hems_aircraft.id"), nullable=False)
+    mission_id = Column(Integer, ForeignKey(f"{SCHEMA_PREFIX}hems_missions.id"))
+    aircraft_id = Column(Integer, ForeignKey(f"{SCHEMA_PREFIX}hems_aircraft.id"), nullable=False)
     
-    completed_by_id = Column(Integer, ForeignKey("hems_crew.id"), nullable=False)
+    completed_by_id = Column(Integer, ForeignKey(f"{SCHEMA_PREFIX}hems_crew.id"), nullable=False)
     completed_at = Column(DateTime, default=datetime.utcnow)
     
     hobbs_reading = Column(Float)
@@ -337,15 +351,16 @@ class HemsChecklistCompletion(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 
-class HemsFRATAssessment(Base):
+class HemsFRATAssessment(HemsBase):
     """Flight Risk Assessment Tool scoring"""
     __tablename__ = "hems_frat_assessments"
+    __table_args__ = SCHEMA_ARGS
     
     id = Column(Integer, primary_key=True, index=True)
     org_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
     
-    mission_id = Column(Integer, ForeignKey("hems_missions.id"))
-    request_id = Column(Integer, ForeignKey("hems_flight_requests.id"))
+    mission_id = Column(Integer, ForeignKey(f"{SCHEMA_PREFIX}hems_missions.id"))
+    request_id = Column(Integer, ForeignKey(f"{SCHEMA_PREFIX}hems_flight_requests.id"))
     
     assessed_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     assessed_at = Column(DateTime, default=datetime.utcnow)

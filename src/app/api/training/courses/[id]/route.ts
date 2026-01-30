@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const params = await context.params
   try {
     const authHeader = request.headers.get('authorization');
     if (!authHeader) {
@@ -26,7 +27,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const params = await context.params
   try {
     const authHeader = request.headers.get('authorization');
     if (!authHeader) {
@@ -58,7 +60,8 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const params = await context.params
   try {
     const authHeader = request.headers.get('authorization');
     if (!authHeader) {

@@ -31,7 +31,6 @@ from models.communications_batch5 import (
     CommsDeliveryAttempt,
     CommsEvent,
     CommsProvider,
-    CommsTemplate,
 )
 from models.quantum_documents import RetentionPolicy
 from models.module_registry import ModuleRegistry
@@ -121,7 +120,7 @@ def _send_telnyx(channel: str, recipient: str, body: str, media_url: str = "") -
     telnyx.api_key = settings.TELNYX_API_KEY
     if channel == "sms":
         response = telnyx.Message.create(
-            from_=settings.TELNYX_NUMBER,
+            from_=settings.TELNYX_FROM_NUMBER,
             to=recipient,
             text=body,
             messaging_profile_id=settings.TELNYX_MESSAGING_PROFILE_ID or None,
@@ -133,7 +132,7 @@ def _send_telnyx(channel: str, recipient: str, body: str, media_url: str = "") -
         response = telnyx.Fax.create(
             connection_id=settings.TELNYX_CONNECTION_ID,
             to=recipient,
-            from_=settings.TELNYX_NUMBER,
+            from_=settings.TELNYX_FAX_FROM_NUMBER or settings.TELNYX_FROM_NUMBER,
             media_url=media_url,
         )
         return response.id
@@ -141,7 +140,7 @@ def _send_telnyx(channel: str, recipient: str, body: str, media_url: str = "") -
         response = telnyx.Call.create(
             connection_id=settings.TELNYX_CONNECTION_ID,
             to=recipient,
-            from_=settings.TELNYX_NUMBER,
+            from_=settings.TELNYX_FROM_NUMBER,
         )
         return response.id
     raise HTTPException(status_code=422, detail="Unsupported channel")
@@ -157,7 +156,7 @@ def _parse_occurred_at(value: Optional[str]) -> Optional[datetime]:
 
 
 def _verify_telnyx_signature(raw_body: bytes, request: Request) -> None:
-    if not settings.TELNYX_REQUIRE_SIGNATURE:
+    if not getattr(settings, "TELNYX_REQUIRE_SIGNATURE", False):
         return
     signature = request.headers.get("telnyx-signature-ed25519")
     timestamp = request.headers.get("telnyx-timestamp")
@@ -183,10 +182,10 @@ def _verify_telnyx_signature(raw_body: bytes, request: Request) -> None:
 
 @router.get("/health")
 def comms_health():
-    configured = bool(settings.TELNYX_API_KEY and settings.TELNYX_NUMBER)
+    configured = bool(settings.TELNYX_API_KEY and settings.TELNYX_FROM_NUMBER)
     response = {
         "configured": configured,
-        "telnyx_number": settings.TELNYX_NUMBER or None,
+        "telnyx_number": settings.TELNYX_FROM_NUMBER or None,
         "probe": "skipped",
     }
     if not configured:
@@ -195,11 +194,12 @@ def comms_health():
     try:
         import telnyx
 
-        telnyx.api_key = settings.TELNYX_API_KEY
-        balance = telnyx.Balance.retrieve()
+        client = telnyx.Telnyx(api_key=settings.TELNYX_API_KEY)
+        resp = client.balance.retrieve()
+        data = getattr(resp, "data", resp)
         response["status"] = "ok"
         response["probe"] = "telnyx_balance"
-        response["balance"] = getattr(balance, "available_credit", None)
+        response["balance"] = getattr(data, "available_credit", getattr(data, "balance", None))
     except Exception as exc:  # noqa: BLE001 - surface status for ops
         response["status"] = "error"
         response["probe"] = "telnyx_balance"
@@ -1334,7 +1334,7 @@ def create_template(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.dispatcher, UserRole.founder)),
 ):
-    template = CommsTemplate(org_id=user.org_id, **payload.dict())
+    template = CommsTemplate(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(template, request)
     db.add(template)
     db.commit()
@@ -1369,7 +1369,7 @@ def update_template(
     if not template:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Template not found")
     before = model_snapshot(template)
-    update_data = payload.dict(exclude_unset=True)
+    update_data = payload.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(template, key, value)
     db.commit()
@@ -1425,7 +1425,7 @@ def create_task(
     return model_snapshot(task)
 
 
-class ThreadCreate(BaseModel):
+class ThreadCreateRequest(BaseModel):
     channel: str = "email"
     subject: str = ""
     priority: str = "Normal"
@@ -1452,12 +1452,12 @@ class SendTelnyx(BaseModel):
 
 @router.post("/thread/create", status_code=status.HTTP_201_CREATED)
 def create_thread_alias(
-    payload: ThreadCreate,
+    payload: ThreadCreateRequest,
     request: Request,
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.billing, UserRole.compliance, UserRole.founder)),
 ):
-    thread = CommsThread(org_id=user.org_id, **payload.dict())
+    thread = CommsThread(org_id=user.org_id, **payload.model_dump())
     apply_training_mode(thread, request)
     db.add(thread)
     db.commit()
@@ -1503,7 +1503,7 @@ def get_thread_detail(
 
 
 @router.post("/send/email", status_code=status.HTTP_201_CREATED)
-def send_email(
+def send_email_message(
     payload: SendEmail,
     request: Request,
     db: Session = Depends(get_db),
@@ -1519,7 +1519,12 @@ def send_email(
             .first()
         )
     if not thread:
-        thread = CommsThread(org_id=user.org_id, channel="email", subject=payload.subject)
+        thread = CommsThread(
+            org_id=user.org_id,
+            channel="email",
+            subject=payload.subject,
+            participants=list({user.email, *payload.recipients}),
+        )
         apply_training_mode(thread, request)
         db.add(thread)
         db.commit()
@@ -1566,13 +1571,13 @@ def send_email(
         event.status = "failed"
         event.error = str(exc.detail)
         db.commit()
-        _record_attempt(db, event, "postmark", "failed", {}, str(exc.detail))
+        _record_attempt(db, event, "smtp", "failed", {}, str(exc.detail))
         raise
     return {"thread": model_snapshot(thread), "message": model_snapshot(message)}
 
 
 @router.post("/send/sms", status_code=status.HTTP_201_CREATED)
-def send_sms(
+def send_sms_message(
     payload: SendTelnyx,
     request: Request,
     db: Session = Depends(get_db),
@@ -1586,7 +1591,12 @@ def send_sms(
             .first()
         )
     if not thread:
-        thread = CommsThread(org_id=user.org_id, channel="sms", subject="SMS")
+        thread = CommsThread(
+            org_id=user.org_id,
+            channel="sms",
+            subject=f"SMS with {payload.recipient}",
+            participants=list({settings.TELNYX_FROM_NUMBER, payload.recipient}),
+        )
         apply_training_mode(thread, request)
         db.add(thread)
         db.commit()
@@ -1594,7 +1604,7 @@ def send_sms(
     message = CommsMessage(
         org_id=user.org_id,
         thread_id=thread.id,
-        sender=settings.TELNYX_NUMBER or user.email,
+        sender=settings.TELNYX_FROM_NUMBER or user.email,
         body=payload.body,
         delivery_status="queued",
     )
@@ -1626,7 +1636,7 @@ def send_sms(
 
 
 @router.post("/send/fax", status_code=status.HTTP_201_CREATED)
-def send_fax(
+def send_fax_message(
     payload: SendTelnyx,
     request: Request,
     db: Session = Depends(get_db),
@@ -1634,7 +1644,12 @@ def send_fax(
 ):
     if not payload.media_url:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Fax media_url required")
-    thread = CommsThread(org_id=user.org_id, channel="fax", subject="Fax")
+    thread = CommsThread(
+        org_id=user.org_id,
+        channel="fax",
+        subject=f"Fax to {payload.recipient}",
+        participants=list({(settings.TELNYX_FAX_FROM_NUMBER or settings.TELNYX_FROM_NUMBER), payload.recipient}),
+    )
     apply_training_mode(thread, request)
     db.add(thread)
     db.commit()
@@ -1642,7 +1657,7 @@ def send_fax(
     message = CommsMessage(
         org_id=user.org_id,
         thread_id=thread.id,
-        sender=settings.TELNYX_NUMBER or user.email,
+        sender=settings.TELNYX_FAX_FROM_NUMBER or settings.TELNYX_FROM_NUMBER or user.email,
         body=payload.body or "fax",
         media_url=payload.media_url,
         delivery_status="queued",
@@ -1675,13 +1690,18 @@ def send_fax(
 
 
 @router.post("/send/voice", status_code=status.HTTP_201_CREATED)
-def send_voice(
+def send_voice_message(
     payload: SendTelnyx,
     request: Request,
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.billing, UserRole.compliance, UserRole.founder)),
 ):
-    thread = CommsThread(org_id=user.org_id, channel="voice", subject="Voice")
+    thread = CommsThread(
+        org_id=user.org_id,
+        channel="voice",
+        subject=f"Voice call with {payload.recipient}",
+        participants=list({settings.TELNYX_FROM_NUMBER, payload.recipient}),
+    )
     apply_training_mode(thread, request)
     db.add(thread)
     db.commit()
@@ -1689,7 +1709,7 @@ def send_voice(
     message = CommsMessage(
         org_id=user.org_id,
         thread_id=thread.id,
-        sender=settings.TELNYX_NUMBER or user.email,
+        sender=settings.TELNYX_FROM_NUMBER or user.email,
         body=payload.body or "voice",
         delivery_status="queued",
     )

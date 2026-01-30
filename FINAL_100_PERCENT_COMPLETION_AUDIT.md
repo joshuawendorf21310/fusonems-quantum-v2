@@ -673,7 +673,7 @@ The FusionEMS Quantum platform has been completed to 100% production-ready statu
 **External Integrations:**
 1. **Stripe** - Payment processing (PCI-DSS SAQ-A compliant)
 2. **Office Ally** - Clearinghouse for medical claims
-3. **Metriport** - Insurance verification and medical records
+3. **Metriport** - Patient information (demographics, insurance, medical history)
 4. **Postmark** - Transactional email
 5. **Telnyx** - Phone, SMS, fax services
 6. **Lob** - Physical mail for patient statements

@@ -229,6 +229,56 @@ def _collect_ready_reasons(
     return ready, reasons, fix_links, qa_score
 
 
+def try_auto_create_claim(db: Session, request: Request, user: User, epcr_patient_id: int) -> BillingClaim | None:
+    """If AUTO_CLAIM_AFTER_FINALIZE is enabled and ready_check passes, create a draft claim. Returns claim or None."""
+    if not getattr(settings, "AUTO_CLAIM_AFTER_FINALIZE", False):
+        return None
+    try:
+        patient = _get_patient(request, db, user, epcr_patient_id)
+        assist_result = _ensure_assist_result(db, request, user, patient)
+        ready, _, _, _ = _collect_ready_reasons(db, request, user, patient, assist_result)
+        if not ready:
+            return None
+        existing = (
+            db.query(BillingClaim)
+            .filter(BillingClaim.org_id == user.org_id, BillingClaim.epcr_patient_id == epcr_patient_id)
+            .first()
+        )
+        if existing:
+            return existing
+        demographics_snapshot = model_snapshot(patient)
+        medical_snapshot = assist_result.snapshot_json.get("medical_necessity_hints") or []
+        claim = BillingClaim(
+            org_id=user.org_id,
+            epcr_patient_id=patient.id,
+            payer_name="To be assigned",
+            payer_type="private",
+            total_charge_cents=0,
+            office_ally_batch_id="",
+            denial_risk_flags=assist_result.snapshot_json.get("denial_risk_flags", []),
+            demographics_snapshot=demographics_snapshot,
+            medical_necessity_snapshot=medical_snapshot,
+        )
+        apply_training_mode(claim, request)
+        db.add(claim)
+        db.commit()
+        db.refresh(claim)
+        audit_and_event(
+            db=db,
+            request=request,
+            user=user,
+            action="create",
+            resource="billing_claim",
+            classification=claim.classification,
+            after_state=model_snapshot(claim),
+            event_type="billing.claim.auto_created",
+            event_payload={"claim_id": claim.id, "patient_id": patient.id},
+        )
+        return claim
+    except Exception:
+        return None
+
+
 @claims_router.post("", response_model=BillingClaimResponse, status_code=status.HTTP_201_CREATED)
 def create_claim(
     payload: BillingClaimCreate,

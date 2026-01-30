@@ -22,6 +22,31 @@ from services.billing.stripe_service import (
 router = APIRouter(prefix="/api/billing/stripe", tags=["Stripe Billing"])
 
 
+@router.get("/ready")
+def stripe_ready():
+    """Return Stripe configuration readiness (no auth). Use for health checks and setup validation."""
+    raw_secret = (settings.stripe_secret_key or "").strip()
+    has_secret = bool(raw_secret)
+    secret_looks_valid = raw_secret.startswith("sk_test_") or raw_secret.startswith("sk_live_")
+    has_webhook = bool(settings.stripe_webhook_secret and settings.stripe_webhook_secret.strip())
+    has_publishable = bool(settings.stripe_publishable_key and settings.stripe_publishable_key.strip())
+    ready = has_secret and secret_looks_valid and (has_webhook or not settings.stripe_webhook_secret)
+    if has_secret and not secret_looks_valid:
+        msg = "STRIPE_SECRET_KEY should start with sk_test_ or sk_live_. Get the secret key from Stripe Dashboard → API keys (not the publishable pk_ key)."
+    elif ready:
+        msg = "Stripe is configured and ready for payments."
+    else:
+        msg = "Set STRIPE_SECRET_KEY in backend .env. For production, set STRIPE_WEBHOOK_SECRET. For frontend Payment Element, set STRIPE_PUBLISHABLE_KEY and NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY."
+    return {
+        "ready": ready,
+        "has_secret_key": has_secret,
+        "secret_key_valid_format": secret_looks_valid,
+        "has_webhook_secret": has_webhook,
+        "has_publishable_key": has_publishable,
+        "message": msg,
+    }
+
+
 class CheckoutCreate(BaseModel):
     invoice_id: str
     success_url: str
@@ -34,6 +59,12 @@ def create_checkout(
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.billing)),
 ):
+    valid, msg = _stripe_secret_valid()
+    if not valid:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=msg,
+        )
     invoice = (
         scoped_query(db, BillingInvoice, user.org_id, None)
         .filter(BillingInvoice.id == payload.invoice_id)

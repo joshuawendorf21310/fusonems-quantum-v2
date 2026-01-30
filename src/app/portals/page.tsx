@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Logo from "@/components/Logo"
 
 const internalPortals = [
   {
@@ -21,7 +22,7 @@ const internalPortals = [
     scope: ["Schedule transports", "Assign units", "Trip lifecycle tracking", "Operational notes"],
     notes: "Not real-time dispatch, separate from CAD authority",
     gradient: "from-orange-600 to-amber-600",
-    link: "/transport"
+    link: "/scheduling"
   },
   {
     name: "Fire Module Portal",
@@ -44,14 +45,14 @@ const internalPortals = [
     link: "/hems"
   },
   {
-    name: "Telehealth Portal",
+    name: "FusionCare",
     icon: "telehealth",
-    purpose: "Remote clinical consultation and telemedicine",
-    users: "Physicians, nurse practitioners, telehealth coordinators",
-    scope: ["Video consultations", "Patient assessments", "Documentation", "Remote clinical support"],
-    notes: "Clinical telemedicine only, no dispatch or billing access",
+    purpose: "Native telehealth and clinical oversight",
+    users: "Physicians, medical control, telehealth coordinators, EMS and HEMS clinicians",
+    scope: ["Live video consults", "Medical control", "Specialist escalation", "Documentation-backed clinical decisions"],
+    notes: "Fully integrated with CAD, ePCR, and billing. Not a third-party integration.",
     gradient: "from-purple-600 to-pink-600",
-    link: "/telehealth"
+    link: "/portals/carefusion/login"
   },
   {
     name: "Pilot Portal",
@@ -61,7 +62,7 @@ const internalPortals = [
     scope: ["Mission details", "Assignment acknowledgments", "Status updates", "Safety confirmations"],
     notes: "Read-only or limited-write, no dispatch or billing access",
     gradient: "from-indigo-600 to-violet-600",
-    link: "/pilot"
+    link: "/hems"
   },
   {
     name: "Compliance / QA-QI Portal",
@@ -81,7 +82,7 @@ const internalPortals = [
     scope: ["User & role management", "Permissions", "Agency / region configuration", "System policies"],
     notes: "Restricted to minimal users, fully audited",
     gradient: "from-gray-600 to-slate-600",
-    link: "/admin"
+    link: "/founder"
   }
 ]
 
@@ -95,7 +96,7 @@ const externalPortals = [
     excluded: ["Dispatch", "CAD access", "ePCR access", "Billing access"],
     notes: "Front door for facilities, not an EMS system",
     gradient: "from-cyan-600 to-teal-600",
-    link: "/transportlink"
+    link: "/portals/transportlink/login"
   },
   {
     name: "Provider Portal",
@@ -118,7 +119,7 @@ const publicPortals = [
     scope: ["View invoices", "Make payments", "Download receipts", "Submit billing inquiries"],
     notes: "No operational or clinical system access",
     gradient: "from-green-600 to-emerald-600",
-    link: "/billing"
+    link: "/portals/patient/login"
   },
   {
     name: "Payment Portal",
@@ -157,8 +158,11 @@ export default function PortalsPage() {
       <header className="fixed top-0 left-0 right-0 z-50 h-16 bg-[#0a0a0a]/95 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-7xl mx-auto h-full px-6 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
-              <span className="text-white font-black text-lg">Q</span>
+            <div className="relative">
+              <div aria-hidden="true" className="absolute -inset-2 rounded-2xl bg-gradient-to-r from-orange-500/25 via-red-600/15 to-transparent blur-lg" />
+              <div className="relative w-10 h-10 rounded-xl border border-white/10 bg-white/5 backdrop-blur flex items-center justify-center">
+                <Logo variant="icon" width={40} height={40} className="w-8 h-8" />
+              </div>
             </div>
             <div className="hidden sm:block">
               <div className="text-white font-black text-lg tracking-tight">FusionEMS Quantum</div>
@@ -426,7 +430,7 @@ export default function PortalsPage() {
                 The platform consists of <span className="text-orange-400 font-semibold">internal EMS operational portals</span>, 
                 <span className="text-orange-400 font-semibold"> external facility and provider portals</span>, 
                 <span className="text-orange-400 font-semibold"> patient and payment portals</span>, and 
-                <span className="text-orange-400 font-semibold"> controlled interoperability with independent clinical systems</span> such as CareFusion — 
+                <span className="text-orange-400 font-semibold"> native FusionCare telehealth and clinical oversight</span> — 
                 each with <span className="text-orange-400 font-semibold">strict access boundaries and audit controls</span>.
               </p>
             </div>
@@ -451,8 +455,11 @@ export default function PortalsPage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
-                  <span className="text-white font-black text-sm">Q</span>
+                <div className="relative">
+                  <div aria-hidden="true" className="absolute -inset-2 rounded-xl bg-gradient-to-r from-orange-500/25 via-red-600/15 to-transparent blur-lg" />
+                  <div className="relative w-8 h-8 rounded-lg border border-white/10 bg-white/5 backdrop-blur flex items-center justify-center">
+                    <Logo variant="icon" width={32} height={32} className="w-7 h-7" />
+                  </div>
                 </div>
                 <span className="text-white font-bold">FusionEMS Quantum</span>
               </div>

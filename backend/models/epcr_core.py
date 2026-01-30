@@ -238,6 +238,7 @@ class EpcrAssessment(Base):
     chief_complaint = Column(String, default="")
     assessment_summary = Column(Text, default="")
     clinical_impression = Column(Text, default="")
+    impression_code = Column(String(32), default="")  # ICD-10 from terminology (NEMSIS-constrained)
     plan = Column(Text, default="")
     protocol_notes = Column(JSON, nullable=False, default=dict)
     supporting_documents = Column(JSON, nullable=False, default=list)

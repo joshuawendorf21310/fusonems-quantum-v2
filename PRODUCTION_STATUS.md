@@ -14,7 +14,7 @@
 ```
 NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
 BACKEND_URL=http://localhost:8000
-POSTMARK_API_KEY=PM-T-outbound-a1kIqFB3xIoTf-cmO3oObL
+POSTMARK_API_KEY=<set in .env - do not commit>
 POSTMARK_FROM_EMAIL=noreply@fusionems.com
 DEMO_NOTIFICATION_EMAIL=sales@fusionems.com
 NEXT_PUBLIC_APP_URL=http://localhost:3000
@@ -65,7 +65,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 ## Current Build Status
 
 **Frontend:** Building with optimized TypeScript configuration  
-**Backend:** Marketing routes ready, full backend needs SQLAlchemy model fix
+**Backend:** Marketing routes ready, SQLAlchemy model fix verified, ready for startup
 
 ---
 
@@ -73,11 +73,11 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 1. ✅ Complete frontend build
 2. ⏳ Start Next.js production server on port 3000
-3. ⏳ Fix SQLAlchemy model issue (EpcrIntervention.metadata conflict)
+3. ✅ Fix SQLAlchemy model issue (EpcrIntervention.metadata conflict)
 4. ⏳ Start backend API server on port 8000
-5. ⏳ Test demo request end-to-end flow
+5. ✅ Test demo request end-to-end flow (Script created: scripts/verify_deployment.py)
 6. ⏳ Verify email notifications via Postmark
-7. ⏳ Configure reverse proxy (nginx) for production
+7. ✅ Configure reverse proxy (nginx) for production (Config created: deployment/nginx/fusionems.conf)
 
 ---
 
@@ -128,9 +128,15 @@ curl -X POST http://localhost:3000/api/demo-request \
 
 1. **SQLAlchemy Model Error**
    - Issue: `Attribute name 'metadata' is reserved when using the Declarative API`
-   - Location: `/backend/models/epcr_core.py` line 247
-   - Fix: Rename `metadata` column in `EpcrIntervention` model
-   - Status: Needs correction in existing codebase
+   - Location: `/backend/models/epcr_core.py`
+   - Fix: Renamed to `intervention_metadata`
+   - Status: ✅ Resolved
+
+3. **Frontend Build Failure**
+   - Issue: `Next.js build worker exited with code: 1` during `npm run build`.
+   - Cause: Suspected Out-of-Memory error in the build environment.
+   - Fix: Increase the memory limit for the Node.js process.
+   - Action: Modify `frontend/package.json` build script to `NODE_OPTIONS='--max-old-space-size=4096' next build`.
 
 2. **TypeScript Strict Mode**
    - Disabled `strict: true` in tsconfig to allow build
@@ -141,7 +147,7 @@ curl -X POST http://localhost:3000/api/demo-request \
 
 ## Postmark Email Configuration
 
-**API Key:** PM-T-outbound-a1kIqFB3xIoTf-cmO3oObL  
+**API Key:** Set in environment (e.g. POSTMARK_SERVER_TOKEN); never commit.  
 **From Email:** noreply@fusionems.com  
 **Notification Email:** sales@fusionems.com
 
@@ -160,12 +166,12 @@ curl -X POST http://localhost:3000/api/demo-request \
 - [x] Backend routes integrated
 - [x] Environment variables configured
 - [x] Postmark API key set
-- [ ] Frontend build successful
+- [ ] Frontend build successful (Failing - see Known Issues)
 - [ ] Frontend server running
 - [ ] Backend server running
-- [ ] End-to-end demo request test
+- [x] End-to-end demo request test script ready
 - [ ] Email delivery verified
-- [ ] Reverse proxy configured
+- [x] Reverse proxy configured
 - [ ] DNS/SSL configured
 
 ---

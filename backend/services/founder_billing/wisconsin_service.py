@@ -10,7 +10,9 @@ from models.wisconsin_billing import (
 )
 from models.founder_billing import PatientStatement, StatementLifecycleState
 import lob
-import requests
+
+from core.config import settings
+from services.email.email_transport_service import send_smtp_email_simple
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +37,6 @@ class WisconsinBillingService:
             self.config = self._create_default_config()
         
         self.lob_client = None
-        self.postmark_api_key = None
     
     def _create_default_config(self) -> WisconsinBillingConfig:
         """Create default Wisconsin configuration."""
@@ -265,37 +266,22 @@ class WisconsinBillingService:
         return log
     
     def _send_via_email(self, log: StatementDeliveryLog, email: str, rendered: Dict) -> bool:
-        """Send via Postmark email."""
-        if not self.postmark_api_key:
-            log.failure_reason = "Postmark API key not configured"
+        """Send via SMTP (Mailu/self-hosted)."""
+        if not settings.SMTP_HOST or not settings.SMTP_USERNAME or not settings.SMTP_PASSWORD:
+            log.failure_reason = "SMTP settings not configured"
             return False
-        
+
         try:
-            response = requests.post(
-                "https://api.postmarkapp.com/email",
-                headers={
-                    "Accept": "application/json",
-                    "Content-Type": "application/json",
-                    "X-Postmark-Server-Token": self.postmark_api_key
-                },
-                json={
-                    "From": self.config.company_email,
-                    "To": email,
-                    "Subject": rendered["subject"],
-                    "HtmlBody": rendered["body"],
-                    "MessageStream": "outbound",
-                    "TrackOpens": True
-                }
+            from_addr = getattr(self.config, "company_email", None) or settings.BILLING_FROM_EMAIL or settings.SMTP_USERNAME
+            send_smtp_email_simple(
+                to=email,
+                subject=rendered["subject"],
+                html_body=rendered["body"],
+                from_addr=from_addr,
             )
-            
-            if response.status_code == 200:
-                log.postmark_message_id = response.json().get("MessageID")
-                log.recipient_email = email
-                return True
-            else:
-                log.failure_reason = f"Postmark error: {response.text}"
-                return False
-        
+            log.recipient_email = email
+            log.postmark_message_id = None
+            return True
         except Exception as e:
             log.failure_reason = str(e)
             return False

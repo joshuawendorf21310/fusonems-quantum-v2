@@ -16,19 +16,7 @@ class CommsProvider(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
-class CommsTemplate(Base):
-    __tablename__ = "comms_templates"
 
-    id = Column(Integer, primary_key=True, index=True)
-    org_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
-    name = Column(String, nullable=False)
-    channel = Column(String, default="email")
-    subject = Column(String, default="")
-    body = Column(String, default="")
-    meta_data = Column("metadata", JSON, default=dict)
-    status = Column(String, default="active")
-    training_mode = Column(Boolean, default=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class CommsEvent(Base):

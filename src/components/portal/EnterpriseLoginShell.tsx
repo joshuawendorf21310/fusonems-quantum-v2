@@ -1,80 +1,28 @@
 "use client"
 
-import { useState, FormEvent, ReactNode } from "react"
+import { useState, FormEvent } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-
-interface SecurityFeature {
-  icon: ReactNode
-  title: string
-  description: string
-}
+import Logo from "@/components/Logo"
 
 interface EnterpriseLoginShellProps {
   portalName: string
-  portalDescription: string
+  portalTagline: string
   portalGradient: string
-  portalIcon: ReactNode
+  portalIcon: string
   onSubmit: (email: string, password: string) => Promise<void>
   redirectPath: string
-  showRememberMe?: boolean
-  showPasswordRecovery?: boolean
-  marketingTitle?: string
-  marketingSubtitle?: string
-  securityFeatures?: SecurityFeature[]
+  features: string[]
 }
-
-const defaultSecurityFeatures: SecurityFeature[] = [
-  {
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-      </svg>
-    ),
-    title: "Bank-Level Encryption",
-    description: "Your data is protected with 256-bit AES encryption"
-  },
-  {
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-      </svg>
-    ),
-    title: "HIPAA Compliant",
-    description: "Fully compliant with healthcare security standards"
-  },
-  {
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-      </svg>
-    ),
-    title: "Multi-Factor Authentication",
-    description: "Extra layer of security for your account"
-  },
-  {
-    icon: (
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-      </svg>
-    ),
-    title: "Real-Time Monitoring",
-    description: "24/7 security monitoring and threat detection"
-  }
-]
 
 export default function EnterpriseLoginShell({
   portalName,
-  portalDescription,
+  portalTagline,
   portalGradient,
   portalIcon,
   onSubmit,
   redirectPath,
-  showRememberMe = true,
-  showPasswordRecovery = true,
-  marketingTitle,
-  marketingSubtitle,
-  securityFeatures = defaultSecurityFeatures,
+  features
 }: EnterpriseLoginShellProps) {
   const router = useRouter()
   const [email, setEmail] = useState("")
@@ -95,99 +43,94 @@ export default function EnterpriseLoginShell({
         localStorage.setItem("remember_email", email)
       }
       router.push(redirectPath)
-    } catch (err: any) {
-      setError(err.message || "Authentication failed. Please try again.")
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Authentication failed. Please check your credentials."
+      setError(message)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex">
-      <div className={`hidden lg:flex lg:w-1/2 bg-gradient-to-br ${portalGradient} relative overflow-hidden`}>
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10"></div>
-        
-        <div className="relative z-10 flex flex-col justify-between p-12 text-white w-full">
-          <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
-            <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-lg flex items-center justify-center">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
+    <div className="min-h-screen w-full bg-[#0a0a0b] flex">
+      {/* Left — Tech hero */}
+      <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px]" aria-hidden />
+        <div className={`absolute inset-0 bg-gradient-to-br ${portalGradient} opacity-[0.12]`} aria-hidden />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-white/[0.02] blur-3xl" aria-hidden />
+        <div className="relative z-10 flex flex-col justify-between w-full max-w-lg mx-auto px-14 py-12">
+          <Link href="/" className="inline-flex items-center gap-2.5 text-white/90 hover:text-white transition-colors w-fit">
+            <div className="w-9 h-9 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+              <Logo variant="icon" width={36} height={36} className="w-7 h-7" />
             </div>
-            <span className="font-semibold">Back to Home</span>
+            <span className="font-semibold text-base tracking-tight">FusionEMS Quantum</span>
           </Link>
 
-          <div className="space-y-8">
-            <div className="space-y-4">
-              <div className={`inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm`}>
-                {portalIcon}
-              </div>
-              <h1 className="text-5xl font-bold leading-tight">
-                {marketingTitle || `Welcome to ${portalName}`}
-              </h1>
-              <p className="text-xl text-white/80 max-w-md">
-                {marketingSubtitle || portalDescription}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 gap-6 max-w-lg">
-              {securityFeatures.map((feature, index) => (
-                <div key={index} className="flex items-start space-x-4 bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
-                  <div className="flex-shrink-0 text-white">
-                    {feature.icon}
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-white mb-1">{feature.title}</h3>
-                    <p className="text-sm text-white/70">{feature.description}</p>
-                  </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50 mb-4">Portal</p>
+            <h1 className="text-4xl xl:text-5xl font-bold text-white tracking-tight leading-[1.1] mb-4">
+              {portalName}
+            </h1>
+            <p className="text-lg text-white/60 max-w-md leading-relaxed mb-8">
+              {portalTagline}
+            </p>
+            <div className="space-y-3">
+              {features.map((feature, i) => (
+                <div key={i} className="flex items-center gap-3 text-white/70 text-sm font-medium">
+                  <span className="w-1 h-1 rounded-full bg-white/50 flex-shrink-0" aria-hidden />
+                  {feature}
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="text-sm text-white/60">
-            &copy; {new Date().getFullYear()} FusionEMS Quantum. All rights reserved.
+          <div className="flex items-center gap-4 text-xs text-white/40 font-medium">
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400/80" aria-hidden />
+              HIPAA
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-sky-400/80" aria-hidden />
+              256-bit
+            </span>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-8 bg-zinc-950">
-        <div className="w-full max-w-md space-y-8">
-          <div className="lg:hidden text-center space-y-4 mb-8">
-            <Link href="/" className="inline-flex items-center space-x-2 text-gray-400 hover:text-white transition-colors mb-4">
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              <span>Back to Home</span>
+      {/* Right — Modern form */}
+      <div className="w-full lg:w-1/2 xl:w-2/5 min-h-screen flex items-center justify-center p-6 sm:p-10 bg-[#0a0a0b]">
+        <div className="w-full max-w-[400px]">
+          {/* Mobile: brand */}
+          <div className="lg:hidden mb-10">
+            <Link href="/" className="inline-flex items-center gap-2.5 text-white/90 mb-8">
+              <Logo variant="icon" width={36} height={36} className="w-9 h-9" />
+              <span className="font-semibold text-lg">FusionEMS Quantum</span>
             </Link>
-            <div className={`inline-flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-br ${portalGradient} mb-4`}>
-              {portalIcon}
-            </div>
-            <h1 className="text-3xl font-bold text-white">{portalName}</h1>
-            <p className="text-gray-400">{portalDescription}</p>
+            <h1 className="text-3xl font-bold text-white tracking-tight">{portalName}</h1>
+            <p className="text-white/50 text-base mt-1">{portalTagline}</p>
           </div>
 
-          <div className="hidden lg:block">
-            <h2 className="text-3xl font-bold text-white mb-2">Sign In</h2>
-            <p className="text-gray-400">Enter your credentials to access your account</p>
+          <div className="lg:mb-10">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Sign in</h2>
+            <p className="text-white/50 text-base mt-1">Use your credentials to access the portal.</p>
           </div>
 
           {error && (
-            <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
-              <div className="flex items-center space-x-3">
-                <svg className="w-5 h-5 text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-red-400 text-sm">{error}</p>
-              </div>
+            <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-3">
+              <svg className="w-5 h-5 text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-red-300 text-sm font-medium">{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
-                Email Address
+              <label htmlFor="email" className="block text-sm font-medium text-white/80 mb-2">
+                Email
               </label>
               <input
                 id="email"
@@ -195,14 +138,13 @@ export default function EnterpriseLoginShell({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                autoComplete="email"
-                className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-800 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                placeholder="you@example.com"
+                className="w-full px-4 py-3.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 text-base focus:outline-none focus:border-white/25 focus:ring-2 focus:ring-white/10 transition-all"
+                placeholder="you@company.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-white/80 mb-2">
                 Password
               </label>
               <div className="relative">
@@ -212,14 +154,14 @@ export default function EnterpriseLoginShell({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  autoComplete="current-password"
-                  className="w-full px-4 py-3 bg-zinc-900/50 border border-zinc-800 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all pr-12"
-                  placeholder="Enter your password"
+                  className="w-full px-4 py-3.5 pr-12 rounded-xl bg-white/5 border border-white/10 text-white placeholder-white/30 text-base focus:outline-none focus:border-white/25 focus:ring-2 focus:ring-white/10 transition-all"
+                  placeholder="••••••••"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-white/40 hover:text-white/70 rounded-lg transition-colors"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -236,48 +178,47 @@ export default function EnterpriseLoginShell({
             </div>
 
             <div className="flex items-center justify-between">
-              {showRememberMe && (
-                <label className="flex items-center space-x-2 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="w-4 h-4 bg-zinc-900 border-zinc-700 rounded text-orange-500 focus:ring-2 focus:ring-orange-500 focus:ring-offset-0 cursor-pointer"
-                  />
-                  <span className="text-sm text-gray-400 group-hover:text-gray-300 transition-colors">Remember me</span>
-                </label>
-              )}
-              {showPasswordRecovery && (
-                <Link href="/password-recovery" className="text-sm text-orange-500 hover:text-orange-400 transition-colors font-medium">
-                  Forgot password?
-                </Link>
-              )}
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-white/20 bg-white/5 text-white focus:ring-2 focus:ring-white/20"
+                />
+                <span className="text-sm text-white/60">Remember me</span>
+              </label>
+              <Link href="/password-recovery" className="text-sm font-medium text-white/70 hover:text-white transition-colors">
+                Forgot password?
+              </Link>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-3 px-4 bg-gradient-to-r ${portalGradient} text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-orange-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2`}
+              className={`w-full py-4 px-5 rounded-xl bg-gradient-to-r ${portalGradient} text-white font-semibold text-base transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-95 active:scale-[0.99] flex items-center justify-center gap-2 shadow-lg`}
             >
               {loading ? (
                 <>
                   <svg className="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  <span>Signing in...</span>
+                  <span>Signing in…</span>
                 </>
               ) : (
-                <span>Sign In</span>
+                <>
+                  <span>Sign in</span>
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </>
               )}
             </button>
           </form>
 
-          <div className="pt-6 border-t border-zinc-800">
-            <p className="text-center text-sm text-gray-500">
-              Secure enterprise authentication · FusionEMS Quantum
-            </p>
-          </div>
+          <p className="mt-8 text-center text-xs text-white/40">
+            Secure access · <Link href="/security" className="text-white/60 hover:text-white transition-colors">Learn more</Link>
+          </p>
         </div>
       </div>
     </div>

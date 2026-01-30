@@ -50,6 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     localStorage.removeItem("token")
+    localStorage.removeItem("must_change_password")
     setToken(null)
     setUser(null)
   }

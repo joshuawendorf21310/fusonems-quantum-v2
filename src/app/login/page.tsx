@@ -35,7 +35,7 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      const response = await apiFetch<{ access_token: string }>(
+      const response = await apiFetch<{ access_token: string; user?: { role?: string; must_change_password?: boolean } }>(
         "/auth/login",
         {
           method: "POST",
@@ -48,9 +48,38 @@ export default function LoginPage() {
       } else {
         localStorage.removeItem("remember_email")
       }
-      router.push("/dashboard")
+      if (response.user?.must_change_password) {
+        localStorage.setItem("must_change_password", "true")
+        router.push("/change-password")
+        return
+      }
+      const role = response.user?.role
+      router.push(role === "founder" ? "/founder" : "/dashboard")
     } catch (err: any) {
       setError(err.response?.data?.detail || "Login failed. Please try again.")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDevAccess = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const response = await apiFetch<{ access_token: string; user?: { must_change_password?: boolean } }>("/auth/dev_seed", {
+        method: "POST",
+      })
+      localStorage.setItem("token", response.access_token)
+      if (response.user?.must_change_password) {
+        localStorage.setItem("must_change_password", "true")
+        router.push("/change-password")
+        window.location.reload()
+        return
+      }
+      router.push("/founder")
+      window.location.reload()
+    } catch (err: any) {
+      setError(err.response?.data?.detail || "Dev access failed. Set ENV=development and LOCAL_AUTH_ENABLED=true in the backend.")
     } finally {
       setLoading(false)
     }
@@ -270,6 +299,19 @@ export default function LoginPage() {
                 Create one
               </Link>
             </p>
+            {process.env.NODE_ENV === "development" && (
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={handleDevAccess}
+                  disabled={loading}
+                  className="text-sm text-amber-400 hover:text-amber-300 font-medium transition-colors disabled:opacity-50"
+                >
+                  Dev access (founder) — no password
+                </button>
+                <p className="text-xs text-gray-500 mt-1">Creates dev@local founder user and logs you in</p>
+              </div>
+            )}
             <p className="text-center text-sm text-gray-500">
               Secure enterprise authentication · FusionEMS Quantum
             </p>

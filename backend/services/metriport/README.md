@@ -1,6 +1,6 @@
-# Metriport Integration
+# Metriport Integration — Patient Information
 
-Complete integration for automatic patient insurance verification and demographics synchronization using Metriport API.
+**We use Metriport for patient information.** This integration provides demographics, insurance verification, and medical history via the Metriport API (no generic EHR/HL7 build from scratch).
 
 ## Features
 

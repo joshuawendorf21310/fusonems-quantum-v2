@@ -54,7 +54,7 @@ class PaymentPlan(Base):
     id = Column(Integer, primary_key=True, index=True)
     account_id = Column(Integer, ForeignKey("collections_accounts.id"), nullable=False)
     statement_id = Column(Integer, ForeignKey("patient_statements.id"), nullable=False)
-    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
+    patient_id = Column(Integer, ForeignKey("epcr_patients.id"), nullable=False)
     
     tier = Column(SQLEnum(PaymentPlanTier), nullable=False)
     status = Column(SQLEnum(PaymentPlanStatus), default=PaymentPlanStatus.PENDING_ACCEPTANCE)
@@ -212,7 +212,7 @@ class StripePaymentRecord(Base):
     statement_id = Column(Integer, ForeignKey("patient_statements.id"), nullable=True)
     plan_id = Column(Integer, ForeignKey("payment_plans.id"), nullable=True)
     installment_id = Column(Integer, ForeignKey("payment_plan_installments.id"), nullable=True)
-    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
+    patient_id = Column(Integer, ForeignKey("epcr_patients.id"), nullable=False)
     
     stripe_payment_intent_id = Column(String, unique=True, nullable=False, index=True)
     stripe_customer_id = Column(String, nullable=True, index=True)

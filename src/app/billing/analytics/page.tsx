@@ -67,7 +67,7 @@ export default function BillingAnalyticsPage() {
             <strong style={{ fontSize: "2rem", color: "#ff7c29" }}>{analytics.paid_month_to_date}</strong>
           </div>
         </div>
-        <div style={{ marginTop: "1.5rem", display: "grid", gap: "1.2rem" }}>
+        <div style={{ marginTop: "1.5rem", display: "grid", gap: "1.2rem", minWidth: 320, minHeight: 160 }}>
           <RCMChart
             title="Aging (days)"
             data={Object.entries(analytics.aging).map(([bucket, value]) => ({ label: `${bucket}+`, value }))}

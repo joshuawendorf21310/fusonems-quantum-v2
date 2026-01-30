@@ -18,12 +18,12 @@ from models.fire import (
     FireIncident,
     FireIncidentApparatus,
     FireIncidentPersonnel,
-    FirePersonnel,
     FirePreventionRecord,
     FireTrainingRecord,
     FireIncidentTimeline,
     FireInventoryHook,
 )
+from models.fire_rms import FirePersonnel
 from models.user import User, UserRole
 from utils.tenancy import get_scoped_record, scoped_query
 from utils.ai_registry import register_ai_output

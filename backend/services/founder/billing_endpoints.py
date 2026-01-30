@@ -61,6 +61,17 @@ class AIChatResponse(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
 
+class ExplainRequest(BaseModel):
+    """Ask for a plain-language explanation of a billing term, concept, or screen."""
+    topic: str = Field(..., min_length=1, max_length=500, description="e.g. 'denial', 'claim status', 'EOB', 'what to do next'")
+    context: Optional[str] = Field(None, max_length=2000, description="Optional: where you are in the app or what you're looking at")
+
+
+class ExplainResponse(BaseModel):
+    explanation: str
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+
 # Service instance
 billing_service = FounderBillingService()
 
@@ -187,6 +198,23 @@ async def generate_billing_ai_chat_response(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to generate AI billing response"
+        )
+
+
+@router.post("/explain", response_model=ExplainResponse)
+async def explain_billing_topic(request: ExplainRequest):
+    """
+    Get a plain-language explanation of a billing term, concept, or "what to do next".
+    Designed for someone new to billing — AI explains everything and suggests next steps.
+    """
+    try:
+        explanation = await billing_service.explain_billing_topic(request.topic, request.context)
+        return ExplainResponse(explanation=explanation)
+    except Exception as e:
+        logger.error(f"Error in explain_billing_topic: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get explanation"
         )
 
 

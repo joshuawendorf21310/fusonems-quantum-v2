@@ -7,7 +7,15 @@ from sqlalchemy.orm import Session
 
 from core.database import get_db
 from core.security import get_current_user
-from models.agency_portal import AgencyPortalMessage, MessageCategory, MessagePriority, ThirdPartyBillingAgency
+from models.agency_portal import (
+    AgencyAnalyticsSnapshot,
+    AgencyOnboardingStepRecord,
+    AgencyPortalMessage,
+    MessageCategory,
+    MessagePriority,
+    MessageStatus,
+    ThirdPartyBillingAgency,
+)
 from models.user import User, UserRole
 
 from .agency_service import (
@@ -115,6 +123,106 @@ class MessageCreate(BaseModel):
     subject: str
     content: str
     linked_context: Optional[dict] = None
+
+
+# Founder-only: list all agencies (Wisconsin-first, US-wide)
+@agency_router.get("/agencies")
+def list_agencies(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """
+    List all third-party billing agencies (founder only).
+    Returns state, pricing (base + per call), and summary for multi-state management.
+    """
+    if user.role not in FOUNDER_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Founder access required",
+        )
+    agencies = db.query(ThirdPartyBillingAgency).order_by(ThirdPartyBillingAgency.agency_name).all()
+    result = []
+    for a in agencies:
+        steps = (
+            db.query(AgencyOnboardingStepRecord)
+            .filter(AgencyOnboardingStepRecord.agency_id == a.id)
+            .all()
+        )
+        total_steps = 10
+        completed = sum(1 for s in steps if s.completed)
+        onboarding_progress = int(100 * completed / total_steps) if total_steps else 0
+        pending_messages = (
+            db.query(AgencyPortalMessage)
+            .filter(
+                AgencyPortalMessage.agency_id == a.id,
+                AgencyPortalMessage.status != MessageStatus.RESOLVED,
+            )
+            .count()
+        )
+        result.append({
+            "id": a.id,
+            "agency_name": a.agency_name,
+            "contact_email": a.primary_contact_email or "",
+            "onboarding_status": a.onboarding_status.value if a.onboarding_status else "not_started",
+            "onboarding_progress": onboarding_progress,
+            "activated_at": a.billing_activated_at.isoformat() if a.billing_activated_at else None,
+            "total_accounts": 0,
+            "active_accounts": 0,
+            "messages_pending": pending_messages,
+            "state": a.state or "",
+            "service_types": list(a.service_types) if isinstance(a.service_types, list) else (list(a.service_types) if a.service_types else []),
+            "base_charge_cents": a.base_charge_cents,
+            "per_call_cents": a.per_call_cents,
+            "billing_interval": a.billing_interval or "",
+        })
+    return result
+
+
+# Founder-only: list all agencies' analytics
+@agency_router.get("/analytics")
+def list_analytics(
+    limit: int = Query(50, le=200),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """
+    List analytics per agency (founder only). Uses latest snapshot per agency.
+    """
+    if user.role not in FOUNDER_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Founder access required",
+        )
+    agencies = db.query(ThirdPartyBillingAgency).order_by(ThirdPartyBillingAgency.agency_name).all()
+    result = []
+    for a in agencies:
+        latest = (
+            db.query(AgencyAnalyticsSnapshot)
+            .filter(AgencyAnalyticsSnapshot.agency_id == a.id)
+            .order_by(AgencyAnalyticsSnapshot.period_end.desc())
+            .first()
+        )
+        if latest:
+            result.append({
+                "agency_id": a.id,
+                "agency_name": a.agency_name,
+                "total_statements_sent": latest.accounts_patient_responsibility + latest.accounts_insurance_pending,
+                "total_collected": latest.payments_collected or 0,
+                "collection_rate": latest.collection_rate or 0,
+                "avg_days_to_payment": round(latest.average_days_to_pay or 0),
+                "active_payment_plans": latest.accounts_payment_plan or 0,
+            })
+        else:
+            result.append({
+                "agency_id": a.id,
+                "agency_name": a.agency_name,
+                "total_statements_sent": 0,
+                "total_collected": 0,
+                "collection_rate": 0,
+                "avg_days_to_payment": 0,
+                "active_payment_plans": 0,
+            })
+    return result[:limit]
 
 
 # Incident Endpoints
@@ -403,29 +511,67 @@ def get_payment_summary(
 @agency_router.get("/messages")
 def list_messages(
     category: Optional[str] = Query(None),
+    status_filter: Optional[str] = Query(None, alias="status"),
+    all_agencies: bool = Query(False, alias="all"),
     limit: int = Query(50, le=200),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
     """
-    Get message inbox for agency
-    Available to: all agency roles, founder
+    Get message inbox for agency. Founder can use ?all=true to get all agencies' messages (flat list).
     """
+    # Founder: optional flat list of all agencies' messages
+    if all_agencies and user.role in FOUNDER_ROLES:
+        query = db.query(AgencyPortalMessage, ThirdPartyBillingAgency).join(
+            ThirdPartyBillingAgency,
+            AgencyPortalMessage.agency_id == ThirdPartyBillingAgency.id,
+        )
+        if status_filter:
+            try:
+                status_enum = MessageStatus(status_filter)
+                query = query.filter(AgencyPortalMessage.status == status_enum)
+            except ValueError:
+                pass
+        if category:
+            try:
+                cat_enum = MessageCategory(category)
+                query = query.filter(AgencyPortalMessage.category == cat_enum)
+            except ValueError:
+                pass
+        rows = query.order_by(AgencyPortalMessage.received_at.desc()).limit(limit).all()
+        return [
+            {
+                "id": msg.id,
+                "agency_id": msg.agency_id,
+                "agency_name": agency.agency_name,
+                "subject": msg.subject,
+                "message_body": msg.content,
+                "category": msg.category.value,
+                "priority": msg.priority.value,
+                "ai_triaged": msg.ai_triaged or False,
+                "ai_suggested_response": msg.ai_suggested_response,
+                "status": msg.status.value,
+                "created_at": msg.received_at.isoformat(),
+            }
+            for msg, agency in rows
+        ]
     agency = get_agency_for_user(db, user)
-
     query = db.query(AgencyPortalMessage).filter(
         AgencyPortalMessage.agency_id == agency.id
     )
-
+    if status_filter:
+        try:
+            status_enum = MessageStatus(status_filter)
+            query = query.filter(AgencyPortalMessage.status == status_enum)
+        except ValueError:
+            pass
     if category:
         try:
             cat_enum = MessageCategory(category)
             query = query.filter(AgencyPortalMessage.category == cat_enum)
         except ValueError:
             pass
-
     messages = query.order_by(AgencyPortalMessage.received_at.desc()).limit(limit).all()
-
     return {
         "agency_id": agency.id,
         "agency_name": agency.agency_name,

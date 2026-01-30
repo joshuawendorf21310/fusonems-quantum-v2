@@ -33,7 +33,7 @@ def build_storage_path(
 
 
 def validate_system(system: str) -> bool:
-    valid_systems = {"workspace", "accounting", "communications", "app-builder"}
+    valid_systems = {"workspace", "accounting", "communications", "app-builder", "founder"}
     return system in valid_systems
 
 
@@ -42,6 +42,7 @@ def validate_object_type(system: str, object_type: str) -> bool:
         "workspace": {"doc", "sheet", "slide", "pdf"},
         "accounting": {"receipt", "invoice", "export"},
         "communications": {"email-attachment", "message-attachment"},
-        "app-builder": {"source", "build"}
+        "app-builder": {"source", "build"},
+        "founder": {"file", "content"},
     }
     return object_type in valid_types.get(system, set())

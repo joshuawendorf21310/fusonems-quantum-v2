@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
@@ -18,8 +18,9 @@ from utils.legal import get_active_hold
 from utils.tenancy import scoped_query
 from utils.write_ops import audit_and_event, model_snapshot
 
-from services.email.email_ingest_service import ingest_inbound, verify_postmark_signature
-from services.email.email_transport_service import send_outbound
+from core.config import settings
+from services.email.email_ingest_service import ingest_inbound, verify_postmark_signature, poll_inbound_imap
+from services.email.email_transport_service import send_outbound, send_smtp_email_simple
 
 router = APIRouter(
     prefix="/api/email",
@@ -93,10 +94,57 @@ def _policy_decision(
 
 @router.post("/inbound/postmark")
 async def inbound_postmark(request: Request, db: Session = Depends(get_db)):
+    from core.config import settings
+    if not settings.POSTMARK_SERVER_TOKEN:
+        raise HTTPException(
+            status_code=501,
+            detail="Postmark not configured. Use SMTP/IMAP and call POST /api/email/poll-inbound to fetch inbound mail.",
+        )
     raw_body = await request.body()
     verify_postmark_signature(raw_body, request)
     payload = await request.json()
     return ingest_inbound(db, request, payload)
+
+
+@router.post("/poll-inbound")
+def poll_inbound(
+    request: Request,
+    db: Session = Depends(get_db),
+    user: User = Depends(require_roles(UserRole.admin, UserRole.founder)),
+):
+    """
+    Poll IMAP inbox (Mailu/self-hosted) for new messages and ingest them.
+    Requires IMAP_* env vars. Call periodically (e.g. cron) or on demand.
+    """
+    try:
+        poll_inbound_imap(db, request)
+        return {"status": "ok", "message": "IMAP poll completed"}
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"IMAP poll failed: {e}")
+
+
+@router.post("/send-test")
+def send_test_email(
+    user: User = Depends(require_roles(UserRole.admin, UserRole.founder)),
+):
+    """
+    Send a test email to FOUNDER_EMAIL (your configured address) via SMTP.
+    Log in as admin/founder and POST here, or use /send-test-cron from cron.
+    """
+    to = getattr(settings, "FOUNDER_EMAIL", None) or getattr(settings, "SMTP_USERNAME", None)
+    if not to:
+        raise HTTPException(status_code=412, detail="FOUNDER_EMAIL or SMTP_USERNAME not set")
+    try:
+        send_smtp_email_simple(
+            to=to,
+            subject="FusionEMS – test email",
+            html_body="<p>This is an automatic test email from FusionEMS. Sending is working.</p>",
+        )
+        return {"status": "ok", "message": f"Test email sent to {to}"}
+    except ValueError as e:
+        raise HTTPException(status_code=412, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Send failed: {e}")
 
 
 @router.post("/send", status_code=status.HTTP_201_CREATED)

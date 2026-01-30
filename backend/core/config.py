@@ -3,16 +3,46 @@ from typing import Optional
 
 
 class Settings(BaseSettings):
+    # Self-Hosted Mailu SMTP/IMAP
+    SMTP_HOST: Optional[str] = None
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: Optional[str] = None
+    SMTP_PASSWORD: Optional[str] = None
+    SMTP_USE_TLS: bool = True
+    # Founder identity (person); used when founder sends from dashboard
+    FOUNDER_EMAIL: str = "joshua.j.wendorf@fusionemsquantum.com"
+    # Aliases (different addresses for different purposes)
+    BILLING_FROM_EMAIL: Optional[str] = "billing@fusionemsquantum.com"  # Patient statements, billing correspondence
+    SUPPORT_EMAIL: Optional[str] = "billing@fusionemsquantum.com"  # Contact/support (can be same as billing)
+    NOREPLY_EMAIL: Optional[str] = None  # System notifications; if unset uses SMTP_USERNAME or FOUNDER_EMAIL
+    SMTP_FROM_EMAIL: Optional[str] = None  # Generic override for From when no alias specified; defaults above used per flow
+
+    IMAP_HOST: Optional[str] = None
+    IMAP_PORT: int = 993
+    IMAP_USERNAME: Optional[str] = None
+    IMAP_PASSWORD: Optional[str] = None
+    IMAP_USE_TLS: bool = True
+
     ENV: str = "development"
     DATABASE_URL: str = "sqlite:///./app.db"
     JWT_SECRET_KEY: str = "dev-secret"
     STORAGE_ENCRYPTION_KEY: str = "dev-storage"
     DOCS_ENCRYPTION_KEY: str = "dev-docs"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    AUTH_RATE_LIMIT_PER_MIN: int = 20
     DB_POOL_SIZE: int = 5
     DB_MAX_OVERFLOW: int = 10
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
     SESSION_COOKIE_NAME: str = "session"
     CSRF_COOKIE_NAME: str = "csrf_token"
+
+    # Stripe (patient payments, checkout, subscriptions, webhooks)
+    stripe_secret_key: str = ""
+    stripe_webhook_secret: str = ""
+    stripe_publishable_key: str = ""
+    stripe_enforce_entitlements: bool = False
+    BILLING_BRAND_NAME: str = "FusionEMS Quantum"
+
     stripe_price_id_cad: str = ""
     stripe_price_id_epcr: str = ""
     stripe_price_id_billing: str = ""
@@ -50,8 +80,6 @@ class Settings(BaseSettings):
     METRIPORT_WEBHOOK_SECRET: str = ""
     
     SPACES_ENDPOINT: Optional[str] = None
-    
-    SPACES_ENDPOINT: Optional[str] = None
     SPACES_REGION: Optional[str] = None
     SPACES_BUCKET: Optional[str] = None
     SPACES_ACCESS_KEY: Optional[str] = None
@@ -64,8 +92,47 @@ class Settings(BaseSettings):
     TELNYX_FAX_FROM_NUMBER: Optional[str] = None
     TELNYX_FAX_CONNECTION_ID: Optional[str] = None
     TELNYX_FAX_WEBHOOK_URL: Optional[str] = None
+    TELNYX_MESSAGING_PROFILE_ID: Optional[str] = None
+    TELNYX_PUBLIC_KEY: Optional[str] = None
+    TELNYX_REQUIRE_SIGNATURE: bool = False
+    TELNYX_ENABLED: bool = True
+    TELNYX_TRANSFER_NUMBER: Optional[str] = None  # For IVR "speak to someone" (e.g. queue or main line)
+    TELNYX_CONNECTION_ID: Optional[str] = None  # For voice/fax outbound (fallback if TELNYX_FAX_CONNECTION_ID not set)
+    APP_BASE_URL: Optional[str] = None  # Used for TeXML action URLs and patient portal links
 
-    # Postmark Configuration (Email)
+    # Facesheet request: optional URL to a PDF template sent when requesting facesheet from facility via fax
+    FACESHEET_REQUEST_FAX_MEDIA_URL: Optional[str] = None
+
+    # Ollama (AI biller helper, IVR voice agent, billing explain/chat)
+    OLLAMA_SERVER_URL: str = "http://localhost:11434"
+    OLLAMA_IVR_MODEL: str = "llama3.2"  # Conversational, human-like for phone
+    OLLAMA_ENABLED: bool = True  # Solo biller: AI does as much as possible; set False to disable
+
+    # Optional: secret for cron to trigger send-test without session (e.g. EMAIL_TEST_CRON_SECRET=your-secret)
+    EMAIL_TEST_CRON_SECRET: Optional[str] = None
+
+    # Terminology / reference datasets (builder health checks; set when loaded or API available)
+    SNOMED_API_URL: Optional[str] = None
+    SNOMED_DATASET_LOADED: bool = False
+    ICD10_API_URL: Optional[str] = None
+    ICD10_DATASET_LOADED: bool = False
+    RXNORM_API_URL: Optional[str] = None
+    RXNORM_DATASET_LOADED: bool = False
+
+    # Billing: optional auto-create claim when ePCR finalized and ready-check passes (per-org config in DB later)
+    AUTO_CLAIM_AFTER_FINALIZE: bool = False
+
+    # NEMSIS state submission (Wisconsin-first for certification)
+    NEMSIS_STATE_CODES: Optional[str] = "WI"  # Default WI; e.g. "WI,IL,MN"
+    NEMSIS_STATE_ENDPOINTS: Optional[str] = None  # JSON: {"WI": "https://...", "IL": "https://..."}
+    WISCONSIN_NEMSIS_ENDPOINT: Optional[str] = None  # Wisconsin EMS submission URL when provided
+
+    # NEMSIS version watch: notify when NEMSIS standard is updated
+    NEMSIS_CURRENT_VERSION: str = "3.5.1"  # Version we support; watch compares to this / fetched version
+    NEMSIS_VERSION_CHECK_URL: Optional[str] = None  # If set, GET and parse for 3.x.y; default uses nemsis.org
+    NEMSIS_WATCH_CRON_SECRET: Optional[str] = None  # Cron: POST /api/cron/nemsis-watch with X-Cron-Secret
+
+    # Postmark (optional; primary email is SMTP/IMAP / Mailu)
     POSTMARK_SERVER_TOKEN: Optional[str] = None
     POSTMARK_ACCOUNT_TOKEN: Optional[str] = None
     POSTMARK_FROM_EMAIL: Optional[str] = None

@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '20260127_metriport_integration'
-down_revision = '20260126_023717_add_storage_tables'
+down_revision = '20260126_023717'
 branch_labels = None
 depends_on = None
 

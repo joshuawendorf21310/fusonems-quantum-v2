@@ -306,6 +306,7 @@ const OnboardingTracker = () => {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="bg-white rounded-2xl shadow-lg p-6 border border-slate-100"
+            style={{ minWidth: 320, minHeight: 160 }}
           >
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -366,7 +367,10 @@ const OnboardingTracker = () => {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ status, value }) => `${status}: ${value}%`}
+                  label={(props) => {
+                    const p = props as unknown as { payload?: { status?: string }; value?: number }
+                    return `${p.payload?.status ?? "Status"}: ${p.value ?? 0}%`
+                  }}
                   outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
@@ -428,7 +432,7 @@ const OnboardingTracker = () => {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: idx * 0.05 }}
-                        whileHover={{ y: -2, shadow: '0 8px 20px rgba(0,0,0,0.15)' }}
+                        whileHover={{ y: -2, boxShadow: "0 8px 20px rgba(0,0,0,0.15)" }}
                         className="bg-white rounded-xl shadow-md p-4 cursor-pointer border border-slate-200 hover:border-violet-300 transition-all"
                         onClick={() => setSelectedEmployee(item)}
                       >

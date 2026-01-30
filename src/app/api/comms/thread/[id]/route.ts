@@ -1,10 +1,8 @@
 import { NextResponse } from "next/server"
 import { getThread } from "@/lib/core/commsStore"
+import type { AwaitableRouteContext } from "@/lib/route-context"
 
-export async function GET(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params
   const thread = getThread(id)
   if (!thread) {

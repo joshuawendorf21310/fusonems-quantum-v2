@@ -24,4 +24,8 @@ python-socketio
 aiohttp
 reportlab
 geoalchemy2
+shapely
+jinja2
+redis
 python-socketio
+telnyx

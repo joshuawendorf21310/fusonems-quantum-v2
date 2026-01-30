@@ -37,8 +37,8 @@ class PatientStatement(Base):
     __tablename__ = "patient_statements"
 
     id = Column(Integer, primary_key=True, index=True)
-    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
-    call_id = Column(Integer, ForeignKey("calls.id"), nullable=True)
+    patient_id = Column(Integer, ForeignKey("epcr_patients.id"), nullable=False)
+    call_id = Column(Integer, ForeignKey("cad_calls.id"), nullable=True)
     
     statement_number = Column(String, unique=True, nullable=False, index=True)
     statement_date = Column(DateTime, default=datetime.utcnow)

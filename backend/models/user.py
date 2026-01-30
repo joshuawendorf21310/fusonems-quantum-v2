@@ -1,6 +1,7 @@
 from enum import Enum
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy.orm import synonym
 
 from core.database import Base
 
@@ -64,6 +65,9 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     org_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
     email = Column(String, unique=True, nullable=False, index=True)
-    password_hash = Column("passwordHash", String, nullable=False)
+    full_name = Column(String, nullable=True)
+    hashed_password = Column("hashed_password", String, nullable=True)
+    password_hash = synonym("hashed_password")
     role = Column(String, default=UserRole.crew.value)
+    must_change_password = Column(Boolean, default=False, nullable=False)
     created_at = Column("createdAt", DateTime(timezone=True), server_default=func.now())

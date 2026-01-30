@@ -1,6 +1,7 @@
 "use client";
 import { useParams, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { NemsisRecordActions } from "@/components/epcr";
 
 const glassmorphism = {
   background: "rgba(17, 17, 17, 0.8)",
@@ -53,19 +54,22 @@ export default function EmsEpcrDetail() {
               {record.record_id} • {record.created_at}
             </p>
           </div>
-          <button
-            onClick={() => router.back()}
-            style={{
-              background: "transparent",
-              color: "#ff6b35",
-              border: "1px solid rgba(255, 107, 53, 0.5)",
-              padding: "12px 24px",
-              cursor: "pointer",
-              fontWeight: 600,
-            }}
-          >
-            ← Back
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+            <NemsisRecordActions recordId={recordId} stateCode="WI" compact />
+            <button
+              onClick={() => router.back()}
+              style={{
+                background: "transparent",
+                color: "#ff6b35",
+                border: "1px solid rgba(255, 107, 53, 0.5)",
+                padding: "12px 24px",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              ← Back
+            </button>
+          </div>
         </div>
 
         {/* Patient Section */}

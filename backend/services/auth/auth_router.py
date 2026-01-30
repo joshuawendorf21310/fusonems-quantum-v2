@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from core.database import get_db
 from core.security import create_access_token, hash_password, verify_password, get_current_user, require_roles
 from core.config import settings
+from core.logger import logger
 from core.modules import MODULE_DEPENDENCIES
 from models.module_registry import ModuleRegistry
 from models.organization import Organization
@@ -32,6 +33,11 @@ class RegisterPayload(BaseModel):
 class LoginPayload(BaseModel):
     email: EmailStr
     password: str
+
+
+class ChangePasswordPayload(BaseModel):
+    current_password: str
+    new_password: str
 
 
 class TokenResponse(BaseModel):
@@ -74,7 +80,7 @@ def _maybe_emit_register_audit(
             event_payload={"user_id": user.id},
         )
     except Exception as exc:  # pragma: no cover - best effort logging
-        print("REGISTER_AUDIT_FAILED", exc)
+        logger.error("REGISTER_AUDIT_FAILED: %s", exc)
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
@@ -84,11 +90,11 @@ def register(
     request: Request = None,
     response: Response = None,
 ):
-    print("REGISTER_START", flush=True)
+    logger.info("REGISTER_START")
     if not settings.LOCAL_AUTH_ENABLED:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="LOCAL_AUTH_DISABLED")
     if request is not None and settings.ENV == "production":
-        bucket = f"register:{request.client.host}"
+        bucket = f"register:{request.client.host if request.client else 'unknown'}"
         if not check_rate_limit(bucket, settings.AUTH_RATE_LIMIT_PER_MIN):
             raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="RATE_LIMIT")
     result: TokenResponse | None = None
@@ -119,7 +125,7 @@ def register(
             db.commit()
             db.refresh(org)
             seed_retention_policies(db, org.id)
-        print("REGISTER_HASH_START", flush=True)
+        logger.info("REGISTER_HASH_START")
         user = User(
             email=payload.email,
             full_name=payload.full_name,
@@ -129,7 +135,7 @@ def register(
         )
         db.add(user)
         db.flush()
-        print("REGISTER_DB_COMMIT_START", flush=True)
+        logger.info("REGISTER_DB_COMMIT_START")
         db.commit()
         db.refresh(user)
         _maybe_emit_register_audit(db, request, user, org, org_created)
@@ -156,7 +162,7 @@ def register(
         db.rollback()
         raise
     finally:
-        print("REGISTER_END", flush=True)
+        logger.info("REGISTER_END")
     if result is None:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Registration failed")
     return result
@@ -234,6 +240,26 @@ def login(
     return TokenResponse(access_token=token, user=model_snapshot(user))
 
 
+@router.post("/change-password")
+def change_password(
+    payload: ChangePasswordPayload,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Change password and clear must_change_password. Required when must_change_password is true."""
+    current_hash = getattr(user, "hashed_password", None) or getattr(user, "password_hash", None)
+    if not current_hash or not verify_password(payload.current_password, current_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Current password is incorrect",
+        )
+    user.hashed_password = hash_password(payload.new_password)
+    user.must_change_password = False
+    db.commit()
+    db.refresh(user)
+    return {"status": "ok", "message": "Password changed. You can continue."}
+
+
 @router.get("/me")
 def me(user: User = Depends(get_current_user), request: Request = None):
     payload = model_snapshot(user)
@@ -295,10 +321,22 @@ def dev_seed(response: Response = None, db: Session = Depends(get_db)):
     if not settings.LOCAL_AUTH_ENABLED:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="LOCAL_AUTH_DISABLED")
     demo_email = "dev@local"
-    demo_password = "password"
+    demo_password = "Pass1234"
     demo_org_name = "Dev Organization"
     user = db.query(User).filter(User.email == demo_email).first()
-    if not user:
+    if user:
+        # Ensure existing dev user has founder role and must change password on next login
+        changed = False
+        if user.role != UserRole.founder.value:
+            user.role = UserRole.founder.value
+            changed = True
+        if not getattr(user, "must_change_password", True):
+            user.must_change_password = True
+            changed = True
+        if changed:
+            db.commit()
+            db.refresh(user)
+    else:
         org = db.query(Organization).filter(Organization.name == demo_org_name).first()
         org_created = False
         if not org:
@@ -323,13 +361,14 @@ def dev_seed(response: Response = None, db: Session = Depends(get_db)):
             email=demo_email,
             full_name="Developer",
             hashed_password=hash_password(demo_password),
-            role=UserRole.admin.value if hasattr(UserRole, 'admin') else UserRole.dispatcher.value,
+            role=UserRole.founder.value,
             org_id=org.id,
+            must_change_password=True,
         )
         db.add(user)
         db.commit()
         db.refresh(user)
-    token = create_access_token({"sub": user.id, "org": user.org_id, "role": user.role, "mfa": False})
+    token, _ = create_access_token({"sub": user.id, "org": user.org_id, "role": user.role, "mfa": False})
     if response is not None:
         response.set_cookie(
             settings.SESSION_COOKIE_NAME,

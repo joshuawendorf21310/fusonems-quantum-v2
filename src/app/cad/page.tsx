@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { apiFetch } from "@/lib/api";
 import Link from "next/link";
 
@@ -28,14 +28,19 @@ export default function CADDashboard() {
   const [unitStatuses, setUnitStatuses] = useState<UnitStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [newIncidentOpen, setNewIncidentOpen] = useState(false);
+  const [newIncidentSubmitting, setNewIncidentSubmitting] = useState(false);
+  const [newIncidentError, setNewIncidentError] = useState<string | null>(null);
+  const [newIncidentForm, setNewIncidentForm] = useState({
+    requesting_facility: "",
+    receiving_facility: "",
+    transport_type: "IFT" as "IFT" | "NEMT" | "CCT",
+    priority: "Routine",
+    scheduled_time: "",
+    notes: "",
+  });
 
-  useEffect(() => {
-    loadDashboardData();
-    const interval = setInterval(loadDashboardData, 10000); // Refresh every 10s
-    return () => clearInterval(interval);
-  }, []);
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       const [incidents, units] = await Promise.all([
         apiFetch<Incident[]>("/api/cad/incidents/active").catch(() => []),
@@ -49,7 +54,7 @@ export default function CADDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const getPriorityColor = (priority: string) => {
     switch (priority.toLowerCase()) {
@@ -93,11 +98,111 @@ export default function CADDashboard() {
             >
               All Incidents
             </Link>
-            <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors font-medium">
+            <button
+              type="button"
+              onClick={() => setNewIncidentOpen(true)}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors font-medium"
+            >
               New Incident
             </button>
           </div>
         </div>
+
+        {/* New Incident Modal */}
+        {newIncidentOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={() => !newIncidentSubmitting && setNewIncidentOpen(false)}>
+            <div className="bg-zinc-900 rounded-xl border border-zinc-700 shadow-xl max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+              <h2 className="text-xl font-semibold mb-4">New CAD Incident</h2>
+              {newIncidentError && (
+                <div className="mb-4 p-3 rounded-lg bg-red-900/20 border border-red-600/30 text-red-400 text-sm">{newIncidentError}</div>
+              )}
+              <form onSubmit={handleCreateIncident} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-zinc-400 mb-1">Requesting Facility *</label>
+                  <input
+                    type="text"
+                    required
+                    value={newIncidentForm.requesting_facility}
+                    onChange={(e) => setNewIncidentForm((f) => ({ ...f, requesting_facility: e.target.value }))}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                    placeholder="e.g. County General"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-zinc-400 mb-1">Receiving Facility *</label>
+                  <input
+                    type="text"
+                    required
+                    value={newIncidentForm.receiving_facility}
+                    onChange={(e) => setNewIncidentForm((f) => ({ ...f, receiving_facility: e.target.value }))}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                    placeholder="e.g. Regional Medical Center"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-zinc-400 mb-1">Transport Type *</label>
+                  <select
+                    value={newIncidentForm.transport_type}
+                    onChange={(e) => setNewIncidentForm((f) => ({ ...f, transport_type: e.target.value as "IFT" | "NEMT" | "CCT" }))}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="IFT">IFT</option>
+                    <option value="NEMT">NEMT</option>
+                    <option value="CCT">CCT</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-zinc-400 mb-1">Priority</label>
+                  <select
+                    value={newIncidentForm.priority}
+                    onChange={(e) => setNewIncidentForm((f) => ({ ...f, priority: e.target.value }))}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                  >
+                    <option value="Routine">Routine</option>
+                    <option value="Urgent">Urgent</option>
+                    <option value="Emergency">Emergency</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-zinc-400 mb-1">Scheduled Time (optional)</label>
+                  <input
+                    type="datetime-local"
+                    value={newIncidentForm.scheduled_time}
+                    onChange={(e) => setNewIncidentForm((f) => ({ ...f, scheduled_time: e.target.value }))}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-zinc-400 mb-1">Notes (optional)</label>
+                  <textarea
+                    value={newIncidentForm.notes}
+                    onChange={(e) => setNewIncidentForm((f) => ({ ...f, notes: e.target.value }))}
+                    rows={2}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+                    placeholder="Additional notes..."
+                  />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setNewIncidentOpen(false)}
+                    disabled={newIncidentSubmitting}
+                    className="flex-1 px-4 py-2 bg-zinc-700 hover:bg-zinc-600 rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={newIncidentSubmitting}
+                    className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors font-medium disabled:opacity-50"
+                  >
+                    {newIncidentSubmitting ? "Creating..." : "Create Incident"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         {loading && (
           <div className="text-center py-12 text-zinc-400">Loading dispatch board...</div>

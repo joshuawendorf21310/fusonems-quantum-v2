@@ -187,7 +187,7 @@ const HRDashboard = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.1 }}
-              whileHover={{ y: -4, shadow: '0 20px 40px rgba(0,0,0,0.1)' }}
+              whileHover={{ y: -4, boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}
               className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6 hover:border-zinc-700 transition-all"
             >
               <div className="flex items-start justify-between">
@@ -235,6 +235,7 @@ const HRDashboard = () => {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6"
+            style={{ minWidth: 320, minHeight: 160 }}
           >
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -312,6 +313,7 @@ const HRDashboard = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6"
+            style={{ minWidth: 320, minHeight: 160 }}
           >
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -347,6 +349,7 @@ const HRDashboard = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6"
+            style={{ minWidth: 320, minHeight: 160 }}
           >
             <div className="flex items-center justify-between mb-6">
               <div>

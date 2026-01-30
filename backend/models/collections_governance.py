@@ -80,7 +80,7 @@ class CollectionsAccount(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     statement_id = Column(Integer, ForeignKey("patient_statements.id"), unique=True, nullable=False)
-    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
+    patient_id = Column(Integer, ForeignKey("epcr_patients.id"), nullable=False)
     
     current_phase = Column(SQLEnum(CollectionsPhase), default=CollectionsPhase.INTERNAL)
     
@@ -191,7 +191,7 @@ class WriteOffRecord(Base):
     id = Column(Integer, primary_key=True, index=True)
     account_id = Column(Integer, ForeignKey("collections_accounts.id"), nullable=False)
     statement_id = Column(Integer, ForeignKey("patient_statements.id"), nullable=False)
-    patient_id = Column(Integer, ForeignKey("patients.id"), nullable=False)
+    patient_id = Column(Integer, ForeignKey("epcr_patients.id"), nullable=False)
     
     original_balance = Column(Float, nullable=False)
     amount_paid = Column(Float, default=0.0)

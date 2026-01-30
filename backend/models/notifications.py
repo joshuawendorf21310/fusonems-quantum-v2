@@ -16,6 +16,7 @@ class NotificationType(str, Enum):
     COMPLIANCE_REMINDER = "compliance.reminder"
     TASK_ASSIGNED = "task.assigned"
     DOCUMENT_READY = "document.ready"
+    NEMSIS_UPDATE = "compliance.nemsis_update"
 
 
 class NotificationSeverity(str, Enum):

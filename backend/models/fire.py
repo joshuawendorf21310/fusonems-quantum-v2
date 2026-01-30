@@ -1,9 +1,9 @@
 from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, JSON, String, Text, func
 
-from core.database import FireBase
+from core.database import Base
 
 
-class FireIncident(FireBase):
+class FireIncident(Base):
     __tablename__ = "fire_incidents"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -50,7 +50,7 @@ class FireIncident(FireBase):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=True)
 
 
-class FireApparatus(FireBase):
+class FireApparatus(Base):
     __tablename__ = "fire_apparatus"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -64,7 +64,7 @@ class FireApparatus(FireBase):
     readiness_score = Column(Integer, default=100)
 
 
-class FireApparatusInventory(FireBase):
+class FireApparatusInventory(Base):
     __tablename__ = "fire_apparatus_inventory"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -78,20 +78,8 @@ class FireApparatusInventory(FireBase):
     notes = Column(Text, default="")
 
 
-class FirePersonnel(FireBase):
-    __tablename__ = "fire_personnel"
 
-    id = Column(Integer, primary_key=True, index=True)
-    org_id = Column(Integer, nullable=False, index=True)
-    classification = Column(String, default="OPS")
-    training_mode = Column(Boolean, default=False)
-    full_name = Column(String, nullable=False)
-    role = Column(String, nullable=False)
-    certifications = Column(Text, default="")
-    status = Column(String, default="Active")
-
-
-class FireIncidentApparatus(FireBase):
+class FireIncidentApparatus(Base):
     __tablename__ = "fire_incident_apparatus"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -105,7 +93,7 @@ class FireIncidentApparatus(FireBase):
     notes = Column(Text, default="")
 
 
-class FireIncidentPersonnel(FireBase):
+class FireIncidentPersonnel(Base):
     __tablename__ = "fire_incident_personnel"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -119,7 +107,7 @@ class FireIncidentPersonnel(FireBase):
     notes = Column(Text, default="")
 
 
-class FireTrainingRecord(FireBase):
+class FireTrainingRecord(Base):
     __tablename__ = "fire_training_records"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -133,7 +121,7 @@ class FireTrainingRecord(FireBase):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
-class FirePreventionRecord(FireBase):
+class FirePreventionRecord(Base):
     __tablename__ = "fire_prevention_records"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -147,7 +135,7 @@ class FirePreventionRecord(FireBase):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
-class FireAuditLog(FireBase):
+class FireAuditLog(Base):
     __tablename__ = "fire_audit_logs"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -160,7 +148,7 @@ class FireAuditLog(FireBase):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
-class FireExportRecord(FireBase):
+class FireExportRecord(Base):
     __tablename__ = "fire_exports"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -174,7 +162,7 @@ class FireExportRecord(FireBase):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
-class FireIncidentTimeline(FireBase):
+class FireIncidentTimeline(Base):
     __tablename__ = "fire_incident_timeline"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -189,7 +177,7 @@ class FireIncidentTimeline(FireBase):
     recorded_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
-class FireInventoryHook(FireBase):
+class FireInventoryHook(Base):
     __tablename__ = "fire_inventory_hooks"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -207,7 +195,7 @@ class FireInventoryHook(FireBase):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
-class Fire911Transport(FireBase):
+class Fire911Transport(Base):
     __tablename__ = "fire_911_transports"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -252,7 +240,7 @@ class Fire911Transport(FireBase):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
-class Fire911TransportTimeline(FireBase):
+class Fire911TransportTimeline(Base):
     __tablename__ = "fire_911_transport_timeline"
 
     id = Column(Integer, primary_key=True, index=True)

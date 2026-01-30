@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import Link from "next/link";
+import { NemsisRecordActions } from "@/components/epcr";
 
 interface PCRData {
   id: string;
@@ -122,7 +123,8 @@ export default function EPCRDetail() {
             <h1 className="text-3xl font-bold">PCR #{pcr.incident_number}</h1>
             <p className="text-zinc-400 mt-1">{pcr.patient_name}</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <NemsisRecordActions recordId={id} stateCode="WI" compact />
             {editMode ? (
               <>
                 <button

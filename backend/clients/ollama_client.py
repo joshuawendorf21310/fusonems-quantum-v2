@@ -11,8 +11,14 @@ from utils.logger import logger
 class OllamaClient:
     """Client for Ollama local LLM server."""
     
-    def __init__(self, base_url: str = "http://localhost:11434"):
-        self.base_url = base_url
+    def __init__(self, base_url: Optional[str] = None):
+        if base_url is None:
+            try:
+                from core.config import settings
+                base_url = getattr(settings, "OLLAMA_SERVER_URL", None) or "http://localhost:11434"
+            except Exception:
+                base_url = "http://localhost:11434"
+        self.base_url = base_url.rstrip("/")
         self.timeout = 120.0
     
     async def generate(
@@ -118,3 +124,19 @@ class OllamaClient:
         except httpx.HTTPError as e:
             logger.error(f"Ollama list_models error: {e}")
             return {"error": str(e), "models": []}
+
+    async def generate_response(
+        self,
+        prompt: str,
+        system_prompt: Optional[str] = None,
+        model: str = "llama3.2",
+    ) -> str:
+        """Generate text and return the response string (for billing chat, explain, etc.)."""
+        result = await self.generate(
+            prompt=prompt,
+            model=model,
+            system=system_prompt,
+        )
+        if isinstance(result, dict) and "response" in result:
+            return (result.get("response") or "").strip()
+        return ""

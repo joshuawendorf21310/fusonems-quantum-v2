@@ -1,0 +1,32 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- FusionEMS Quantum - Redesigned mark: EMS / Fire / HEMS - one intelligence engine -->
+  <defs>
+    <linearGradient id="core" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f97316"/>
+      <stop offset="100%" stop-color="#dc2626"/>
+    </linearGradient>
+    <linearGradient id="ring" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="rgba(249,115,22,0.9)"/>
+      <stop offset="100%" stop-color="rgba(220,38,38,0.6)"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <!-- Outer shield / response arc (abstract) -->
+  <path d="M256 72 L440 180 L440 332 Q440 420 256 440 Q72 420 72 332 L72 180 Z" stroke="url(#ring)" stroke-width="20" fill="none" stroke-linejoin="round"/>
+  <!-- Inner hex / core container -->
+  <path d="M256 120 L376 200 L376 312 L256 392 L136 312 L136 200 Z" stroke="rgba(255,255,255,0.25)" stroke-width="12" fill="none"/>
+  <!-- Central core: orange to red -->
+  <circle cx="256" cy="256" r="44" fill="url(#core)"/>
+  <circle cx="256" cy="256" r="28" fill="rgba(255,255,255,0.2)"/>
+  <!-- Pulse / signal nodes (EMS, Fire, HEMS) -->
+  <circle cx="256" cy="120" r="8" fill="#fb923c"/>
+  <circle cx="392" cy="256" r="8" fill="#f97316"/>
+  <circle cx="256" cy="392" r="8" fill="#dc2626"/>
+  <circle cx="120" cy="256" r="8" fill="#fb923c"/>
+</svg>

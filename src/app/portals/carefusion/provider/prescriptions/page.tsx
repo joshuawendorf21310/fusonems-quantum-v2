@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 
 interface Medication {
@@ -21,7 +21,7 @@ interface Prescription {
   pharmacyId?: string
 }
 
-export default function PrescriptionsPage() {
+function PrescriptionsClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const patientId = searchParams.get("patientId")
@@ -302,5 +302,13 @@ export default function PrescriptionsPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function PrescriptionsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-zinc-950" />}>
+      <PrescriptionsClient />
+    </Suspense>
   )
 }

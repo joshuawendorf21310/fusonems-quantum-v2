@@ -7,7 +7,7 @@ from sqlalchemy import and_
 from models.notifications import InAppNotification, NotificationPreference, NotificationType, NotificationSeverity
 from models.user import User
 from services.notifications.notification_service import NotificationService
-from services.email.email_transport_service import send_postmark_email
+from services.email.email_transport_service import send_notification_email
 from services.communications.comms_router import CommsThread, CommsMessage
 from core.config import settings
 from utils.logger import logger
@@ -150,16 +150,16 @@ class NotificationDispatcher:
         html_body: str,
         training_mode: bool = False,
     ) -> None:
-        if training_mode or not settings.POSTMARK_SERVER_TOKEN:
-            logger.info(f"[Training/Disabled] Email notification to {user.email}: {title}")
+        if training_mode:
+            logger.info(f"[Training] Email notification to {user.email}: {title}")
             return
 
         try:
-            send_postmark_email(
+            send_notification_email(
                 to=user.email,
                 subject=title,
                 html_body=html_body,
-                reply_to=settings.POSTMARK_DEFAULT_SENDER,
+                reply_to=getattr(settings, "SUPPORT_EMAIL", None) or getattr(settings, "FOUNDER_EMAIL", None) or settings.SMTP_USERNAME,
             )
             logger.info(f"Email notification sent to {user.email}")
         except Exception as e:

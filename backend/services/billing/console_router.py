@@ -194,6 +194,57 @@ def console_call_queue(
     ]
 
 
+@router.get("/speed")
+def console_speed(user: User = Depends(require_roles(UserRole.admin, UserRole.billing)), db: Session = Depends(get_db)) -> dict[str, Any]:
+    """Billing speed metrics: claim created → submitted (avg/min/max hours); first-pass rate."""
+    submitted_claims = (
+        db.query(BillingClaim)
+        .filter(
+            BillingClaim.org_id == user.org_id,
+            BillingClaim.status.in_(["submitted", "paid"]),
+            BillingClaim.submitted_at.isnot(None),
+            BillingClaim.created_at.isnot(None),
+        )
+        .all()
+    )
+    hours_to_submit = []
+    for c in submitted_claims:
+        if c.created_at and c.submitted_at:
+            delta = (c.submitted_at - c.created_at).total_seconds() / 3600.0
+            hours_to_submit.append(round(delta, 2))
+    total_claims = (
+        db.query(func.count(BillingClaim.id)).filter(BillingClaim.org_id == user.org_id).scalar() or 0
+    )
+    denied_count = (
+        db.query(func.count(BillingClaim.id))
+        .filter(BillingClaim.org_id == user.org_id, BillingClaim.status == "denied")
+        .scalar()
+        or 0
+    )
+    submitted_count = len(submitted_claims)
+    # First-pass rate: fraction of (submitted + denied) that are submitted (accepted)
+    submitted_or_denied = submitted_count + denied_count
+    first_pass_rate = (
+        round(submitted_count / max(submitted_or_denied, 1), 2) if submitted_or_denied else 0.0
+    )
+    return {
+        "avg_hours_claim_to_submitted": round(sum(hours_to_submit) / len(hours_to_submit), 2) if hours_to_submit else 0,
+        "min_hours_claim_to_submitted": min(hours_to_submit) if hours_to_submit else 0,
+        "max_hours_claim_to_submitted": max(hours_to_submit) if hours_to_submit else 0,
+        "first_pass_rate": first_pass_rate,
+        "submitted_mtd": submitted_count,
+        "pending_count": (
+            db.query(func.count(BillingClaim.id))
+            .filter(
+                BillingClaim.org_id == user.org_id,
+                BillingClaim.status.in_(["draft", "locked", "processing", "ready"]),
+            )
+            .scalar()
+            or 0
+        ),
+    }
+
+
 @router.get("/analytics")
 def console_analytics(user: User = Depends(require_roles(UserRole.admin, UserRole.billing)), db: Session = Depends(get_db)) -> dict[str, Any]:
     now = utc_now()

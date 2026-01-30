@@ -383,11 +383,12 @@ class CrewResourceManagementTraining(Base):
 - Stripe (payments) ✅
 - Lob (physical mail) ✅
 - Postmark (email) ✅
-- **MISSING:** Hospital interfaces, state registries, device integrations
+- **MISSING:** Hospital interfaces, state registries (we use OCR, not device integrations)
 
 **Required Integrations:**
 
 #### **A. Hospital Interfaces (HL7/FHIR):**
+- **Patient information source:** Metriport (demographics, insurance, medical history). Hospital interfaces consume Metriport/FHIR data where applicable.
 - **Hospital Arrival Notifications:** Auto-notify ED of incoming EMS patient with ETA, complaint
 - **Patient Handoff Report:** Send ePCR summary to hospital EMR (HL7 ADT, FHIR)
 - **Hospital Bed Availability:** Query hospital bed status (ER, ICU, STEMI, Stroke)
@@ -842,7 +843,7 @@ class ProtocolComplianceScore(Base):
 
 ### **Budget Estimate:**
 - **Development:** $200,000 - $300,000 (5 months, 5-person team)
-- **Third-Party Integrations:** $50,000 - $100,000 (HL7/FHIR, state registries, device integrations)
+- **Third-Party Integrations:** $50,000 - $100,000 (HL7/FHIR, state registries; we use OCR for equipment/vitals, not device integrations)
 - **Infrastructure:** $5,000 - $10,000/month (monitoring, CI/CD, multi-region backups)
 - **Compliance/Accreditation:** $20,000 - $40,000 (HIPAA audit, CAAS/CAMTS consulting)
 

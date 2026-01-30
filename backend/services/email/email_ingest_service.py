@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from typing import Any
 from uuid import uuid4
 
+from typing import Optional
 from fastapi import HTTPException, Request
 from sqlalchemy.orm import Session
 
@@ -22,6 +23,58 @@ from utils.events import event_bus
 from utils.storage import build_storage_key, get_storage_backend
 from utils.write_ops import apply_training_mode, audit_and_event, model_snapshot
 
+import imaplib
+import email
+
+# === IMAP Polling for Self-Hosted Mailu ===
+def poll_inbound_imap(db, request):
+    """
+    Polls the IMAP inbox for new messages and ingests them.
+    This is a stub for integration; production should use a background task or scheduler.
+    """
+    imap_host = settings.IMAP_HOST
+    imap_port = settings.IMAP_PORT
+    imap_user = settings.IMAP_USERNAME
+    imap_pass = settings.IMAP_PASSWORD
+    imap_tls = settings.IMAP_USE_TLS
+    if not imap_host or not imap_user or not imap_pass:
+        raise Exception("IMAP settings not configured")
+    if imap_tls:
+        mail = imaplib.IMAP4_SSL(imap_host, imap_port)
+    else:
+        mail = imaplib.IMAP4(imap_host, imap_port)
+    mail.login(imap_user, imap_pass)
+    mail.select("INBOX")
+    typ, data = mail.search(None, 'UNSEEN')
+    if not data or not data[0]:
+        mail.logout()
+        return
+    for num in data[0].split():
+        typ, msg_data = mail.fetch(num, '(RFC822)')
+        for response_part in msg_data:
+            if isinstance(response_part, tuple):
+                msg = email.message_from_bytes(response_part[1])
+                # Convert msg to dict payload for ingest_inbound
+                body_plain = ""
+                if msg.is_multipart():
+                    for part in msg.walk():
+                        if part.get_content_type() == "text/plain":
+                            body_plain = (part.get_payload(decode=True) or b"").decode(errors="ignore")
+                            break
+                        if part.get_content_type() == "text/html" and not body_plain:
+                            body_plain = (part.get_payload(decode=True) or b"").decode(errors="ignore")
+                else:
+                    body_plain = (msg.get_payload(decode=True) or b"").decode(errors="ignore")
+                payload = {
+                    "From": msg.get("From"),
+                    "To": msg.get("To"),
+                    "Subject": msg.get("Subject"),
+                    "TextBody": body_plain,
+                    "body_plain": body_plain,
+                }
+                ingest_inbound(db, request, payload)
+        mail.store(num, '+FLAGS', '\\Seen')
+    mail.logout()
 
 def verify_postmark_signature(raw_body: bytes, request: Request) -> None:
     if not settings.POSTMARK_REQUIRE_SIGNATURE:
@@ -194,7 +247,7 @@ def ingest_inbound(
     in_reply_to = payload.get("InReplyTo") or ""
     references = payload.get("References") or []
     sender = payload.get("From") or ""
-    body_plain = payload.get("TextBody") or ""
+    body_plain = payload.get("TextBody") or payload.get("body_plain") or ""
     body_html = payload.get("HtmlBody") or ""
     thread = _resolve_thread(db, org.id, subject, message_id, references, in_reply_to)
 
@@ -217,7 +270,7 @@ def ingest_inbound(
         in_reply_to=in_reply_to,
         references=references if isinstance(references, list) else [references],
         postmark_record_type=record_type,
-        meta={"postmark": {"spam_score": payload.get("SpamScore"), "spam_status": payload.get("SpamStatus")}},
+        meta={"transport": payload.get("transport", "postmark"), "spam_score": payload.get("SpamScore"), "spam_status": payload.get("SpamStatus")},
     )
     apply_training_mode(message, request)
     db.add(message)
