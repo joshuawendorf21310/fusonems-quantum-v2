@@ -26,7 +26,7 @@ interface Provider {
 export default function ProviderDetailPage() {
   const router = useRouter()
   const params = useParams()
-  const providerId = (params?.id as string) ?? ""
+  const providerId = params.id as string
 
   const [provider, setProvider] = useState<Provider | null>(null)
   const [loading, setLoading] = useState(true)

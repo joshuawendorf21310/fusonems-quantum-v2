@@ -27,7 +27,7 @@ function PaymentsClient() {
   const [showSuccess, setShowSuccess] = useState(false)
 
   useEffect(() => {
-    if (searchParams?.get("success") === "true") {
+    if (searchParams.get("success") === "true") {
       setShowSuccess(true)
       setTimeout(() => setShowSuccess(false), 5000)
     }

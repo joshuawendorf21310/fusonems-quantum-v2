@@ -295,7 +295,7 @@ const HRDashboard = () => {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name}: ${((percent ?? 0) * 100).toFixed(0)}%`}
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                   outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
@@ -395,8 +395,8 @@ const HRDashboard = () => {
             {[
               { label: 'Add Personnel', icon: UserPlus, href: '/hr/personnel' },
               { label: 'View Certifications', icon: Award, href: '/hr/certifications' },
-              { label: 'Schedule (Crew Scheduling)', icon: Calendar, href: '/hr/scheduling' },
-              { label: 'Payroll (HR)', icon: DollarSign, href: '/hr/payroll' },
+              { label: 'Manage Schedule', icon: Calendar, href: '/hr/scheduling' },
+              { label: 'Process Payroll', icon: DollarSign, href: '/hr/payroll' },
             ].map((action, idx) => (
               <motion.a
                 key={idx}

@@ -60,7 +60,7 @@ export default function FireScheduling() {
   const renderCalendar = () => {
     const daysInMonth = getDaysInMonth(selectedDate);
     const firstDay = getFirstDayOfMonth(selectedDate);
-    const days: (Date | null)[] = [];
+    const days = [];
 
     for (let i = 0; i < firstDay; i++) {
       days.push(null);

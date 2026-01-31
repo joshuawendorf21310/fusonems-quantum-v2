@@ -15,11 +15,11 @@ const navItems = [
   { label: "Compliance", href: "/compliance", icon: "shield" },
   { label: "HEMS", href: "/hems", icon: "helicopter" },
   { label: "Telehealth", href: "/telehealth", icon: "video" },
-  { label: "Crew Scheduling", href: "/scheduling", icon: "calendar" },
+  { label: "Scheduling", href: "/scheduling", icon: "calendar" },
   { label: "Inventory", href: "/inventory", icon: "box" },
   { label: "Analytics", href: "/analytics", icon: "chart" },
   { label: "Training", href: "/training", icon: "book" },
-  { label: "Personnel & Operations", href: "/hr", icon: "briefcase" },
+  { label: "HR", href: "/hr", icon: "briefcase" },
   { label: "Portals", href: "/portals", icon: "users" },
   { label: "Founders", href: "/founder", icon: "crown" },
 ]

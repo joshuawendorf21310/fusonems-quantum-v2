@@ -3,7 +3,7 @@
 import { useEffect } from "react"
 import { usePathname, useRouter } from "next/navigation"
 
-const ALLOWED = ["/change-password", "/login", "/register", "/request-access", "/password-recovery"]
+const ALLOWED = ["/change-password", "/login", "/register", "/password-recovery"]
 
 export default function MustChangePasswordGuard() {
   const pathname = usePathname()

@@ -101,7 +101,7 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const billId = params?.id ?? ""
+  const billId = params.id
 
   useEffect(() => {
     if (billId) {
@@ -114,8 +114,7 @@ export default function PaymentPage() {
       setLoading(true)
       setError(null)
 
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || ""
-      const billResponse = await fetch(`${baseUrl}/patient-portal/bills/${billId}`, {
+      const billResponse = await fetch(`http://localhost:8000/api/patient-portal/bills/${billId}`, {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
@@ -129,7 +128,7 @@ export default function PaymentPage() {
       const billData = await billResponse.json()
       setBill(billData)
 
-      const paymentIntentResponse = await fetch(`${baseUrl}/patient-portal/create-payment-intent`, {
+      const paymentIntentResponse = await fetch("http://localhost:8000/api/patient-portal/create-payment-intent", {
         method: "POST",
         credentials: "include",
         headers: {

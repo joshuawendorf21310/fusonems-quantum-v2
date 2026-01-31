@@ -56,7 +56,7 @@ interface JitsiConfig {
 export default function VideoConsultationPage() {
   const router = useRouter()
   const params = useParams()
-  const sessionId = (params?.sessionId as string) ?? ""
+  const sessionId = params.sessionId as string
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

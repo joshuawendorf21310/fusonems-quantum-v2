@@ -303,9 +303,9 @@ export default function SchedulingDashboard() {
         <header className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">
-              <span className="text-orange-500">FusionEMS</span> Crew Scheduling
+              <span className="text-orange-500">Scheduling</span> Module
             </h1>
-            <p className="text-zinc-400 mt-1">Shift definitions, assignments, availability, swaps, coverage, fatigue indicators, predictive recommendations. Standalone—no HR or payroll required.</p>
+            <p className="text-zinc-400 mt-1">Enterprise workforce scheduling and management</p>
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -412,9 +412,6 @@ export default function SchedulingDashboard() {
             </div>
           </div>
 
-          <p className="px-4 py-2 text-xs text-zinc-500 border-t border-zinc-800/80">
-            Crew Scheduling: shifts, assignments, availability, time-off, swaps, coverage, fatigue &amp; overtime indicators, predictive recommendations, Fire schedules, PDF/ICS export. Does not run payroll, calculate paychecks, enforce union rules, or guarantee labor compliance.
-          </p>
           {loading ? (
             <div className="p-8 text-center">
               <RefreshCw className="w-8 h-8 animate-spin mx-auto text-orange-500" />

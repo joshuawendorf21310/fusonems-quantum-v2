@@ -1,23 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { apiFetch } from "@/lib/api";
 
 const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
 
-interface StateEndpoint {
-  state_code: string;
-  configured: boolean;
-}
-
-interface StateEndpointsResponse {
-  state_endpoints: StateEndpoint[];
-  realtime?: boolean;
-}
-
 interface NemsisRecordActionsProps {
   recordId: string | number;
-  /** Optional state code for submit (e.g. WI). Defaults to first configured state. */
+  /** Optional state code for submit (e.g. WI). Defaults to WI. */
   stateCode?: string;
   /** Optional: show compact layout */
   compact?: boolean;
@@ -35,7 +25,7 @@ interface SubmitResult {
 
 export function NemsisRecordActions({
   recordId,
-  stateCode: stateCodeProp,
+  stateCode = "WI",
   compact = false,
   className = "",
 }: NemsisRecordActionsProps) {
@@ -43,17 +33,6 @@ export function NemsisRecordActions({
   const [submitting, setSubmitting] = useState(false);
   const [submitResult, setSubmitResult] = useState<SubmitResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [selectedState, setSelectedState] = useState<string>("");
-  const [stateEndpoints, setStateEndpoints] = useState<StateEndpoint[]>([]);
-
-  useEffect(() => {
-    apiFetch<StateEndpointsResponse>("/api/epcr/state-endpoints")
-      .then((data) => setStateEndpoints(data?.state_endpoints ?? []))
-      .catch(() => setStateEndpoints([]));
-  }, []);
-  const configuredStates = stateEndpoints.filter((s) => s.configured);
-  const stateCode =
-    stateCodeProp ?? (selectedState || (configuredStates[0]?.state_code ?? stateEndpoints[0]?.state_code ?? "WI"));
 
   const handleExportNemsis = async () => {
     setError(null);
@@ -103,22 +82,6 @@ export function NemsisRecordActions({
   return (
     <div className={`rounded-lg border border-zinc-700/80 bg-zinc-900/80 p-4 ${className}`}>
       <h3 className="text-sm font-semibold text-orange-400 mb-3">NEMSIS</h3>
-      {stateEndpoints.length > 1 && !stateCodeProp && (
-        <div className="mb-3">
-          <label className="block text-xs text-zinc-400 mb-1">State</label>
-          <select
-            value={stateCode}
-            onChange={(e) => setSelectedState(e.target.value)}
-            className="w-full max-w-[8rem] rounded bg-zinc-800 text-zinc-200 border border-zinc-600 px-2 py-1.5 text-sm"
-          >
-            {stateEndpoints.map((s) => (
-              <option key={s.state_code} value={s.state_code} disabled={!s.configured}>
-                {s.state_code}{s.configured ? "" : " (not configured)"}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
       <div className={`flex flex-wrap gap-2 ${compact ? "gap-2" : "gap-3"}`}>
         <button
           type="button"
@@ -131,7 +94,7 @@ export function NemsisRecordActions({
         <button
           type="button"
           onClick={handleSubmitToState}
-          disabled={submitting || (stateEndpoints.length > 0 && !configuredStates.find((s) => s.state_code === stateCode))}
+          disabled={submitting}
           className="px-3 py-2 rounded-lg bg-orange-600/20 text-orange-400 hover:bg-orange-600/30 text-sm font-medium disabled:opacity-50"
         >
           {submitting ? "Submitting…" : "Submit to state"}

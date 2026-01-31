@@ -11,7 +11,7 @@ function TwoFactorContent() {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const returnTo = searchParams?.get("returnTo") || "/dashboard";
+  const returnTo = searchParams.get("returnTo") || "/dashboard";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

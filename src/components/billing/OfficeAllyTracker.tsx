@@ -27,7 +27,7 @@ export default function OfficeAllyTracker({ batchId, submittedAt, status, ackPay
       )}
       {ackPayload && (
         <p style={{ margin: "0.35rem 0 0", fontSize: "0.72rem", color: "#777" }}>
-          Ack: {typeof ackPayload?.status === "object" ? "OK" : String(ackPayload?.status ?? "N/A")}
+          Ack: {ackPayload?.status || "N/A"}
         </p>
       )}
     </div>

@@ -146,7 +146,6 @@ export default function ScenariosPage() {
       }, 1000);
       return () => clearInterval(timer);
     }
-    return () => {};
   }, [activeScenario, timeRemaining, isPaused, showResults]);
 
   const startScenario = (scenario: Scenario) => {

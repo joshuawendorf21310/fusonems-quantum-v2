@@ -41,8 +41,7 @@ export default function ProfilePage() {
     try {
       setLoading(true)
       setError(null)
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || ""
-      const response = await fetch(`${baseUrl}/patient-portal/profile`, {
+      const response = await fetch("http://localhost:8000/api/patient-portal/profile", {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",
@@ -69,8 +68,7 @@ export default function ProfilePage() {
     try {
       setSaving(true)
       setError(null)
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || ""
-      const response = await fetch(`${baseUrl}/patient-portal/profile`, {
+      const response = await fetch("http://localhost:8000/api/patient-portal/profile", {
         method: "PUT",
         credentials: "include",
         headers: {

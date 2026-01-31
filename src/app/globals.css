@@ -43,52 +43,6 @@
   box-sizing: border-box;
 }
 
-/* SVG Safety Net - Prevent oversized SVGs when Tailwind classes don't load */
-svg {
-  max-width: 100%;
-  height: auto;
-  flex-shrink: 0;
-}
-
-svg:not([width]):not([height]) {
-  max-width: 100%;
-  max-height: 100%;
-}
-
-/* Ensure SVGs with Tailwind size classes have fallback constraints */
-svg[class*="w-"][class*="h-"] {
-  flex-shrink: 0;
-}
-
-/* Logo safety - CRITICAL: Prevent 512x512 logo from breaking layouts */
-img[alt="FusionEMS Quantum logo"],
-img[alt*="FusionEMS"],
-img[src*="logo-mark"],
-img[src*="logo-icon"],
-img[src*="logo-full"],
-img[src*="logo-header"] {
-  max-width: 100% !important;
-  height: auto !important;
-  object-fit: contain;
-}
-
-/* Hero logo constraint */
-.hero-logo,
-.hero-icon-active img,
-.logo-icon-wrap img {
-  max-width: 120px !important;
-  max-height: 120px !important;
-  width: auto !important;
-  height: auto !important;
-}
-
-/* Header logo constraint */
-.header-lockup img,
-.logo-section img {
-  max-width: 40px !important;
-  max-height: 40px !important;
-}
-
 html {
   scroll-behavior: smooth;
 }
@@ -1343,55 +1297,6 @@ body {
   font-size: 1rem;
   color: var(--charcoal-300);
   margin: 0 0 1rem;
-}
-
-.billing-selector {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  justify-content: center;
-  margin-bottom: 1.5rem;
-}
-
-.billing-selector-btn {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--charcoal-300);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(249, 115, 22, 0.3);
-  border-radius: 0.5rem;
-  cursor: pointer;
-  transition: color 0.2s, background 0.2s, border-color 0.2s;
-}
-
-.billing-selector-btn:hover {
-  color: #fff;
-  background: rgba(249, 115, 22, 0.1);
-  border-color: rgba(249, 115, 22, 0.5);
-}
-
-.billing-selector-btn--active {
-  color: #fff;
-  background: rgba(249, 115, 22, 0.2);
-  border-color: var(--orange-500);
-}
-
-.billing-copy-panel {
-  text-align: left;
-  max-width: 36rem;
-  margin: 0 auto 1.25rem;
-}
-
-.billing-copy-panel .billing-desc {
-  text-align: left;
-}
-
-.billing-pricing-note {
-  font-size: 0.875rem;
-  color: var(--charcoal-400);
-  margin: 0 0 1.5rem;
-  font-style: italic;
 }
 
 .billing-sub {

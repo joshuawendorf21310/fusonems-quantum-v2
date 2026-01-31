@@ -1,7 +1,4 @@
-"use client"
-
 import Link from "next/link"
-import { useEffect, useState } from "react"
 import Logo from "@/components/Logo"
 import TrustBadge from "@/components/marketing/TrustBadge"
 import { SecurityHero, SecurityControls, SecurityStats, SecurityCTA } from "@/components/SecurityHero"
@@ -19,84 +16,9 @@ import {
   Activity,
   ShieldCheck,
   Zap,
-  CalendarDays,
 } from "lucide-react"
 
-type BillingServiceType = "not-sure" | "fire-based" | "third-service" | "hems"
-
-const BILLING_COPY: Record<BillingServiceType, { title: string; paragraphs: string[] }> = {
-  "not-sure": {
-    title: "Transport Billing Integrated Into the Workflow",
-    paragraphs: [
-      "Disconnected systems and manual handoffs are common sources of billing delay and revenue loss across EMS agencies of all types.",
-      "FusionEMS Quantum delivers native transport billing aligned with dispatch, documentation, telehealth, and facility coordination—creating a continuous, auditable workflow from dispatch through reimbursement.",
-      "When billing data remains connected to operations and clinical context, even modest improvements can have a measurable financial impact over time.",
-    ],
-  },
-  "fire-based": {
-    title: "Transport Billing Built for Fire-Based EMS",
-    paragraphs: [
-      "Fire-based EMS agencies operate in complex environments with mixed response types, shared resources, and documentation that often spans systems never designed to work together.",
-      "FusionEMS Quantum treats transport billing as an extension of operations—not a back-office function. Dispatch activity, unit response data, patient care documentation, FusionCare™ telehealth encounters, and facility-scheduled transports are aligned into a single, auditable workflow.",
-      "Because billing outcomes are shaped upstream, even small improvements in workflow continuity can materially impact reimbursement over time.",
-    ],
-  },
-  "third-service": {
-    title: "Transport Billing Designed for Third-Service EMS",
-    paragraphs: [
-      "Third-service EMS agencies depend on predictable reimbursement to sustain staffing, readiness, and response coverage—yet billing workflows are often fragmented across dispatch, documentation, and third-party systems.",
-      "FusionEMS Quantum delivers native transport billing directly connected to CAD, patient care documentation, FusionCare™ telehealth encounters, and Transport Link™ facility requests.",
-      "When documentation, clinical context, and transport data stay connected, billing outcomes become more predictable and defensible.",
-    ],
-  },
-  hems: {
-    title: "Transport Billing for High-Acuity and Air Medical Operations",
-    paragraphs: [
-      "HEMS and air medical programs face uniquely complex billing challenges, including advanced clinical documentation, strict payer scrutiny, and high-acuity justification requirements.",
-      "FusionEMS Quantum integrates flight operations, clinical documentation, FusionCare™ telehealth consults, and transport billing into a single workflow designed to preserve clinical justification and audit defensibility.",
-      "In high-acuity environments, documentation continuity is critical to financial sustainability.",
-    ],
-  },
-}
-
 export default function HomePage() {
-  const [billingServiceType, setBillingServiceType] = useState<BillingServiceType>("not-sure")
-
-  // Handle smooth scrolling for hash links
-  useEffect(() => {
-    const handleHashClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement
-      const link = target.closest('a[href^="#"]') as HTMLAnchorElement
-      if (link) {
-        const hash = link.getAttribute('href')
-        if (hash && hash.startsWith('#')) {
-          e.preventDefault()
-          const id = hash.substring(1)
-          const element = document.getElementById(id)
-          if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'start' })
-            // Update URL without jumping
-            window.history.pushState(null, '', hash)
-          }
-        }
-      }
-    }
-
-    // Handle initial hash on page load
-    if (window.location.hash) {
-      const id = window.location.hash.substring(1)
-      setTimeout(() => {
-        const element = document.getElementById(id)
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        }
-      }, 100)
-    }
-
-    document.addEventListener('click', handleHashClick)
-    return () => document.removeEventListener('click', handleHashClick)
-  }, [])
-
   return (
     <div className="homepage-wrapper">
       <div className="bg-motion" aria-hidden>
@@ -111,14 +33,12 @@ export default function HomePage() {
             <Logo variant="headerLockup" active />
           </Link>
           <nav className="quick-nav" aria-label="Primary">
-            <Link href="#modules" className="nav-item">Modules</Link>
-            <Link href="#fusioncare" className="nav-item">FusionCare</Link>
-            <Link href="#transport-link" className="nav-item">Transport Link</Link>
+            <Link href="/#modules" className="nav-item">Modules</Link>
+            <Link href="/#fusioncare" className="nav-item">FusionCare</Link>
+            <Link href="/#transport-link" className="nav-item">Transport Link</Link>
             <Link href="/portals" className="nav-item">Architecture</Link>
-            <Link href="#stats" className="nav-item">Performance</Link>
-            <Link href="#contact" className="nav-item">Contact</Link>
-            <Link href="/pricing" className="nav-item">Pricing</Link>
-            <Link href="/fusionems-scheduling" className="nav-item">Scheduling</Link>
+            <Link href="/#stats" className="nav-item">Performance</Link>
+            <Link href="/#contact" className="nav-item">Contact</Link>
             <Link href="/billing" className="nav-item nav-item--pay">Pay a Bill</Link>
           </nav>
           <div className="top-bar-actions">
@@ -262,38 +182,20 @@ export default function HomePage() {
         <section id="billing" className="billing-redesign section-anim">
           <div className="billing-inner">
             <span className="section-label section-label--light">Revenue</span>
-            <h2 className="billing-title">{BILLING_COPY[billingServiceType].title}</h2>
-            <p className="billing-lead">What type of service best describes your agency?</p>
-            <div className="billing-selector" role="group" aria-label="Service type">
-              {(
-                [
-                  { value: "fire-based" as const, label: "Fire-Based EMS" },
-                  { value: "third-service" as const, label: "Third-Service EMS" },
-                  { value: "hems" as const, label: "HEMS / Air Medical" },
-                  { value: "not-sure" as const, label: "Not Sure / Other" },
-                ] as const
-              ).map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setBillingServiceType(opt.value)}
-                  className={`billing-selector-btn ${billingServiceType === opt.value ? "billing-selector-btn--active" : ""}`}
-                  aria-pressed={billingServiceType === opt.value}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-            <div className="billing-copy-panel">
-              {BILLING_COPY[billingServiceType].paragraphs.map((p, i) => (
-                <p key={i} className="billing-desc">{p}</p>
-              ))}
-            </div>
-            <p className="billing-pricing-note">
-              Pricing is transparent, usage-aligned, and replaces traditional third-party billing vendors without percentage-of-revenue fees.
+            <h2 className="billing-title">Transport Billing — Dispatch to Reimbursement</h2>
+            <p className="billing-lead">One auditable revenue workflow. No handoffs. Fewer denials. Faster reimbursement.</p>
+            <p className="billing-desc">
+              Transport billing is native to the platform. It connects CAD activity, clinical documentation, and Transport Link requests; it also links to FusionCare for encounter data. One pipeline from dispatch through care to billing—reducing re-keying, revenue leakage, and audit risk.
             </p>
+            <ul className="billing-list">
+              <li>Dispatch → care → billing continuity</li>
+              <li>No handoffs between systems</li>
+              <li>Reduced denials and faster reimbursement</li>
+              <li>Audit-ready documentation</li>
+            </ul>
             <div className="billing-cta">
-              <Link href="/billing/roi" className="btn-secondary">Estimate ROI by ZIP Code</Link>
+              <Link href="/demo" className="btn-primary">Request a Demo</Link>
+              <Link href="/billing" className="btn-pay">Pay a Bill</Link>
             </div>
           </div>
         </section>
@@ -333,7 +235,6 @@ export default function HomePage() {
               { title: "CAD", desc: "Dispatch, incident lifecycle, unit status.", href: "/cad", Icon: MapPin },
               { title: "ePCR", desc: "Clinical documentation, validations, exports.", href: "/epcr", Icon: ClipboardList },
               { title: "Billing", desc: "Transport billing, claims, denials, analytics.", href: "/billing/dashboard", Icon: DollarSign },
-              { title: "Scheduling", desc: "Crew scheduling, shifts, availability, swaps.", href: "/fusionems-scheduling", Icon: CalendarDays },
               { title: "Fire RMS", desc: "Inspections, hydrants, preplans, CRR.", href: "/fire/rms", Icon: Flame },
               { title: "Fleet", desc: "Vehicles, DVIR, inspections, maintenance.", href: "/fleet", Icon: Truck },
               { title: "Compliance", desc: "HIPAA, CJIS, DEA, CMS.", href: "/compliance", Icon: Shield },
@@ -394,8 +295,6 @@ export default function HomePage() {
             <span>&copy; {new Date().getFullYear()} FusionEMS Quantum</span>
             <nav className="footer-links">
               <Link href="/portals" className="footer-link">Architecture</Link>
-              <Link href="/pricing" className="footer-link">Pricing</Link>
-              <Link href="/fusionems-scheduling" className="footer-link">Scheduling</Link>
               <Link href="/demo" className="footer-link">Demo</Link>
               <Link href="/billing" className="footer-link footer-link--pay">Pay a Bill</Link>
             </nav>

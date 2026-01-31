@@ -47,7 +47,7 @@ interface Medication {
 
 export default function PatientDetailPage() {
   const params = useParams()
-  const patientId = (params?.id as string) ?? ""
+  const patientId = params.id as string
   
   const [patient, setPatient] = useState<PatientDetail | null>(null)
   const [medicalHistory, setMedicalHistory] = useState<MedicalHistory[]>([])

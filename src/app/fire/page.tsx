@@ -77,7 +77,7 @@ export default function FireDashboard() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <PageShell title="Fire Services" requireAuth={true}>
       {/* Header */}
       <div className="relative overflow-hidden bg-gradient-to-r from-red-950 via-zinc-900 to-orange-950 border-b border-red-900/30">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />

@@ -203,16 +203,16 @@ export default function PredictiveDashboard() {
                 <Heart className={`w-8 h-8 ${
                   insights?.wellness_summary.critical_required ? 'text-red-400' : 'text-pink-400'
                 }`} />
-                {(insights?.wellness_summary?.alerts_count ?? 0) > 0 && (
+                {insights?.wellness_summary.alerts_count > 0 && (
                   <span className="px-2 py-1 text-xs bg-orange-500 text-white rounded-full">
-                    {insights?.wellness_summary?.alerts_count ?? 0}
+                    {insights.wellness_summary.alerts_count}
                   </span>
                 )}
               </div>
               <h3 className="text-lg font-semibold mb-1">Wellness Center</h3>
               <div className="flex items-baseline space-x-2">
                 <span className="text-3xl font-bold">
-                  {insights?.wellness_summary?.alerts_count ?? 0}
+                  {insights?.wellness_summary.alerts_count || 0}
                 </span>
                 <span className="text-zinc-400">active alerts</span>
               </div>

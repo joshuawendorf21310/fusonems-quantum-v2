@@ -24,8 +24,8 @@ interface Prescription {
 function PrescriptionsClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const patientId = searchParams?.get("patientId")
-  const visitId = searchParams?.get("visitId")
+  const patientId = searchParams.get("patientId")
+  const visitId = searchParams.get("visitId")
 
   const [searchTerm, setSearchTerm] = useState("")
   const [medications, setMedications] = useState<Medication[]>([])

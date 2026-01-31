@@ -9,7 +9,6 @@ export default function BillingLayout({
   children: React.ReactNode
 }) {
   const pathname = usePathname() ?? ""
-  const isPublicPage = pathname.includes("/roi")
   const pageContext =
     pathname.includes("denials") ? "Denials page" :
     pathname.includes("claims-ready") ? "Claims ready to submit" :
@@ -22,11 +21,9 @@ export default function BillingLayout({
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       {children}
-      {!isPublicPage && (
-        <div style={{ maxWidth: 900, width: "100%", margin: "0 auto", padding: "0 1.5rem 2rem" }}>
-          <BillingAIAssistant pageContext={pageContext} />
-        </div>
-      )}
+      <div style={{ maxWidth: 900, width: "100%", margin: "0 auto", padding: "0 1.5rem 2rem" }}>
+        <BillingAIAssistant pageContext={pageContext} />
+      </div>
     </div>
   )
 }

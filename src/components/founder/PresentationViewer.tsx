@@ -22,12 +22,6 @@ function sanitizeHTML(html: string): string {
 
 const PresentationViewer: React.FC<Props> = ({ slides }) => {
   const [current, setCurrent] = React.useState(0)
-  
-  // Sanitize the slide content before rendering
-  const sanitizedSlide = React.useMemo(
-    () => sanitizeHTML(slides[current] || ''),
-    [slides, current]
-  )
 
   const toolbar = (
     <div className="flex items-center gap-2 p-2 rounded-t-lg border-b" style={{ background: "#D83B01", borderColor: "#b33301" }}>

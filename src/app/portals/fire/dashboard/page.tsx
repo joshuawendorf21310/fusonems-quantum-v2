@@ -7,13 +7,13 @@ export default function FireDashboard() {
   return (
     <PageShell title="Fire Portal" requireAuth={true}>
       <div className="space-y-8">
-        <section className="portal-hero">
-          <h2 className="text-4xl font-black tracking-tight text-white mb-2">Fire Operations Center</h2>
-          <p className="text-zinc-400 text-lg">Real-time fire department management and incident command</p>
-        </section>
+        <div>
+          <h2 className="text-4xl font-black text-white mb-2">Fire Operations Center</h2>
+          <p className="text-gray-400 text-lg">Real-time fire department management and incident command</p>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="portal-stat-card rounded-2xl border border-white/10 bg-white/5 p-6 shadow-lg shadow-black/20 backdrop-blur-sm transition-all hover:border-white/20 hover:shadow-xl">
+          <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-green-500/10 border border-green-500/20 rounded-xl flex items-center justify-center">
                 <svg className="w-6 h-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -26,7 +26,7 @@ export default function FireDashboard() {
             <p className="text-gray-400 text-sm">Apparatus Available</p>
           </div>
 
-          <div className="portal-stat-card rounded-2xl border border-white/10 bg-white/5 p-6 shadow-lg shadow-black/20 backdrop-blur-sm transition-all hover:border-white/20 hover:shadow-xl">
+          <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center justify-center">
                 <svg className="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -39,7 +39,7 @@ export default function FireDashboard() {
             <p className="text-gray-400 text-sm">Active Incidents</p>
           </div>
 
-          <div className="portal-stat-card rounded-2xl border border-white/10 bg-white/5 p-6 shadow-lg shadow-black/20 backdrop-blur-sm transition-all hover:border-white/20 hover:shadow-xl">
+          <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-center justify-center">
                 <svg className="w-6 h-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -52,7 +52,7 @@ export default function FireDashboard() {
             <p className="text-gray-400 text-sm">Personnel On Duty</p>
           </div>
 
-          <div className="portal-stat-card rounded-2xl border border-white/10 bg-white/5 p-6 shadow-lg shadow-black/20 backdrop-blur-sm transition-all hover:border-white/20 hover:shadow-xl">
+          <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-purple-500/10 border border-purple-500/20 rounded-xl flex items-center justify-center">
                 <svg className="w-6 h-6 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">

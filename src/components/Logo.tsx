@@ -35,55 +35,51 @@ export default function Logo({
   if (variant === 'headerLockup') {
     const iconSize = 40
     return (
-      <span className={`header-lockup ${className}`.trim()} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <span className="logo-icon-wrap" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, width: iconSize, height: iconSize }}>
+      <span className={`header-lockup ${className}`.trim()}>
+        <span className="logo-icon-wrap">
           <Image
             src={`${logoSrc.icon}?v=${LOGO_VERSION}`}
             alt=""
             width={iconSize}
             height={iconSize}
             className={active ? 'logo-icon-active' : ''}
-            style={{ width: iconSize, height: iconSize, maxWidth: iconSize, maxHeight: iconSize }}
             priority
             aria-hidden
           />
         </span>
-        <span className="text-white font-semibold text-lg tracking-tight whitespace-nowrap" style={{ color: '#fff', fontWeight: 600, fontSize: 18, letterSpacing: '-0.025em', whiteSpace: 'nowrap' }}>
-          FusionEMS <span className="text-orange-400" style={{ color: '#fb923c' }}>Quantum</span>
+        <span className="text-white font-semibold text-lg tracking-tight whitespace-nowrap">
+          FusionEMS <span className="text-orange-400">Quantum</span>
         </span>
       </span>
     )
   }
 
   if (variant === 'header') {
-    const w = width ?? 180
-    const h = height ?? 48
     return (
       <Image
         src={`${logoSrc.header}?v=${LOGO_VERSION}`}
         alt="FusionEMS Quantum logo"
-        width={w}
-        height={h}
+        width={width ?? 180}
+        height={height ?? 48}
         className={className}
-        style={{ width: w, height: h, maxWidth: w, maxHeight: h }}
         priority
         aria-label="FusionEMS Quantum logo"
       />
     )
   }
 
-  // For icon and full variants, use passed dimensions or reasonable defaults
-  const finalWidth = width ?? (variant === 'icon' ? 40 : defaultDimensions[variant === 'full' ? 'full' : 'icon'].width)
-  const finalHeight = height ?? (variant === 'icon' ? 40 : defaultDimensions[variant === 'full' ? 'full' : 'icon'].height)
+  const dimensions = {
+    width: width ?? defaultDimensions[variant === 'full' ? 'full' : 'icon'].width,
+    height: height ?? defaultDimensions[variant === 'full' ? 'full' : 'icon'].height,
+  }
 
   return (
     <Image
       src={`${logoSrc[variant]}?v=${LOGO_VERSION}`}
       alt="FusionEMS Quantum logo"
-      width={finalWidth}
-      height={finalHeight}
+      width={dimensions.width}
+      height={dimensions.height}
       className={className}
-      style={{ width: finalWidth, height: finalHeight, maxWidth: finalWidth, maxHeight: finalHeight }}
       priority
       aria-label="FusionEMS Quantum logo"
     />

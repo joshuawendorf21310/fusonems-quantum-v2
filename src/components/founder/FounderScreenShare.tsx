@@ -2,8 +2,8 @@ import React, { useRef, useState } from "react";
 
 export default function FounderScreenShare() {
   const [sharing, setSharing] = useState(false);
-  const [stream, setStream] = useState<MediaStream | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [stream, setStream] = useState(null);
+  const videoRef = useRef(null);
 
   const handleShareScreen = async () => {
     try {
@@ -21,7 +21,7 @@ export default function FounderScreenShare() {
 
   const handleStopSharing = () => {
     if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
+      stream.getTracks().forEach(track => track.stop());
       setStream(null);
       setSharing(false);
     }

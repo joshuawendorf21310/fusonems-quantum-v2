@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Calendar as CalendarIcon,
@@ -18,10 +18,9 @@ import {
   Sun,
   Sunrise,
   Sunset,
-  RefreshCw,
 } from 'lucide-react';
 
-// Fallback mock data when Crew Scheduling API returns empty or is unavailable
+// Mock schedule data
 const shifts = {
   'A-Shift': { icon: Sun, color: 'blue', time: '06:00-18:00' },
   'B-Shift': { icon: Moon, color: 'purple', time: '18:00-06:00' },
@@ -29,101 +28,73 @@ const shifts = {
   'Day': { icon: Sunrise, color: 'yellow', time: '08:00-17:00' },
 };
 
-const mockScheduleData = [
-  { date: '2024-02-01', day: 'Mon', shifts: [{ shift: 'A-Shift', personnel: ['John Doe', 'Sarah Johnson'], station: 'Station 1' }, { shift: 'B-Shift', personnel: ['Michael Chen'], station: 'Station 2' }] },
-  { date: '2024-02-02', day: 'Tue', shifts: [{ shift: 'A-Shift', personnel: ['Emily Rodriguez'], station: 'Station 1' }, { shift: 'C-Shift', personnel: ['David Thompson', 'John Doe'], station: 'Station 3' }] },
+const scheduleData = [
+  {
+    date: '2024-02-01',
+    day: 'Mon',
+    shifts: [
+      { shift: 'A-Shift', personnel: ['John Doe', 'Sarah Johnson'], station: 'Station 1' },
+      { shift: 'B-Shift', personnel: ['Michael Chen'], station: 'Station 2' },
+    ],
+  },
+  {
+    date: '2024-02-02',
+    day: 'Tue',
+    shifts: [
+      { shift: 'A-Shift', personnel: ['Emily Rodriguez'], station: 'Station 1' },
+      { shift: 'C-Shift', personnel: ['David Thompson', 'John Doe'], station: 'Station 3' },
+    ],
+  },
+  // Add more days...
 ];
 
-const mockTimeOffRequests = [
-  { id: 1, employeeName: 'John Doe', requestType: 'Vacation', startDate: '2024-02-15', endDate: '2024-02-20', days: 5, status: 'pending', reason: 'Family vacation' },
-  { id: 2, employeeName: 'Sarah Johnson', requestType: 'Sick Leave', startDate: '2024-02-10', endDate: '2024-02-11', days: 2, status: 'approved', reason: 'Medical appointment' },
-  { id: 3, employeeName: 'Michael Chen', requestType: 'Personal', startDate: '2024-02-25', endDate: '2024-02-25', days: 1, status: 'rejected', reason: 'Personal matters' },
+const timeOffRequests = [
+  {
+    id: 1,
+    employeeName: 'John Doe',
+    requestType: 'Vacation',
+    startDate: '2024-02-15',
+    endDate: '2024-02-20',
+    days: 5,
+    status: 'pending',
+    reason: 'Family vacation',
+  },
+  {
+    id: 2,
+    employeeName: 'Sarah Johnson',
+    requestType: 'Sick Leave',
+    startDate: '2024-02-10',
+    endDate: '2024-02-11',
+    days: 2,
+    status: 'approved',
+    reason: 'Medical appointment',
+  },
+  {
+    id: 3,
+    employeeName: 'Michael Chen',
+    requestType: 'Personal',
+    startDate: '2024-02-25',
+    endDate: '2024-02-25',
+    days: 1,
+    status: 'rejected',
+    reason: 'Personal matters',
+  },
 ];
 
-const mockCoverageStats = [
+const coverageStats = [
   { station: 'Station 1', required: 6, scheduled: 6, coverage: 100 },
   { station: 'Station 2', required: 4, scheduled: 3, coverage: 75 },
   { station: 'Station 3', required: 5, scheduled: 5, coverage: 100 },
   { station: 'HQ', required: 3, scheduled: 3, coverage: 100 },
 ];
 
-function getAuthHeaders(): HeadersInit {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  return token ? { Authorization: `Bearer ${token}` } : {};
-}
-
 const ScheduleManager = () => {
   const [currentWeek, setCurrentWeek] = useState(0);
   const [viewMode, setViewMode] = useState<'calendar' | 'timeoff' | 'coverage'>('calendar');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [stats, setStats] = useState<{ total_shifts_this_week?: number; open_shifts?: number; pending_requests?: number; coverage_rate?: number } | null>(null);
-  const [calendarData, setCalendarData] = useState<Record<string, { date: string; day_of_week: string; shifts: Array<{ id: number; station?: string; unit?: string; status: string; required: number; assigned: number }>; coverage?: { required: number; assigned: number; rate: number } }>>({});
-  const [timeOffRequests, setTimeOffRequests] = useState<Array<{ id: number; employeeName?: string; request_type?: string; requestType?: string; start_date?: string; startDate?: string; end_date?: string; endDate?: string; status: string; reason?: string; days?: number }>>(mockTimeOffRequests);
-  const [coverageStats, setCoverageStats] = useState(mockCoverageStats);
-  const [scheduleData, setScheduleData] = useState(mockScheduleData);
-  const [loading, setLoading] = useState(true);
-  const [apiAvailable, setApiAvailable] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  const getWeekStartEnd = useCallback((weekOffset: number) => {
-    const d = new Date();
-    d.setDate(d.getDate() - d.getDay() + weekOffset * 7);
-    const start = new Date(d);
-    const end = new Date(d);
-    end.setDate(end.getDate() + 6);
-    return { start: start.toISOString().split('T')[0], end: end.toISOString().split('T')[0] };
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    const { start, end } = getWeekStartEnd(currentWeek);
-    const headers = getAuthHeaders();
-    Promise.all([
-      fetch('/api/v1/scheduling/dashboard/stats', { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`/api/v1/scheduling/calendar?start_date=${start}&end_date=${end}`, { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch('/api/v1/scheduling/time-off', { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
-    ]).then(([statsRes, calendarRes, timeOffRes]) => {
-      if (cancelled) return;
-      if (statsRes) {
-        setApiAvailable(true);
-        setStats(statsRes);
-      }
-      if (calendarRes?.calendar) {
-        setCalendarData(calendarRes.calendar);
-        const days = Object.entries(calendarRes.calendar).map(([date, day]: [string, unknown]) => {
-          const d = day as { date?: string; day_of_week?: string; shifts?: Array<{ station?: string; assigned?: number; required?: number }> };
-          return {
-            date: d.date || date,
-            day: (d.day_of_week || '').slice(0, 3),
-            shifts: (d.shifts || []).map((s: { station?: string; assigned?: number; required?: number }) => ({ shift: s.station || 'Shift', personnel: [] as string[], station: s.station })),
-          };
-        });
-        if (days.length) setScheduleData(days);
-      }
-      if (Array.isArray(timeOffRes)) {
-        setTimeOffRequests(timeOffRes.map((t: { id: number; user_id?: number; request_type?: string; start_date?: string; end_date?: string; status: string; reason?: string }) => {
-          const start = t.start_date ? new Date(t.start_date) : null;
-          const end = t.end_date ? new Date(t.end_date) : null;
-          const days = start && end ? Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1) : 0;
-          return {
-            id: t.id,
-            employeeName: `User #${t.user_id ?? t.id}`,
-            requestType: t.request_type || 'Time off',
-            startDate: t.start_date,
-            endDate: t.end_date,
-            status: t.status,
-            reason: t.reason ?? '',
-            days,
-          };
-        }));
-      }
-    }).finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [currentWeek, getWeekStartEnd, refreshTrigger]);
-
-  type DayInfo = { date: string; dayName: string; dayNumber: number; isToday: boolean };
-  const getDaysInWeek = (): DayInfo[] => {
-    const days: DayInfo[] = [];
+  const getDaysInWeek = () => {
+    const days = [];
     const today = new Date();
     const startOfWeek = new Date(today.setDate(today.getDate() - today.getDay() + currentWeek * 7));
 
@@ -153,24 +124,11 @@ const ScheduleManager = () => {
         >
           <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">
-              Schedule (Crew Scheduling)
+              Schedule Manager
             </h1>
-            <p className="text-slate-600 mt-1">Read/write view into FusionEMS Crew Scheduling. Same data as main Scheduling. Does not run payroll.</p>
+            <p className="text-slate-600 mt-1">Shift scheduling and time-off management</p>
           </div>
           <div className="flex gap-3">
-            {apiAvailable && (
-              <span className="text-xs text-emerald-600 font-medium self-center">Live from /api/v1/scheduling</span>
-            )}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => { setLoading(true); setRefreshTrigger(t => t + 1); }}
-              disabled={loading}
-              className="px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm hover:border-cyan-400 transition-colors flex items-center gap-2 disabled:opacity-50"
-            >
-              <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-              <span>Refresh</span>
-            </motion.button>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -415,7 +373,7 @@ const ScheduleManager = () => {
                           className={`px-3 py-1 rounded-full text-xs font-medium ${
                             request.status === 'approved'
                               ? 'bg-green-100 text-green-700'
-                              : request.status === 'rejected' || request.status === 'denied'
+                              : request.status === 'rejected'
                               ? 'bg-red-100 text-red-700'
                               : 'bg-orange-100 text-orange-700'
                           }`}

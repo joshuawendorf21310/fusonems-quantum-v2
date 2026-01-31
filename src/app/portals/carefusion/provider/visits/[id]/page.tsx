@@ -43,7 +43,7 @@ interface Diagnosis {
 export default function VisitDetailPage() {
   const params = useParams()
   const router = useRouter()
-  const visitId = (params?.id as string) ?? ""
+  const visitId = params.id as string
   
   const [visit, setVisit] = useState<VisitDetail | null>(null)
   const [soapNote, setSoapNote] = useState<SOAPNote>({

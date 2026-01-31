@@ -4,7 +4,6 @@ import { Calculator, DollarSign, CreditCard, Building2, TrendingDown, CheckCircl
 interface TierOption {
   tier: number
   tier_label: string
-  description?: string
   balance_amount: number
   min_payment: number
   payment_schedules: Array<{

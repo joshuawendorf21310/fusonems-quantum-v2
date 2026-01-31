@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Link from "next/link"
 import { apiFetch } from "@/lib/api"
 
 interface BillingStats {
@@ -145,15 +144,15 @@ export default function AIBillingWidget() {
         <div className="data-grid">
           <article className="panel-card">
             <p className="muted-text">Unpaid Claims</p>
-            <strong className={(stats?.unpaid_claims_value ?? 0) > 50000 ? "warning-text" : ""}>
-              {formatCurrency(stats?.unpaid_claims_value ?? 0)}
+            <strong className={stats?.unpaid_claims_value > 50000 ? "warning-text" : ""}>
+              {formatCurrency(stats?.unpaid_claims_value || 0)}
             </strong>
           </article>
           
           <article className="panel-card">
             <p className="muted-text">Overdue Claims</p>
-            <strong className={(stats?.overdue_claims_value ?? 0) > 10000 ? "warning-text" : ""}>
-              {formatCurrency(stats?.overdue_claims_value ?? 0)}
+            <strong className={stats?.overdue_claims_value > 10000 ? "warning-text" : ""}>
+              {formatCurrency(stats?.overdue_claims_value || 0)}
             </strong>
           </article>
           
@@ -164,8 +163,8 @@ export default function AIBillingWidget() {
           
           <article className="panel-card">
             <p className="muted-text">Billing Accuracy</p>
-            <strong className={(stats?.billing_accuracy_score ?? 0) > 85 ? "success-text" : "warning-text"}>
-              {stats?.billing_accuracy_score ?? 0}%
+            <strong className={stats?.billing_accuracy_score > 85 ? "success-text" : "warning-text"}>
+              {stats?.billing_accuracy_score || 0}%
             </strong>
           </article>
           

@@ -19,7 +19,7 @@ interface TimeSlot {
 function BookAppointmentClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const preselectedProviderId = searchParams?.get("providerId") || ""
+  const preselectedProviderId = searchParams.get("providerId") || ""
 
   const [providers, setProviders] = useState<Provider[]>([])
   const [selectedProviderId, setSelectedProviderId] = useState(preselectedProviderId)

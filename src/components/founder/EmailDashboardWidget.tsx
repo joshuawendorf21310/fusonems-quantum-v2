@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState } from "react"
 import { apiFetch } from "@/lib/api"
 
 type EmailStats = {
@@ -25,8 +25,6 @@ type EmailMessage = {
   needs_response: boolean
   message_id: string
   urgent?: boolean
-  urgency?: string
-  from_address?: string
 }
 
 type EmailDraft = {
@@ -38,7 +36,6 @@ type EmailDraft = {
   bcc?: string[]
   reply_to?: string
   urgent?: boolean
-  context?: string
 }
 
 export function EmailDashboardWidget() {
@@ -54,36 +51,56 @@ export function EmailDashboardWidget() {
   })
   const [aiSuggestions, setAiSuggestions] = useState<string[]>([])
 
-  const refetchEmails = useCallback(() => {
-    apiFetch<{ stats: EmailStats }>("/api/founder/email/stats").then((data) => setEmailStats(data.stats)).catch(() => setEmailStats(null))
-    apiFetch<{ emails: EmailMessage[] }>("/api/founder/email/recent?limit=15").then((data) => setRecentEmails(data.emails)).catch(() => setRecentEmails([]))
-    apiFetch<{ emails: EmailMessage[] }>("/api/founder/email/needs-response?limit=10").then((data) => setNeedResponse(data.emails)).catch(() => setNeedResponse([]))
-  }, [])
-
   useEffect(() => {
     let mounted = true
-    const tick = () => {
-      apiFetch<{ stats: EmailStats }>("/api/founder/email/stats").then((data) => mounted && setEmailStats(data.stats)).catch(() => mounted && setEmailStats(null))
-      apiFetch<{ emails: EmailMessage[] }>("/api/founder/email/recent?limit=15").then((data) => mounted && setRecentEmails(data.emails)).catch(() => mounted && setRecentEmails([]))
-      apiFetch<{ emails: EmailMessage[] }>("/api/founder/email/needs-response?limit=10").then((data) => mounted && setNeedResponse(data.emails)).catch(() => mounted && setNeedResponse([]))
+    
+    const fetchData = () => {
+      // Fetch email stats
+      apiFetch<{stats: EmailStats}>("/api/founder/email/stats")
+        .then(data => {
+          if (mounted) setEmailStats(data.stats)
+        })
+        .catch(() => mounted && setEmailStats(null))
+      
+      // Fetch recent emails
+      apiFetch<{emails: EmailMessage[]}>("/api/founder/email/recent?limit=15")
+        .then(data => {
+          if (mounted) setRecentEmails(data.emails)
+        })
+        .catch(() => mounted && setRecentEmails([]))
+      
+      // Fetch emails needing response - CRITICAL
+      apiFetch<{emails: EmailMessage[]}>("/api/founder/email/needs-response?limit=10")
+        .then(data => {
+          if (mounted) setNeedResponse(data.emails)
+        })
+        .catch(() => mounted && setNeedResponse([]))
     }
-    tick()
-    const interval = setInterval(tick, 30000)
-    return () => { mounted = false; clearInterval(interval) }
+    
+    fetchData()
+    const interval = setInterval(fetchData, 30000)  // Every 30s for founder priority
+    
+    return () => {
+      mounted = false
+      clearInterval(interval)
+    }
   }, [])
 
   const handleSendEmail = async () => {
     try {
-      const response = await apiFetch<{ success?: boolean }>("/api/founder/email/send", {
+      const response = await apiFetch("/api/founder/email/send", {
         method: "POST",
         body: JSON.stringify(draft),
         headers: { 'Content-Type': 'application/json' }
       })
       
-      if (response?.success) {
+      if (response.success) {
+        // Reset form
         setDraft({ to: "", subject: "", body_text: "" })
         setIsComposing(false)
-        refetchEmails()
+        
+        // Refresh data
+        await fetchData()
         alert('Email sent successfully!')
       } else {
         alert('Failed to send email')
@@ -95,30 +112,29 @@ export function EmailDashboardWidget() {
   }
 
   const handleAIAssist = async () => {
-    const ctx = draft.context ?? draft.body_text
-    if (!ctx) {
-      alert('Please provide context or message text for email generation')
+    if (!draft.context) {
+      alert('Please provide context for email generation')
       return
     }
     
     try {
-      const aiDraft = await apiFetch<{ success?: boolean; subject?: string; body_text?: string }>('/api/founder/email/draft', {
+      const aiDraft = await apiFetch('/api/founder/email/draft', {
         method: 'POST',
         body: JSON.stringify({
           recipient_email: draft.to,
           subject_context: draft.subject,
-          context: ctx,
+          context: draft.context,
           tone: "professional",
           length: "medium"
         }),
         headers: { 'Content-Type': 'application/json' }
       })
       
-      if (aiDraft?.success && (aiDraft.subject != null || aiDraft.body_text != null)) {
+      if (aiDraft.success) {
         setDraft({
           ...draft,
-          subject: aiDraft.subject ?? draft.subject,
-          body_text: aiDraft.body_text ?? draft.body_text
+          subject: aiDraft.subject,
+          body_text: aiDraft.body_text
         })
       }
     } catch (error) {
@@ -127,19 +143,22 @@ export function EmailDashboardWidget() {
   }
 
   const handleSuggestImprovements = async () => {
-    const ctx = draft.context ?? draft.body_text
-    if (!draft.subject || !ctx) return
+    if (!draft.subject || !draft.context) {
+      return
+    }
+    
     try {
-      const data = await apiFetch<{ suggestions?: string[] }>('/api/founder/email/suggest-improvements', {
+      const suggestions = await apiFetch('/api/founder/email/suggest-improvements', {
         method: 'POST',
         body: JSON.stringify({
           recipient_email: draft.to,
           subject_line: draft.subject,
-          context: ctx
+          context: draft.context
         }),
         headers: { 'Content-Type': 'application/json' }
       })
-      setAiSuggestions(Array.isArray(data?.suggestions) ? data.suggestions : [])
+      
+      setAiSuggestions(suggestions.suggestions)
     } catch (error) {
       console.error('Suggestions failed:', error)
     }
@@ -209,11 +228,11 @@ export function EmailDashboardWidget() {
               <strong>🚨 {needResponse.length} Emails Need Response</strong>
               <ul className="needs-response-list">
                 {needResponse.map((email) => (
-                  <li key={email.id} className={`needs-response-item ${(email.urgency ?? email.urgent) === 'high' ? 'urgent' : ''}`}>
-                    <span className="from">{email.from_address ?? email.sender}</span>
+                  <li key={email.id} className={`needs-response-item ${email.urgency === 'high' ? 'urgent' : ''}`}>
+                    <span className="from">{email.from_address}</span>
                     <span className="subject">{email.subject}</span>
                     <span className="time">{new Date(email.created_at).toLocaleTimeString()}</span>
-                    {(email.urgency ?? email.urgent) === 'high' && (
+                    {email.urgency === 'high' && (
                       <span className="urgency">⚠️ URGENT</span>
                     )}
                   </li>

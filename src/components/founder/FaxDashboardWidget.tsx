@@ -177,11 +177,11 @@ export function FaxDashboardWidget() {
     if (!confirm('Retry this failed fax?')) return
     
     try {
-      const response = await apiFetch<{ success?: boolean; error?: string }>(`/api/founder/fax/${faxId}/retry`, {
+      const response = await apiFetch(`/api/founder/fax/${faxId}/retry`, {
         method: 'POST'
       })
       
-      if (response?.success) {
+      if (response.success) {
         alert('Fax retry initiated!')
         window.location.reload()
       } else {
@@ -197,11 +197,11 @@ export function FaxDashboardWidget() {
     if (!confirm('Delete this fax record?')) return
     
     try {
-      const response = await apiFetch<{ success?: boolean }>(`/api/founder/fax/${faxId}`, {
+      const response = await apiFetch(`/api/founder/fax/${faxId}`, {
         method: 'DELETE'
       })
       
-      if (response?.success) {
+      if (response.success) {
         alert('Fax deleted!')
         window.location.reload()
       } else {

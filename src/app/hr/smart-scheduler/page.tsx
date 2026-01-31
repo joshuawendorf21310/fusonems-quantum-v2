@@ -1,5 +1,5 @@
 'use client'
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Wand2, Calendar, Users, Clock, AlertTriangle, CheckCircle, Zap, RefreshCw, Settings, ChevronLeft, ChevronRight, Sun, Moon, Sunset } from 'lucide-react'
 import { format, startOfWeek, addDays, addWeeks, subWeeks } from 'date-fns'
@@ -45,17 +45,11 @@ const generateMockSchedule = (): ScheduleSlot[] => {
           score: Math.floor(80 + Math.random() * 15),
           reason: 'Low fatigue, skill match, availability confirmed'
         } : undefined,
-        conflicts: (emp?.fatigueScore ?? 0) > 70 ? ['High fatigue risk'] : undefined
+        conflicts: emp?.fatigueScore > 70 ? ['High fatigue risk'] : undefined
       })
     }
   }
   return slots
-}
-
-function getAuthHeaders(): HeadersInit {
-  if (typeof window === 'undefined') return {}
-  const token = localStorage.getItem('token')
-  return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
 export default function SmartSchedulerPage() {
@@ -63,7 +57,6 @@ export default function SmartSchedulerPage() {
   const [schedule, setSchedule] = useState(generateMockSchedule)
   const [generating, setGenerating] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
-  const [crewStats, setCrewStats] = useState<{ total_shifts_this_week?: number; open_shifts?: number; coverage_rate?: number } | null>(null)
   const [settings, setSettings] = useState({
     maxConsecutiveShifts: 3,
     minRestHours: 10,
@@ -74,18 +67,6 @@ export default function SmartSchedulerPage() {
 
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 0 })
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
-
-  useEffect(() => {
-    const start = format(weekStart, 'yyyy-MM-dd')
-    const end = format(addDays(weekStart, 6), 'yyyy-MM-dd')
-    const headers = getAuthHeaders()
-    Promise.all([
-      fetch('/api/v1/scheduling/dashboard/stats', { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`/api/v1/scheduling/calendar?start_date=${start}&end_date=${end}`, { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
-    ]).then(([statsRes]) => {
-      if (statsRes) setCrewStats(statsRes)
-    })
-  }, [currentWeek])
 
   const stats = useMemo(() => ({
     filled: schedule.filter(s => s.employee).length,

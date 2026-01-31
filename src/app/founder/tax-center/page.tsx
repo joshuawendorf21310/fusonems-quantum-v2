@@ -43,15 +43,7 @@ export default function TaxCenter() {
           <PersonalTaxForm onSubmit={handlePersonalSubmit} />
         )}
         {step === 3 && (
-          <div className="space-y-6">
-            <div className="text-green-700 font-bold text-xl">All data saved.</div>
-            <p className="text-gray-600">Next: review tax summary and e-file quarterly estimated, 1099, or W-2 from the Founder dashboard Accounting widget, or use the links below.</p>
-            <div className="flex flex-wrap gap-3">
-              <a href="/founder" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Go to Founder Dashboard</a>
-              <a href="/founder#accounting" className="px-4 py-2 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200">Accounting & E-File</a>
-            </div>
-            <p className="text-sm text-gray-500">E-file API: GET /api/founder/accounting/efile-status, POST /api/founder/accounting/efile/quarterly, /efile/1099-prep, /efile/w2-prep, /efile/file</p>
-          </div>
+          <div className="text-green-700 font-bold text-xl text-center p-8">All data saved! (Next steps: AI categorization, review, and tax prep coming soon...)</div>
         )}
       </div>
     </div>

@@ -55,7 +55,7 @@ const DocumentManagerDrive: React.FC<Props> = ({
     let folder = folders.find(f => f.id === fid)
     while (folder) {
       path.unshift(folder)
-      folder = folders.find(f => f.id === folder?.parentId)
+      folder = folders.find(f => f.id === folder.parentId)
     }
     return path
   }

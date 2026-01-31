@@ -7,22 +7,20 @@ import Link from "next/link";
 import { ArrowLeft, Package, TrendingUp, TrendingDown, Calendar } from "lucide-react";
 
 export default function ItemDetailPage() {
-  const params = useParams<{ id: string }>();
-  const id = params?.id ?? "";
+  const params = useParams();
   const [item, setItem] = useState<any>(null);
   const [movements, setMovements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!id) return;
     Promise.all([
-      fetch(`/api/inventory/items/${id}`, { credentials: "include" }),
-      fetch(`/api/inventory/movements?item_id=${id}`, { credentials: "include" })
+      fetch(`/api/inventory/items/${params.id}`, { credentials: "include" }),
+      fetch(`/api/inventory/movements?item_id=${params.id}`, { credentials: "include" })
     ]).then(([itemRes, movementsRes]) => {
       if (itemRes.ok) itemRes.json().then(setItem);
       if (movementsRes.ok) movementsRes.json().then(setMovements);
     }).finally(() => setLoading(false));
-  }, [id]);
+  }, [params.id]);
 
   if (loading) return <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center"><div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div></div>;
   if (!item) return <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6"><div className="text-center">Item not found</div></div>;

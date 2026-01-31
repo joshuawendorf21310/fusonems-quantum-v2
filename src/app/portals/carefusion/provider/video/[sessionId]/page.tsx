@@ -57,7 +57,7 @@ interface JitsiConfig {
 export default function ProviderVideoRoomPage() {
   const params = useParams()
   const router = useRouter()
-  const sessionId = (params?.sessionId as string) ?? ""
+  const sessionId = params.sessionId as string
   
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)

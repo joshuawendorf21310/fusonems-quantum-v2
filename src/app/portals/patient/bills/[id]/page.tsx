@@ -29,7 +29,7 @@ export default function BillDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const billId = params?.id ?? ""
+  const billId = params.id
 
   useEffect(() => {
     if (billId) {
@@ -41,8 +41,7 @@ export default function BillDetailPage() {
     try {
       setLoading(true)
       setError(null)
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || ""
-      const response = await fetch(`${baseUrl}/patient-portal/bills/${billId}`, {
+      const response = await fetch(`http://localhost:8000/api/patient-portal/bills/${billId}`, {
         credentials: "include",
         headers: {
           "Content-Type": "application/json",

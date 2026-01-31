@@ -47,7 +47,7 @@ export default function GlobalSearch() {
   const [error, setError] = useState<string | null>(null);
   
   const inputRef = useRef<HTMLInputElement>(null);
-  const debounceTimer = useRef<NodeJS.Timeout | undefined>(undefined);
+  const debounceTimer = useRef<NodeJS.Timeout>();
 
   // Load recent searches from localStorage
   useEffect(() => {

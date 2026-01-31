@@ -6,16 +6,14 @@ import { FACILITY_ROLES } from './facilityRoles';
 import { listTransports, createTransport } from './transportApi';
 // TODO: Import TransportCalendar, QuickBookButton
 
-type TransportItem = Record<string, unknown> & { status?: string; trip_status?: string };
-
 const Dashboard = () => {
-  const [transports, setTransports] = useState<TransportItem[]>([]);
+  const [transports, setTransports] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(null);
   const [showQuickBook, setShowQuickBook] = useState(false);
   const [quickBookLoading, setQuickBookLoading] = useState(false);
-  const [quickBookError, setQuickBookError] = useState<string | null>(null);
-  const [quickBookSuccess, setQuickBookSuccess] = useState<string | null>(null);
+  const [quickBookError, setQuickBookError] = useState(null);
+  const [quickBookSuccess, setQuickBookSuccess] = useState(null);
   const [quickBookForm, setQuickBookForm] = useState({
     patient_name: '',
     requested_date: '',
@@ -68,11 +66,13 @@ const Dashboard = () => {
     }
   };
 
-  const statusCounts = transports.reduce((acc: Record<string, number>, t: TransportItem) => {
-    const status = (t.status ?? t.trip_status ?? 'unknown') as string;
+  // Status counts for summary
+  const statusCounts = transports.reduce((acc, t) => {
+    // Use t.status or t.trip_status depending on API
+    const status = t.status || t.trip_status || 'unknown';
     acc[status] = (acc[status] || 0) + 1;
     return acc;
-  }, {} as Record<string, number>);
+  }, {});
 
   return (
     <ProtectedRoute allowedRoles={FACILITY_ROLES}>
@@ -83,7 +83,7 @@ const Dashboard = () => {
         {!loading && !error && (
           <>
             <div className="status-summary" style={{ display: 'flex', gap: 16 }}>
-              {Object.entries(statusCounts).map(([status, count]: [string, number]) => (
+              {Object.entries(statusCounts).map(([status, count]) => (
                 <div key={status} style={{ border: '1px solid #ccc', padding: 8, borderRadius: 4 }}>
                   <strong>{status}</strong>
                   <div>{count} transports</div>

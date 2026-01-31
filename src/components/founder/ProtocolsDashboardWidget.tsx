@@ -7,7 +7,7 @@ export function ProtocolsDashboardWidget() {
         <h3>Protocols Management</h3>
         <p className="muted-text">Import, review, and manage agency protocols.</p>
       </header>
-      <ProtocolImportWidget onUpload={() => {}} />
+      <ProtocolImportWidget />
       {/* TODO: Add protocol list, review/approval, search, tagging, in-app viewer */}
     </section>
   );

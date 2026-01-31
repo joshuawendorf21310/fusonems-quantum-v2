@@ -57,6 +57,40 @@ export default function CADDashboard() {
     }
   }, []);
 
+  useEffect(() => {
+    loadDashboardData();
+  }, [loadDashboardData]);
+
+  const handleCreateIncident = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setNewIncidentSubmitting(true);
+    setNewIncidentError(null);
+
+    try {
+      await apiFetch("/api/cad/incidents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newIncidentForm),
+      });
+      
+      setNewIncidentOpen(false);
+      setNewIncidentForm({
+        requesting_facility: "",
+        receiving_facility: "",
+        transport_type: "IFT",
+        priority: "Routine",
+        scheduled_time: "",
+        notes: "",
+      });
+      
+      loadDashboardData();
+    } catch (err: any) {
+      setNewIncidentError(err.message || "Failed to create incident");
+    } finally {
+      setNewIncidentSubmitting(false);
+    }
+  };
+
   const getPriorityColor = (priority: string) => {
     switch (priority.toLowerCase()) {
       case "emergency": case "high": return "bg-red-600/20 text-red-400 border-red-600/30";
@@ -77,39 +111,6 @@ export default function CADDashboard() {
       default: return "bg-zinc-600/20 text-zinc-400 border-zinc-600/30";
     }
   };
-
-  const handleCreateIncident = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setNewIncidentSubmitting(true);
-    setNewIncidentError(null);
-    try {
-      await apiFetch("/api/cad/incidents", {
-        method: "POST",
-        body: JSON.stringify(newIncidentForm),
-      });
-      setNewIncidentOpen(false);
-      setNewIncidentForm({
-        requesting_facility: "",
-        receiving_facility: "",
-        transport_type: "IFT",
-        priority: "Routine",
-        scheduled_time: "",
-        notes: "",
-      });
-      loadDashboardData();
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to create incident";
-      setNewIncidentError(message);
-    } finally {
-      setNewIncidentSubmitting(false);
-    }
-  };
-
-  useEffect(() => {
-    loadDashboardData();
-    const interval = setInterval(loadDashboardData, 30000);
-    return () => clearInterval(interval);
-  }, [loadDashboardData]);
 
   return (
     <PageShell title="CAD System" requireAuth={true}>

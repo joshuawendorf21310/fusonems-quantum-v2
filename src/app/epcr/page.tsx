@@ -60,7 +60,7 @@ export default function EPCRDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
+    <PageShell title="ePCR Dashboard" requireAuth={true}>
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div>

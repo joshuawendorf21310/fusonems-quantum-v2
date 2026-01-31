@@ -167,7 +167,6 @@ export const OrgChart: React.FC<OrgChartProps> = ({ data, onNodeClick, className
       container.addEventListener('wheel', handleWheel, { passive: false });
       return () => container.removeEventListener('wheel', handleWheel);
     }
-    return undefined;
   }, [zoom]);
 
   const handleMouseDown = (e: React.MouseEvent) => {

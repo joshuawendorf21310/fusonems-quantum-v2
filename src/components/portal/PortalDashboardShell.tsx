@@ -134,8 +134,8 @@ export default function PortalDashboardShell({
           </div>
         </header>
 
-        <main className="flex-1 p-8 bg-zinc-950/80 backdrop-blur-sm">
-          <div className="max-w-7xl mx-auto">
+        <main className="flex-1 p-8 bg-zinc-950">
+          <div className="max-w-6xl mx-auto">
             {children}
           </div>
         </main>
