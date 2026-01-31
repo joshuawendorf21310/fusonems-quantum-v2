@@ -5,7 +5,6 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { apiFetch } from "@/lib/api"
 import { useAuth } from "@/lib/auth-context"
-import { SystemBanner } from "@/components/SystemBanner"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -17,7 +16,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showBanner, setShowBanner] = useState(false)
-  const [bannerId, setBannerId] = useState<string | null>(null)
 
   useEffect(() => {
     const storedEmail = localStorage.getItem("remember_email")
@@ -27,23 +25,9 @@ export default function LoginPage() {
     }
   }, [])
 
-  // Only redirect if authenticated and not showing banner
-  useEffect(() => {
-    if (isAuthenticated && !showBanner) {
-      router.push("/dashboard")
-    }
-  }, [isAuthenticated, showBanner, router])
-
-  const handleBannerAccept = async () => {
-    try {
-      if (bannerId) {
-        await apiFetch(`/auth/banner/${bannerId}/accept`, { method: "POST" })
-      }
-      setShowBanner(false)
-      router.push("/dashboard")
-    } catch (err) {
-      setError("Failed to accept banner. Please try again.")
-    }
+  if (isAuthenticated) {
+    router.push("/dashboard")
+    return null
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -95,7 +79,8 @@ export default function LoginPage() {
       
       // Check if error is about banner acceptance requirement
       if (detail?.requires_banner_acceptance || detail?.error === "Banner acceptance required") {
-        setBannerId(detail?.banner_id || null)
+        // User needs to accept banner - show banner modal
+        // Note: Login may have succeeded but banner not accepted
         setShowBanner(true)
         return
       }
@@ -373,6 +358,7 @@ export default function LoginPage() {
             <p className="text-center text-sm text-gray-500">
               Secure enterprise authentication · FusionEMS Quantum
             </p>
+          </div>
         </div>
       </div>
     </div>
