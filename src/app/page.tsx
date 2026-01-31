@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useEffect, useState } from "react"
 import Logo from "@/components/Logo"
 import TrustBadge from "@/components/marketing/TrustBadge"
+import { SecurityHero, SecurityControls, SecurityStats, SecurityCTA } from "@/components/SecurityHero"
 import {
   Hexagon,
   Video,
@@ -159,7 +160,13 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 2. WHAT IS FUSIONEMS QUANTUM? — Explainer */}
+        {/* 2. SECURITY HERO — Federal-Grade Security */}
+        <SecurityHero />
+        
+        {/* 2.5. SECURITY STATS */}
+        <SecurityStats />
+
+        {/* 3. WHAT IS FUSIONEMS QUANTUM? — Explainer */}
         <section id="quantum-explainer" className="section-redesign section-explainer section-anim">
           <div className="section-divider section-divider--top" aria-hidden />
           <div className="section-head">
@@ -171,7 +178,10 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 3. ECOSYSTEM OVERVIEW — One system, specialized components */}
+        {/* 4. SECURITY CONTROLS — Comprehensive Implementation */}
+        <SecurityControls />
+
+        {/* 5. ECOSYSTEM OVERVIEW — One system, specialized components */}
         <section id="ecosystem" className="section-redesign ecosystem-section section-anim">
           <div className="section-head">
             <span className="section-label">Ecosystem</span>
@@ -288,18 +298,25 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 7. TRUST & COMPLIANCE — Early placement already in hero; reinforce */}
+        {/* 7. SECURITY CTA — Ready for Federal Deployment */}
+        <SecurityCTA />
+
+        {/* 8. TRUST & COMPLIANCE — Early placement already in hero; reinforce */}
         <section id="trust" className="trust-section section-anim">
           <div className="section-divider section-divider--top" aria-hidden />
           <div className="trust-inner">
             <h2 className="trust-title">Trust & Compliance</h2>
             <div className="trust-grid">
-              <div className="trust-item trust-item-card"><TrustBadge icon="lock" text="HIPAA aligned" /></div>
-              <div className="trust-item trust-item-card"><TrustBadge icon="shield" text="CJIS alignment" /></div>
-              <div className="trust-item trust-item-card"><TrustBadge icon="activity" text="Audit trails" /></div>
-              <div className="trust-item trust-item-card"><TrustBadge icon="headset" text="24/7 mission support" /></div>
+              <div className="trust-item trust-item-card"><TrustBadge icon="lock" text="HIPAA Compliant" /></div>
+              <div className="trust-item trust-item-card"><TrustBadge icon="shield" text="FIPS 140-2 Ready" /></div>
+              <div className="trust-item trust-item-card"><TrustBadge icon="activity" text="NIST 800-53 Aligned" /></div>
+              <div className="trust-item trust-item-card"><TrustBadge icon="headset" text="Pursuing FedRAMP" /></div>
             </div>
-            <p className="trust-note">Built for public-sector accountability and operational reliability.</p>
+            <p className="trust-note">
+              Built with federal-grade security controls. 421 implemented security controls 
+              aligned with FedRAMP High Impact requirements. Designed for public-sector 
+              accountability and operational reliability.
+            </p>
           </div>
         </section>
 

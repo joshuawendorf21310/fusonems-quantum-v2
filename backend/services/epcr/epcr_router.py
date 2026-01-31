@@ -762,11 +762,13 @@ def finalize_record(
 @router.get("/records/{record_id}/timeline", response_model=List[TimelineEvent])
 def get_timeline(
     record_id: int,
+    limit: int = 1000,
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.provider)),
 ):
     record = _get_record(db, user, record_id)
-    events = db.query(EpcrTimeline).filter(EpcrTimeline.record_id == record.id).order_by(EpcrTimeline.timestamp.asc()).all()
+    # Limit timeline events to prevent performance issues with records that have many events
+    events = db.query(EpcrTimeline).filter(EpcrTimeline.record_id == record.id).order_by(EpcrTimeline.timestamp.asc()).limit(limit).all()
     return events
 
 

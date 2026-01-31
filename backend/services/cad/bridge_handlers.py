@@ -183,7 +183,7 @@ async def handle_transport_completed(data: Dict[str, Any]):
     try:
         db = next(get_db())
         
-        # Use orchestrator for unified service integration
+        db = None
         try:
             from services.integration.orchestrator import ServiceOrchestrator
             ServiceOrchestrator.on_transport_completed(db, str(incident_id), epcr_id)
@@ -202,7 +202,25 @@ async def handle_transport_completed(data: Dict[str, Any]):
                 )
                 db.add(billing_record)
                 db.commit()
-                logger.info(f"Fallback: Created billing record {billing_record.id}")
+                
+                logger.info(f"Billing record created for incident {incident_id}")
+                
+                # Trigger billing workflow
+                # This could include:
+                # - Validation of billing data
+                # - Insurance verification
+                # - Claims submission preparation
+                
+            else:
+                logger.info(f"Billing record already exists for incident {incident_id}")
+                
+        except Exception as db_error:
+            logger.error(f"Database error creating billing record: {db_error}", exc_info=True)
+            if db:
+                db.rollback()
+        finally:
+            if db:
+                db.close()
             
     except Exception as e:
         logger.error(

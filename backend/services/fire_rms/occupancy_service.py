@@ -72,20 +72,36 @@ class OccupancyService:
                 )
             )
         )
+        preplans = preplans_result.scalars().all()
         
-        occupancies = []
-        for preplan in preplans_result.scalars().all():
-            # Get latest inspection for this property
-            inspection_result = await db.execute(
+        # Get all inspections for these properties in a single query
+        property_addresses = [preplan.property_address for preplan in preplans]
+        if property_addresses:
+            inspections_result = await db.execute(
                 select(FireInspection).where(
                     and_(
                         FireInspection.org_id == org_id,
-                        FireInspection.property_address == preplan.property_address
+                        FireInspection.property_address.in_(property_addresses)
                     )
-                ).order_by(FireInspection.inspection_date.desc()).limit(1)
+                ).order_by(
+                    FireInspection.property_address,
+                    FireInspection.inspection_date.desc()
+                )
             )
+            all_inspections = inspections_result.scalars().all()
             
-            latest_inspection = inspection_result.scalar_one_or_none()
+            # Group inspections by property_address, keeping only the latest for each
+            latest_inspections = {}
+            for inspection in all_inspections:
+                if inspection.property_address not in latest_inspections:
+                    latest_inspections[inspection.property_address] = inspection
+        else:
+            latest_inspections = {}
+        
+        occupancies = []
+        for preplan in preplans:
+            # Get latest inspection for this property from the pre-loaded dict
+            latest_inspection = latest_inspections.get(preplan.property_address)
             
             # Calculate risk score
             risk_score = OccupancyService._calculate_risk_score(preplan, latest_inspection)

@@ -13,6 +13,7 @@ Features:
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_, update
+from sqlalchemy.exc import SQLAlchemyError, DatabaseError
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 from uuid import UUID
@@ -98,8 +99,11 @@ class OfflineQueueService:
                 )
             )
             return result.scalar_one_or_none()
+        except (SQLAlchemyError, DatabaseError) as e:
+            logger.error("Database error while getting queue event by client_id %s: %s", client_event_id, e, exc_info=True)
+            return None
         except Exception as e:
-            logger.error(f"Failed to get queue event: {e}")
+            logger.error("Unexpected error while getting queue event by client_id %s: %s", client_event_id, e, exc_info=True)
             return None
 
     async def get_pending_events(
@@ -123,8 +127,11 @@ class OfflineQueueService:
             result = await self.db.execute(query)
             return list(result.scalars().all())
 
+        except (SQLAlchemyError, DatabaseError) as e:
+            logger.error("Database error while getting pending events (org_id=%s): %s", org_id, e, exc_info=True)
+            return []
         except Exception as e:
-            logger.error(f"Failed to get pending events: {e}")
+            logger.error("Unexpected error while getting pending events (org_id=%s): %s", org_id, e, exc_info=True)
             return []
 
     # ========================================================================

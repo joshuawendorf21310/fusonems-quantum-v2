@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import Link from "next/link";
+import { PageShell } from "@/components/PageShell";
 
 interface PCR {
   id: string;
@@ -177,6 +178,6 @@ export default function EPCRDashboard() {
           </>
         )}
       </div>
-    </div>
+    </PageShell>
   );
 }

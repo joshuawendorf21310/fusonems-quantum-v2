@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 
 export interface SchedulingEvent {
   type: string;
@@ -41,6 +41,45 @@ export const useSchedulingWebSocket = (
   const [connectionAttempts, setConnectionAttempts] = useState(0);
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const optionsRef = useRef(options);
+
+  // Keep options ref up to date without causing re-renders
+  useEffect(() => {
+    optionsRef.current = options;
+  }, [options]);
+
+  // Memoize stable callback references
+  const callbacksRef = useMemo(() => ({
+    onShiftCreated: options.onShiftCreated,
+    onShiftUpdated: options.onShiftUpdated,
+    onShiftDeleted: options.onShiftDeleted,
+    onAssignmentCreated: options.onAssignmentCreated,
+    onAssignmentRemoved: options.onAssignmentRemoved,
+    onYouWereAssigned: options.onYouWereAssigned,
+    onYourAssignmentRemoved: options.onYourAssignmentRemoved,
+    onSchedulePublished: options.onSchedulePublished,
+    onTimeOffStatusChanged: options.onTimeOffStatusChanged,
+    onSwapRequestReceived: options.onSwapRequestReceived,
+    onSchedulingAlert: options.onSchedulingAlert,
+    onConnected: options.onConnected,
+    onDisconnected: options.onDisconnected,
+    onError: options.onError,
+  }), [
+    options.onShiftCreated,
+    options.onShiftUpdated,
+    options.onShiftDeleted,
+    options.onAssignmentCreated,
+    options.onAssignmentRemoved,
+    options.onYouWereAssigned,
+    options.onYourAssignmentRemoved,
+    options.onSchedulePublished,
+    options.onTimeOffStatusChanged,
+    options.onSwapRequestReceived,
+    options.onSchedulingAlert,
+    options.onConnected,
+    options.onDisconnected,
+    options.onError,
+  ]);
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -49,7 +88,7 @@ export const useSchedulingWebSocket = (
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const host = window.location.host;
-    const wsUrl = `${protocol}//${host}/api/v1/scheduling/ws?token=${options.token}`;
+    const wsUrl = `${protocol}//${host}/api/v1/scheduling/ws?token=${optionsRef.current.token}`;
 
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
@@ -61,20 +100,22 @@ export const useSchedulingWebSocket = (
 
     ws.onclose = () => {
       setIsConnected(false);
-      options.onDisconnected?.();
+      callbacksRef.onDisconnected?.();
 
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
       }
-      const delay = Math.min(1000 * Math.pow(2, connectionAttempts), 30000);
-      reconnectTimeoutRef.current = setTimeout(() => {
-        setConnectionAttempts((prev) => prev + 1);
-        connect();
-      }, delay);
+      setConnectionAttempts((prev) => {
+        const delay = Math.min(1000 * Math.pow(2, prev), 30000);
+        reconnectTimeoutRef.current = setTimeout(() => {
+          connect();
+        }, delay);
+        return prev + 1;
+      });
     };
 
     ws.onerror = (error) => {
-      options.onError?.(error);
+      callbacksRef.onError?.(error);
     };
 
     ws.onmessage = (event) => {
@@ -84,47 +125,47 @@ export const useSchedulingWebSocket = (
 
         switch (message.type) {
           case "connected":
-            options.onConnected?.(message.data as { user_id: number; org_id: number });
+            callbacksRef.onConnected?.(message.data as { user_id: number; org_id: number });
             break;
           case "shift_created":
-            options.onShiftCreated?.(message.data);
+            callbacksRef.onShiftCreated?.(message.data);
             break;
           case "shift_updated":
-            options.onShiftUpdated?.(message.data);
+            callbacksRef.onShiftUpdated?.(message.data);
             break;
           case "shift_deleted":
-            options.onShiftDeleted?.(message.data as { shift_id: number });
+            callbacksRef.onShiftDeleted?.(message.data as { shift_id: number });
             break;
           case "assignment_created":
-            options.onAssignmentCreated?.(message.data);
+            callbacksRef.onAssignmentCreated?.(message.data);
             break;
           case "assignment_removed":
-            options.onAssignmentRemoved?.(message.data as { assignment_id: number });
+            callbacksRef.onAssignmentRemoved?.(message.data as { assignment_id: number });
             break;
           case "you_were_assigned":
-            options.onYouWereAssigned?.(message.data);
+            callbacksRef.onYouWereAssigned?.(message.data);
             break;
           case "your_assignment_removed":
-            options.onYourAssignmentRemoved?.(message.data as { assignment_id: number });
+            callbacksRef.onYourAssignmentRemoved?.(message.data as { assignment_id: number });
             break;
           case "schedule_published":
-            options.onSchedulePublished?.(message.data);
+            callbacksRef.onSchedulePublished?.(message.data);
             break;
           case "time_off_status_changed":
-            options.onTimeOffStatusChanged?.(message.data);
+            callbacksRef.onTimeOffStatusChanged?.(message.data);
             break;
           case "swap_request_received":
-            options.onSwapRequestReceived?.(message.data);
+            callbacksRef.onSwapRequestReceived?.(message.data);
             break;
           case "scheduling_alert":
-            options.onSchedulingAlert?.(message.data);
+            callbacksRef.onSchedulingAlert?.(message.data);
             break;
         }
       } catch (err) {
         console.error("Failed to parse scheduling WebSocket message:", err);
       }
     };
-  }, [options, connectionAttempts]);
+  }, [callbacksRef]);
 
   useEffect(() => {
     if (options.token) {
@@ -134,12 +175,17 @@ export const useSchedulingWebSocket = (
     return () => {
       if (reconnectTimeoutRef.current) {
         clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
       }
       if (wsRef.current) {
+        wsRef.current.onclose = null; // Prevent reconnect on manual close
+        wsRef.current.onerror = null;
+        wsRef.current.onmessage = null;
         wsRef.current.close();
+        wsRef.current = null;
       }
     };
-  }, [options.token]);
+  }, [options.token, connect]);
 
   const reconnect = useCallback(() => {
     if (wsRef.current) {

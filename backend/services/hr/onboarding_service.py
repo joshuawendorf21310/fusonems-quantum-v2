@@ -4,7 +4,7 @@ Handles new hire workflows, document collection, and onboarding checklists
 """
 from datetime import date, datetime, timedelta
 from typing import Dict, List, Optional, Any
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import and_, or_, func
 from collections import defaultdict
 from enum import Enum
@@ -182,17 +182,34 @@ class OnboardingService:
             )
         ).order_by(Personnel.hire_date.desc()).all()
 
+        # Get all personnel IDs
+        personnel_ids = [person.id for person in new_hires]
+        
+        # Load all documents in a single query grouped by personnel_id
+        if personnel_ids:
+            documents = scoped_query(self.db, EmployeeDocument, self.org_id).filter(
+                EmployeeDocument.personnel_id.in_(personnel_ids)
+            ).all()
+            doc_counts = defaultdict(int)
+            for doc in documents:
+                doc_counts[doc.personnel_id] += 1
+            
+            # Load all certifications in a single query grouped by personnel_id
+            certifications = scoped_query(self.db, Certification, self.org_id).filter(
+                Certification.personnel_id.in_(personnel_ids)
+            ).all()
+            cert_counts = defaultdict(int)
+            for cert in certifications:
+                cert_counts[cert.personnel_id] += 1
+        else:
+            doc_counts = defaultdict(int)
+            cert_counts = defaultdict(int)
+
         result = []
         for person in new_hires:
-            # Get document count
-            doc_count = scoped_query(self.db, EmployeeDocument, self.org_id).filter(
-                EmployeeDocument.personnel_id == person.id
-            ).count()
-
-            # Get certification count
-            cert_count = scoped_query(self.db, Certification, self.org_id).filter(
-                Certification.personnel_id == person.id
-            ).count()
+            # Get counts from pre-loaded dictionaries
+            doc_count = doc_counts.get(person.id, 0)
+            cert_count = cert_counts.get(person.id, 0)
 
             days_since_hire = (date.today() - person.hire_date).days
 

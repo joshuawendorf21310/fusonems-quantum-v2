@@ -309,20 +309,24 @@ def create_course(
     )
 
     apply_training_mode(course, request)
-    db.commit()
-    db.refresh(course)
+    try:
+        db.commit()
+        db.refresh(course)
 
-    audit_and_event(
-        db=db,
-        request=request,
-        user=user,
-        action="create",
-        resource="training_course",
-        classification="OPS",
-        after_state=model_snapshot(course),
-        event_type="training.course.created",
-        event_payload={"course_id": course.id, "course_name": course.course_name},
-    )
+        audit_and_event(
+            db=db,
+            request=request,
+            user=user,
+            action="create",
+            resource="training_course",
+            classification="OPS",
+            after_state=model_snapshot(course),
+            event_type="training.course.created",
+            event_payload={"course_id": course.id, "course_name": course.course_name},
+        )
+    except Exception as e:
+        db.rollback()
+        raise
 
     return course
 
@@ -399,20 +403,24 @@ def create_training_session(
     )
 
     apply_training_mode(session, request)
-    db.commit()
-    db.refresh(session)
+    try:
+        db.commit()
+        db.refresh(session)
 
-    audit_and_event(
-        db=db,
-        request=request,
-        user=user,
-        action="create",
-        resource="training_session",
-        classification="OPS",
-        after_state=model_snapshot(session),
-        event_type="training.session.created",
-        event_payload={"session_id": session.id, "course_id": session.course_id},
-    )
+        audit_and_event(
+            db=db,
+            request=request,
+            user=user,
+            action="create",
+            resource="training_session",
+            classification="OPS",
+            after_state=model_snapshot(session),
+            event_type="training.session.created",
+            event_payload={"session_id": session.id, "course_id": session.course_id},
+        )
+    except Exception as e:
+        db.rollback()
+        raise
 
     return session
 
@@ -440,24 +448,28 @@ def enroll_in_session(
         )
 
     apply_training_mode(enrollment, request)
-    db.commit()
-    db.refresh(enrollment)
+    try:
+        db.commit()
+        db.refresh(enrollment)
 
-    audit_and_event(
-        db=db,
-        request=request,
-        user=user,
-        action="create",
-        resource="training_enrollment",
-        classification="OPS",
-        after_state=model_snapshot(enrollment),
-        event_type="training.enrollment.created",
-        event_payload={
-            "session_id": session_id,
-            "personnel_id": personnel_id,
-            "enrollment_id": enrollment.id,
-        },
-    )
+        audit_and_event(
+            db=db,
+            request=request,
+            user=user,
+            action="create",
+            resource="training_enrollment",
+            classification="OPS",
+            after_state=model_snapshot(enrollment),
+            event_type="training.enrollment.created",
+            event_payload={
+                "session_id": session_id,
+                "personnel_id": personnel_id,
+                "enrollment_id": enrollment.id,
+            },
+        )
+    except Exception as e:
+        db.rollback()
+        raise
 
     return enrollment
 
@@ -572,25 +584,29 @@ def submit_fto_evaluation(
     )
 
     apply_training_mode(evaluation, request)
-    db.commit()
-    db.refresh(evaluation)
+    try:
+        db.commit()
+        db.refresh(evaluation)
 
-    audit_and_event(
-        db=db,
-        request=request,
-        user=user,
-        action="create",
-        resource="fto_evaluation",
-        classification="OPS",
-        after_state=model_snapshot(evaluation),
-        event_type="training.fto.evaluation.submitted",
-        event_payload={
-            "evaluation_id": evaluation.id,
-            "trainee_id": evaluation.trainee_id,
-            "fto_id": evaluation.fto_id,
-            "passed_shift": evaluation.passed_shift,
-        },
-    )
+        audit_and_event(
+            db=db,
+            request=request,
+            user=user,
+            action="create",
+            resource="fto_evaluation",
+            classification="OPS",
+            after_state=model_snapshot(evaluation),
+            event_type="training.fto.evaluation.submitted",
+            event_payload={
+                "evaluation_id": evaluation.id,
+                "trainee_id": evaluation.trainee_id,
+                "fto_id": evaluation.fto_id,
+                "passed_shift": evaluation.passed_shift,
+            },
+        )
+    except Exception as e:
+        db.rollback()
+        raise
 
     return evaluation
 
@@ -668,25 +684,29 @@ def submit_ceu_credit(
     )
 
     apply_training_mode(ceu, request)
-    db.commit()
-    db.refresh(ceu)
+    try:
+        db.commit()
+        db.refresh(ceu)
 
-    audit_and_event(
-        db=db,
-        request=request,
-        user=user,
-        action="create",
-        resource="ceu_credit",
-        classification="OPS",
-        after_state=model_snapshot(ceu),
-        event_type="training.ceu.submitted",
-        event_payload={
-            "ceu_id": ceu.id,
-            "personnel_id": ceu.personnel_id,
-            "credit_hours": ceu.credit_hours,
-            "credit_type": ceu.credit_type,
-        },
-    )
+        audit_and_event(
+            db=db,
+            request=request,
+            user=user,
+            action="create",
+            resource="ceu_credit",
+            classification="OPS",
+            after_state=model_snapshot(ceu),
+            event_type="training.ceu.submitted",
+            event_payload={
+                "ceu_id": ceu.id,
+                "personnel_id": ceu.personnel_id,
+                "credit_hours": ceu.credit_hours,
+                "credit_type": ceu.credit_type,
+            },
+        )
+    except Exception as e:
+        db.rollback()
+        raise
 
     return ceu
 

@@ -5,6 +5,7 @@ from sqlalchemy import select, and_, or_, func
 import httpx
 import asyncio
 from math import radians, cos, sin, asin, sqrt
+import logging
 
 from models.core_operations import (
     FacilitySearchCache,
@@ -14,6 +15,8 @@ from models.core_operations import (
     GeofenceEvent
 )
 from models.cad import Call
+
+logger = logging.getLogger(__name__)
 
 
 class FacilitySearchService:
@@ -249,8 +252,12 @@ class GeocodingService:
                             "accuracy": "HIGH",
                             "from_cache": False
                         }
+            except httpx.HTTPError as e:
+                logger.error("HTTP error during geocoding request: %s", e)
+            except (ValueError, KeyError, IndexError) as e:
+                logger.error("Error parsing geocoding response: %s", e)
             except Exception as e:
-                print(f"Geocoding error: {e}")
+                logger.error("Unexpected error during geocoding: %s", e, exc_info=True)
         
         return None
 

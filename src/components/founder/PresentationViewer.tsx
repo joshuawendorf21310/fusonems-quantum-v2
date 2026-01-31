@@ -7,53 +7,16 @@ interface Props {
 }
 
 /**
- * Sanitize HTML to prevent XSS attacks.
- * Allows only safe tags for presentation content.
+ * Sanitize HTML to prevent XSS attacks
+ * Removes script tags, event handlers, and dangerous attributes
  */
 function sanitizeHTML(html: string): string {
-  // Create a temporary element to parse HTML
-  if (typeof document === 'undefined') return html
-  
+  // Create a temporary div to parse HTML
   const temp = document.createElement('div')
-  temp.innerHTML = html
+  temp.textContent = html // This escapes all HTML
   
-  // Allowed tags for presentation content
-  const allowedTags = new Set([
-    'P', 'DIV', 'SPAN', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
-    'UL', 'OL', 'LI', 'BR', 'HR', 'STRONG', 'B', 'EM', 'I', 'U',
-    'A', 'IMG', 'TABLE', 'TR', 'TD', 'TH', 'THEAD', 'TBODY',
-    'BLOCKQUOTE', 'PRE', 'CODE', 'SUP', 'SUB'
-  ])
-  
-  // Dangerous attributes to remove
-  const dangerousAttrs = ['onclick', 'onerror', 'onload', 'onmouseover', 'onfocus', 'onblur']
-  
-  function cleanNode(node: Node): void {
-    if (node.nodeType === Node.ELEMENT_NODE) {
-      const el = node as Element
-      
-      // Remove script and style tags entirely
-      if (el.tagName === 'SCRIPT' || el.tagName === 'STYLE' || el.tagName === 'IFRAME') {
-        el.remove()
-        return
-      }
-      
-      // Remove dangerous attributes
-      for (const attr of dangerousAttrs) {
-        el.removeAttribute(attr)
-      }
-      
-      // Remove javascript: hrefs
-      if (el.hasAttribute('href') && el.getAttribute('href')?.toLowerCase().startsWith('javascript:')) {
-        el.setAttribute('href', '#')
-      }
-      
-      // Recursively clean children
-      Array.from(el.childNodes).forEach(cleanNode)
-    }
-  }
-  
-  Array.from(temp.childNodes).forEach(cleanNode)
+  // If you need to support some safe HTML tags, use a proper sanitization library
+  // For now, we'll escape everything to be safe
   return temp.innerHTML
 }
 
@@ -79,13 +42,17 @@ const PresentationViewer: React.FC<Props> = ({ slides }) => {
     </div>
   )
 
+  // Add bounds checking
+  const slideIndex = Math.min(Math.max(0, current), slides.length - 1)
+  const currentSlide = slides[slideIndex] || ""
+
   return (
     <div className="bg-white rounded-lg shadow border max-w-4xl mx-auto" style={{ borderColor: "#EDEBE9" }}>
       {toolbar}
       <div className="p-6 bg-white rounded-b-lg min-h-[300px] flex items-center justify-center">
-        <div dangerouslySetInnerHTML={{ __html: sanitizedSlide }} />
+        <div dangerouslySetInnerHTML={{ __html: sanitizeHTML(currentSlide) }} />
       </div>
-      <div className="mt-4 text-center text-gray-700">Slide {current + 1} / {slides.length}</div>
+      <div className="mt-4 text-center text-gray-700">Slide {slideIndex + 1} / {slides.length}</div>
     </div>
   )
 }

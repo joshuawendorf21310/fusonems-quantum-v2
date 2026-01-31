@@ -9,6 +9,7 @@ import os
 
 from core.database import get_db
 from core.security import require_roles
+from core.config import settings
 from models.patient_portal import (
     PatientBill,
     PatientPayment,
@@ -22,7 +23,7 @@ from utils.write_ops import apply_training_mode, audit_and_event, model_snapshot
 
 router = APIRouter(prefix="/api/patient-portal", tags=["Patient Billing"])
 
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")
+stripe.api_key = settings.stripe_secret_key
 
 
 class BillCreate(BaseModel):

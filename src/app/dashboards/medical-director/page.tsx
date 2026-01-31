@@ -1,4 +1,5 @@
 "use client";
+import { PageShell } from "@/components/PageShell";
 import { DashboardRenderer } from "@/lib/dashboards/widgets";
 export default function MedicalDirectorDashboard() {
   const schema = {
@@ -9,5 +10,9 @@ export default function MedicalDirectorDashboard() {
       { id: "cases", type: "table", title: "Recent Cases", dataSource: "/api/dashboards/medical-director/cases", gridSize: { width: 3, height: 2 } },
     ],
   };
-  return <DashboardRenderer schema={schema} title="Medical Director Dashboard" description="Clinical outcomes and protocol adherence" />;
+  return (
+    <PageShell title="Medical Director Dashboard" requireAuth={true}>
+      <DashboardRenderer schema={schema} title="Medical Director Dashboard" description="Clinical outcomes and protocol adherence" />
+    </PageShell>
+  );
 }

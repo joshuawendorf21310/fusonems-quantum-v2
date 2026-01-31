@@ -128,8 +128,9 @@ def check_nemsis_version(db: Session) -> Dict[str, Any]:
 
 def notify_founders_nemsis_update(db: Session, new_version: str) -> bool:
     """Create in-app notifications and send email to founders for NEMSIS update. Returns True if any notification sent."""
-    founders = db.query(User).filter(User.role == UserRole.founder).all()
-    admins = db.query(User).filter(User.role == UserRole.admin).all()
+    # Limit queries to prevent performance issues - typically only a few founders/admins exist
+    founders = db.query(User).filter(User.role == UserRole.founder).limit(100).all()
+    admins = db.query(User).filter(User.role == UserRole.admin).limit(100).all()
     # Notify founders first; optionally include first admin per org
     users_to_notify = list(founders)
     if not users_to_notify:

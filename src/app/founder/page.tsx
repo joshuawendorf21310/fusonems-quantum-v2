@@ -24,8 +24,7 @@ import {
 import FounderAIChat from "@/components/founder/FounderAIChat"
 import FounderScreenShare from "@/components/founder/FounderScreenShare"
 import { apiFetch } from "@/lib/api"
-import { useAuth } from "@/lib/auth-context"
-import { ProtectedRoute, RoleGate } from "@/lib/protected-route"
+import { PageShell } from "@/components/PageShell"
 
 type ModuleHealth = {
   module_key: string
@@ -137,12 +136,10 @@ export default function FounderPage() {
   }
 
   return (
-    <ProtectedRoute>
-      <RoleGate allowedRoles={["founder", "admin", "superadmin"]}>
-        <div className="min-h-screen bg-[#0a0a0a]">
-          <Sidebar />
-          <main className="ml-64">
-            <Topbar />
+    <PageShell title="Founder Console" requireAuth={true} allowedRoles={["founder"]}>
+      <Sidebar />
+      <main className="ml-64">
+        <Topbar />
         <div className="p-8 max-w-7xl mx-auto">
           <nav className="flex gap-2 mb-8">
             <button
@@ -327,175 +324,6 @@ export default function FounderPage() {
           )}
         </div>
       </main>
-    </div>
-      </RoleGate>
-    </ProtectedRoute>
-  )
-}
-
-function ValidationRuleBuilder() {
-  const [ruleName, setRuleName] = useState("")
-  const [ruleType, setRuleType] = useState("")
-  const [color, setColor] = useState("#f97316")
-
-  return (
-    <section className="rounded-xl border border-white/10 bg-white/5 p-6">
-      <header className="mb-4">
-        <h3 className="text-lg font-semibold text-white">Validation Rule Builder</h3>
-        <p className="text-sm text-zinc-400">Create custom validation rules for billing and compliance</p>
-      </header>
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm text-zinc-400 mb-1">Rule Name</label>
-          <input
-            type="text"
-            value={ruleName}
-            onChange={(e) => setRuleName(e.target.value)}
-            placeholder="e.g., Missing modifier check"
-            className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 focus:border-orange-500 focus:outline-none"
-          />
-        </div>
-        <div>
-          <label className="block text-sm text-zinc-400 mb-1">Rule Type</label>
-          <select
-            value={ruleType}
-            onChange={(e) => setRuleType(e.target.value)}
-            className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white focus:border-orange-500 focus:outline-none"
-          >
-            <option value="">Select type...</option>
-            <option value="billing">Billing Validation</option>
-            <option value="compliance">Compliance Check</option>
-            <option value="nemsis">NEMSIS Requirement</option>
-            <option value="custom">Custom Rule</option>
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm text-zinc-400 mb-1">Rule Color</label>
-          <div className="flex items-center gap-2">
-            <input
-              type="color"
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-              className="w-10 h-10 rounded cursor-pointer border-0"
-            />
-            <input
-              type="text"
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-              className="flex-1 px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-700 text-white focus:border-orange-500 focus:outline-none"
-            />
-          </div>
-        </div>
-        {(ruleName || ruleType) && (
-          <div className="pt-4 border-t border-zinc-700">
-            <p className="text-sm text-zinc-400 mb-2">Preview:</p>
-            <span
-              style={{ backgroundColor: color }}
-              className="inline-block px-4 py-2 rounded-lg text-white font-medium"
-            >
-              {ruleName || "Rule Name"} ({ruleType || "Type"})
-            </span>
-          </div>
-        )}
-        <button className="w-full mt-2 px-4 py-2 rounded-lg bg-orange-600 text-white font-medium hover:bg-orange-700 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled={!ruleName || !ruleType}>
-          Create Rule
-        </button>
-      </div>
-    </section>
-  )
-}
-
-function BillingImportWizard() {
-  const [file, setFile] = useState<File | null>(null)
-  const [progress, setProgress] = useState(0)
-  const [status, setStatus] = useState("")
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0]
-    if (f) {
-      setFile(f)
-      setProgress(0)
-      setStatus("")
-    }
-  }
-
-  const handleImport = () => {
-    if (!file) return
-    setStatus("Importing...")
-    setProgress(0)
-    
-    // Simulate progress
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval)
-          setStatus("Import complete!")
-          return 100
-        }
-        return prev + 10
-      })
-    }, 200)
-  }
-
-  return (
-    <section className="rounded-xl border border-white/10 bg-white/5 p-6">
-      <header className="mb-4">
-        <h3 className="text-lg font-semibold text-white">Billing Import Wizard</h3>
-        <p className="text-sm text-zinc-400">Import billing data from CSV or Excel files</p>
-      </header>
-      <div className="space-y-4">
-        <div className="border-2 border-dashed border-zinc-700 rounded-lg p-6 text-center hover:border-orange-500/50 transition cursor-pointer">
-          <input
-            type="file"
-            accept=".csv,.xlsx,.xls"
-            onChange={handleFileChange}
-            className="hidden"
-            id="billing-file-input"
-          />
-          <label htmlFor="billing-file-input" className="cursor-pointer">
-            <div className="text-zinc-400 mb-2">
-              <svg className="w-10 h-10 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-              </svg>
-            </div>
-            <p className="text-sm text-zinc-400">
-              {file ? file.name : "Drop CSV or Excel file here, or click to browse"}
-            </p>
-          </label>
-        </div>
-        
-        {file && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-zinc-400">{file.name}</span>
-              <span className="text-zinc-500">{(file.size / 1024).toFixed(1)} KB</span>
-            </div>
-            
-            {progress > 0 && (
-              <div className="w-full bg-zinc-700 rounded-full h-2">
-                <div
-                  className="bg-orange-500 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            )}
-            
-            {status && (
-              <p className={`text-sm ${status.includes("complete") ? "text-green-400" : "text-orange-400"}`}>
-                {status}
-              </p>
-            )}
-            
-            <button
-              onClick={handleImport}
-              disabled={progress > 0 && progress < 100}
-              className="w-full px-4 py-2 rounded-lg bg-orange-600 text-white font-medium hover:bg-orange-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {progress > 0 && progress < 100 ? "Importing..." : "Import Data"}
-            </button>
-          </div>
-        )}
-      </div>
-    </section>
+    </PageShell>
   )
 }

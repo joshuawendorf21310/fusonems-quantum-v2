@@ -278,9 +278,9 @@ export default function GlobalSearch() {
                     </button>
                   </div>
                   <div className="space-y-1">
-                    {recentSearches.map((search, idx) => (
+                    {recentSearches.map((search) => (
                       <button
-                        key={idx}
+                        key={`recent-${search}`}
                         onClick={() => handleRecentSearch(search)}
                         className="w-full flex items-center gap-3 p-2 rounded hover:bg-gray-800 text-left transition-colors"
                       >
@@ -296,9 +296,9 @@ export default function GlobalSearch() {
               <div>
                 <h3 className="text-sm font-medium text-gray-400 mb-3">Popular Searches</h3>
                 <div className="space-y-1">
-                  {popularSearches.map((search, idx) => (
+                  {popularSearches.map((search) => (
                     <button
-                      key={idx}
+                      key={`popular-${search}`}
                       onClick={() => setQuery(search)}
                       className="w-full flex items-center gap-3 p-2 rounded hover:bg-gray-800 text-left transition-colors"
                     >

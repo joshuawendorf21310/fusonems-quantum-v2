@@ -1,8 +1,9 @@
-import os
 import time
 import jwt
 from datetime import datetime, timedelta
 from typing import Optional
+
+from core.config import settings
 
 
 class JitsiService:
@@ -12,10 +13,10 @@ class JitsiService:
     """
     
     def __init__(self):
-        self.domain = os.getenv("JITSI_DOMAIN", "jitsi.fusionems.com")
-        self.app_id = os.getenv("JITSI_APP_ID", "fusionems_carefusion")
-        self.app_secret = os.getenv("JITSI_APP_SECRET", "")
-        self.algorithm = os.getenv("JITSI_JWT_ALGORITHM", "HS256")
+        self.domain = settings.JITSI_DOMAIN
+        self.app_id = settings.JITSI_APP_ID
+        self.app_secret = settings.JITSI_APP_SECRET
+        self.algorithm = settings.JITSI_JWT_ALGORITHM
         
         if not self.app_secret:
             raise ValueError("JITSI_APP_SECRET must be set in environment variables")

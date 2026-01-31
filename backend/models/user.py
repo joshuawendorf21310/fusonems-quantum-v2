@@ -6,6 +6,14 @@ from sqlalchemy.orm import synonym
 from core.database import Base
 
 
+class AccountStatus(str, Enum):
+    """Account status for lifecycle management (FedRAMP AC-2(2), AC-2(3))"""
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    DISABLED = "disabled"
+    TERMINATED = "terminated"
+
+
 class UserRole(str, Enum):
     ADMIN = "admin"
     OPS_ADMIN = "ops_admin"
@@ -71,3 +79,9 @@ class User(Base):
     role = Column(String, default=UserRole.crew.value)
     must_change_password = Column(Boolean, default=False, nullable=False)
     created_at = Column("createdAt", DateTime(timezone=True), server_default=func.now())
+    
+    # Account lifecycle management fields (FedRAMP AC-2(2), AC-2(3))
+    last_activity_at = Column(DateTime(timezone=True), nullable=True, index=True)
+    account_status = Column(String, default=AccountStatus.ACTIVE.value, nullable=False, index=True)
+    deactivation_reason = Column(String, nullable=True)
+    deactivation_scheduled_at = Column(DateTime(timezone=True), nullable=True, index=True)

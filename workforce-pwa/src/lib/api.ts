@@ -1,19 +1,44 @@
 import { useAuth } from './auth'
+import { queueRequest } from './offline-queue'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const { token } = useAuth.getState()
-  const res = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers
+  const url = `${API_URL}${endpoint}`
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(options.headers as Record<string, string> || {})
+  }
+  
+  try {
+    const res = await fetch(url, {
+      ...options,
+      headers,
+    })
+    if (!res.ok) throw new Error(`API Error: ${res.status}`)
+    return res.json()
+  } catch (error) {
+    // Queue failed non-GET requests when offline or network error
+    const method = options.method || 'GET'
+    if (
+      method !== 'GET' &&
+      (!navigator.onLine || error instanceof TypeError || (error as Error).message.includes('Failed to fetch'))
+    ) {
+      try {
+        await queueRequest(
+          url,
+          method,
+          headers,
+          options.body as string
+        )
+      } catch (queueError) {
+        console.error('Failed to queue request:', queueError)
+      }
     }
-  })
-  if (!res.ok) throw new Error(`API Error: ${res.status}`)
-  return res.json()
+    throw error
+  }
 }
 
 export const api = {

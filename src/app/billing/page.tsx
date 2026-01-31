@@ -1,63 +1,82 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import Link from "next/link"
 import Logo from "@/components/Logo"
 import TrustBadge from "@/components/marketing/TrustBadge"
 import { BILLING_EMAIL, BILLING_PHONE } from "@/lib/site-contact"
+import { useFormValidation } from "@/lib/hooks/useFormValidation"
 
 type PayMode = "self" | "representative"
 
+interface BillingFormData {
+  accountNumber: string
+  zipCode: string
+  amount: string
+  patientDob: string
+  patientLastName: string
+  representativeName: string
+  relationship: string
+}
+
 export default function BillingPage() {
   const [mode, setMode] = useState<PayMode>("self")
-  const [formData, setFormData] = useState({
-    accountNumber: "",
-    zipCode: "",
-    amount: "",
-    // Authorized representative fields
-    patientDob: "",
-    patientLastName: "",
-    representativeName: "",
-    relationship: "",
-  })
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState("")
+  
+  const validationSchema = useMemo(() => ({
+    accountNumber: {
+      rules: [{ type: "required" as const }, { type: "stringLength" as const, min: 1 }],
+    },
+    zipCode: {
+      rules: [{ type: "required" as const }, { type: "zipCode" as const }],
+    },
+    ...(mode === "representative" && {
+      patientDob: {
+        rules: [{ type: "required" as const }, { type: "dateNotFuture" as const }],
+      },
+      patientLastName: {
+        rules: [{ type: "required" as const }, { type: "stringLength" as const, min: 1 }],
+      },
+      representativeName: {
+        rules: [{ type: "required" as const }, { type: "stringLength" as const, min: 2 }],
+      },
+      relationship: {
+        rules: [{ type: "required" as const }],
+      },
+    }),
+  }), [mode])
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
-    setError("")
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-    setError("")
-
-    if (!formData.accountNumber || !formData.zipCode) {
-      setError("Please enter account number and ZIP code.")
-      setIsSubmitting(false)
-      return
-    }
-
-    if (mode === "representative") {
-      if (!formData.patientDob || !formData.patientLastName || !formData.representativeName || !formData.relationship) {
-        setError("Please complete all authorized representative fields.")
-        setIsSubmitting(false)
-        return
-      }
-    }
-
-    try {
+  const {
+    values: formData,
+    errors,
+    touched,
+    isSubmitting,
+    setValue,
+    handleChange,
+    handleBlur,
+    handleSubmit: handleFormSubmit,
+  } = useFormValidation<BillingFormData>({
+    schema: validationSchema,
+    initialValues: {
+      accountNumber: "",
+      zipCode: "",
+      amount: "",
+      patientDob: "",
+      patientLastName: "",
+      representativeName: "",
+      relationship: "",
+    },
+    validateOnBlur: true,
+    onSubmit: async (values) => {
       const body: Record<string, unknown> = {
-        accountNumber: formData.accountNumber,
-        zipCode: formData.zipCode,
+        accountNumber: values.accountNumber,
+        zipCode: values.zipCode,
       }
       if (mode === "representative") {
         body.authorizedRep = true
-        body.patientDob = formData.patientDob
-        body.patientLastName = formData.patientLastName
-        body.representativeName = formData.representativeName
-        body.relationship = formData.relationship
+        body.patientDob = values.patientDob
+        body.patientLastName = values.patientLastName
+        body.representativeName = values.representativeName
+        body.relationship = values.relationship
       }
 
       const response = await fetch("/api/billing/lookup", {
@@ -71,14 +90,28 @@ export default function BillingPage() {
         console.log("Account found:", data)
         // TODO: redirect to payment flow when implemented
       } else {
-        setError("Account not found. Please verify the information.")
+        throw new Error("Account not found. Please verify the information.")
       }
-    } catch {
-      setError("An error occurred. Please try again.")
-    } finally {
-      setIsSubmitting(false)
+    },
+  })
+
+  const [error, setError] = useState("")
+
+  const handleChangeWrapper = (field: keyof BillingFormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setValue(field, e.target.value)
+    setError("")
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+    try {
+      await handleFormSubmit(e)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred. Please try again.")
     }
   }
+
 
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-white">
@@ -162,10 +195,18 @@ export default function BillingPage() {
                   name="accountNumber"
                   required
                   value={formData.accountNumber}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition"
+                  onChange={handleChangeWrapper("accountNumber")}
+                  onBlur={handleBlur("accountNumber")}
+                  className={`w-full px-4 py-3 rounded-xl bg-white/5 border ${
+                    touched.accountNumber && errors.accountNumber
+                      ? "border-red-500/50"
+                      : "border-white/10"
+                  } text-white placeholder-gray-500 focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition`}
                   placeholder={mode === "representative" ? "Patient's account number" : "Enter your account number"}
                 />
+                {touched.accountNumber && errors.accountNumber && (
+                  <p className="text-xs text-red-400 mt-1.5">{errors.accountNumber}</p>
+                )}
               </div>
 
               <div>
@@ -178,15 +219,23 @@ export default function BillingPage() {
                   name="zipCode"
                   required
                   value={formData.zipCode}
-                  onChange={handleChange}
-                  maxLength={5}
-                  pattern="[0-9]{5}"
-                  className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition"
-                  placeholder="12345"
+                  onChange={handleChangeWrapper("zipCode")}
+                  onBlur={handleBlur("zipCode")}
+                  maxLength={10}
+                  className={`w-full px-4 py-3 rounded-xl bg-white/5 border ${
+                    touched.zipCode && errors.zipCode
+                      ? "border-red-500/50"
+                      : "border-white/10"
+                  } text-white placeholder-gray-500 focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition`}
+                  placeholder="12345 or 12345-6789"
                 />
-                <p className="text-xs text-gray-500 mt-1.5">
-                  {mode === "representative" ? "ZIP code on the patient's account." : "ZIP code associated with the service address."}
-                </p>
+                {touched.zipCode && errors.zipCode ? (
+                  <p className="text-xs text-red-400 mt-1.5">{errors.zipCode}</p>
+                ) : (
+                  <p className="text-xs text-gray-500 mt-1.5">
+                    {mode === "representative" ? "ZIP code on the patient's account." : "ZIP code associated with the service address."}
+                  </p>
+                )}
               </div>
 
               {mode === "representative" && (
@@ -206,9 +255,17 @@ export default function BillingPage() {
                           name="patientDob"
                           required={mode === "representative"}
                           value={formData.patientDob}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition"
+                          onChange={handleChangeWrapper("patientDob")}
+                          onBlur={handleBlur("patientDob")}
+                          className={`w-full px-4 py-3 rounded-xl bg-white/5 border ${
+                            touched.patientDob && errors.patientDob
+                              ? "border-red-500/50"
+                              : "border-white/10"
+                          } text-white focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition`}
                         />
+                        {touched.patientDob && errors.patientDob && (
+                          <p className="text-xs text-red-400 mt-1.5">{errors.patientDob}</p>
+                        )}
                       </div>
                       <div>
                         <label htmlFor="patientLastName" className="block text-sm font-semibold text-gray-300 mb-2">
@@ -220,10 +277,18 @@ export default function BillingPage() {
                           name="patientLastName"
                           required={mode === "representative"}
                           value={formData.patientLastName}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition"
+                          onChange={handleChangeWrapper("patientLastName")}
+                          onBlur={handleBlur("patientLastName")}
+                          className={`w-full px-4 py-3 rounded-xl bg-white/5 border ${
+                            touched.patientLastName && errors.patientLastName
+                              ? "border-red-500/50"
+                              : "border-white/10"
+                          } text-white placeholder-gray-500 focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition`}
                           placeholder="Last name"
                         />
+                        {touched.patientLastName && errors.patientLastName && (
+                          <p className="text-xs text-red-400 mt-1.5">{errors.patientLastName}</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -242,10 +307,18 @@ export default function BillingPage() {
                           name="representativeName"
                           required={mode === "representative"}
                           value={formData.representativeName}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition"
+                          onChange={handleChangeWrapper("representativeName")}
+                          onBlur={handleBlur("representativeName")}
+                          className={`w-full px-4 py-3 rounded-xl bg-white/5 border ${
+                            touched.representativeName && errors.representativeName
+                              ? "border-red-500/50"
+                              : "border-white/10"
+                          } text-white placeholder-gray-500 focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition`}
                           placeholder="First and last name"
                         />
+                        {touched.representativeName && errors.representativeName && (
+                          <p className="text-xs text-red-400 mt-1.5">{errors.representativeName}</p>
+                        )}
                       </div>
                       <div>
                         <label htmlFor="relationship" className="block text-sm font-semibold text-gray-300 mb-2">
@@ -256,8 +329,13 @@ export default function BillingPage() {
                           name="relationship"
                           required={mode === "representative"}
                           value={formData.relationship}
-                          onChange={handleChange}
-                          className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition [color-scheme:dark]"
+                          onChange={handleChangeWrapper("relationship")}
+                          onBlur={handleBlur("relationship")}
+                          className={`w-full px-4 py-3 rounded-xl bg-white/5 border ${
+                            touched.relationship && errors.relationship
+                              ? "border-red-500/50"
+                              : "border-white/10"
+                          } text-white focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 focus:outline-none transition [color-scheme:dark]`}
                         >
                           <option value="">Select relationship</option>
                           <option value="parent">Parent</option>
@@ -267,6 +345,9 @@ export default function BillingPage() {
                           <option value="power_of_attorney">Power of attorney</option>
                           <option value="other">Other</option>
                         </select>
+                        {touched.relationship && errors.relationship && (
+                          <p className="text-xs text-red-400 mt-1.5">{errors.relationship}</p>
+                        )}
                       </div>
                     </div>
                   </div>

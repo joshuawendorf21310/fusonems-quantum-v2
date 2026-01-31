@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from pydantic import BaseModel
 from datetime import datetime
@@ -138,13 +138,14 @@ async def get_account_details(account_id: int, db: Session = Depends(get_db)):
     - Communication history
     - Action log
     """
-    account = db.query(CollectionsAccount).filter_by(id=account_id).first()
+    account = db.query(CollectionsAccount).options(
+        joinedload(CollectionsAccount.actions)
+    ).filter_by(id=account_id).first()
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
     
-    actions = db.query(CollectionsActionLog).filter_by(
-        account_id=account_id
-    ).order_by(CollectionsActionLog.executed_at.desc()).all()
+    # Actions are already loaded via joinedload, just need to sort them
+    actions = sorted(account.actions, key=lambda a: a.executed_at, reverse=True)
     
     return {
         "account": {

@@ -1,11 +1,11 @@
 import Link from 'next/link'
+import { PageShell } from "@/components/PageShell"
 
 export default function ProviderDashboard() {
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
+    <PageShell title="Provider Dashboard" requireAuth={true}>
       <header className="mb-8 flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-white">Provider Dashboard</h1>
           <p className="text-zinc-400">Dr. Sarah Smith, MD • Emergency Medicine</p>
         </div>
         <div className="flex gap-4">
@@ -123,6 +123,6 @@ export default function ProviderDashboard() {
           </div>
         </div>
       </div>
-    </div>
+    </PageShell>
   )
 }

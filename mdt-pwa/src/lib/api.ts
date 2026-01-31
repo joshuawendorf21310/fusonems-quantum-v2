@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { ssoAuth } from './auth'
+import { queueRequest } from './offline-queue'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api/v1'
 
@@ -19,9 +20,13 @@ api.interceptors.request.use((config) => {
   }
   
   // Fall back to legacy token
-  const token = localStorage.getItem('auth_token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+  try {
+    const token = localStorage.getItem('auth_token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+  } catch (error) {
+    console.error('Error accessing localStorage:', error)
   }
   return config
 })
@@ -49,6 +54,24 @@ api.interceptors.response.use(
       }
     }
     
+    // Queue failed non-GET requests when offline or network error
+    if (
+      originalRequest &&
+      originalRequest.method !== 'get' &&
+      (!navigator.onLine || error.code === 'ERR_NETWORK' || error.message === 'Network Error')
+    ) {
+      try {
+        await queueRequest(
+          originalRequest.url || '',
+          originalRequest.method || 'POST',
+          originalRequest.headers as Record<string, string>,
+          originalRequest.data
+        )
+      } catch (queueError) {
+        console.error('Failed to queue request:', queueError)
+      }
+    }
+    
     return Promise.reject(error)
   }
 )
@@ -69,7 +92,13 @@ export const updateStatus = async (incidentId: string, status: string) => {
 }
 
 export const updateUnitStatus = async (status: string, latitude?: number, longitude?: number) => {
-  const unitId = localStorage.getItem('unit_id')
+  let unitId: string | null = null
+  try {
+    unitId = localStorage.getItem('unit_id')
+  } catch (error) {
+    console.error('Error accessing localStorage:', error)
+    throw new Error('Failed to access unit ID')
+  }
   if (!unitId) throw new Error('No unit ID found')
   
   const response = await api.patch(`/cad/units/${unitId}/status`, {

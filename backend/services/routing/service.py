@@ -243,8 +243,8 @@ class RoutingService:
         dest_lon: float
     ) -> Dict:
         """Mapbox Directions API with live traffic"""
-        import os
-        mapbox_token = os.getenv("MAPBOX_ACCESS_TOKEN")
+        from core.config import settings
+        mapbox_token = settings.MAPBOX_ACCESS_TOKEN
         
         url = f"https://api.mapbox.com/directions/v5/mapbox/driving/{origin_lon},{origin_lat};{dest_lon},{dest_lat}"
         params = {

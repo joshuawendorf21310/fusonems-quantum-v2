@@ -66,8 +66,13 @@ class SSOAuth {
         this.scheduleTokenRefresh();
       }
     } catch (error) {
-      console.error('Error loading auth state:', error);
-      this.clearStorage();
+      console.error('Error loading auth state from localStorage:', error);
+      // Clear storage on error to prevent corrupted state
+      try {
+        this.clearStorage();
+      } catch (clearError) {
+        console.error('Error clearing storage:', clearError);
+      }
     }
   }
 
@@ -76,9 +81,13 @@ class SSOAuth {
    */
   private saveToStorage(): void {
     if (this.accessToken && this.refreshToken && this.user) {
-      localStorage.setItem('sso_access_token', this.accessToken);
-      localStorage.setItem('sso_refresh_token', this.refreshToken);
-      localStorage.setItem('sso_user', JSON.stringify(this.user));
+      try {
+        localStorage.setItem('sso_access_token', this.accessToken);
+        localStorage.setItem('sso_refresh_token', this.refreshToken);
+        localStorage.setItem('sso_user', JSON.stringify(this.user));
+      } catch (error) {
+        console.error('Error saving auth state to localStorage:', error);
+      }
     }
   }
 
@@ -86,10 +95,14 @@ class SSOAuth {
    * Clear authentication state from localStorage
    */
   private clearStorage(): void {
-    localStorage.removeItem('sso_access_token');
-    localStorage.removeItem('sso_refresh_token');
-    localStorage.removeItem('sso_user');
-    localStorage.removeItem('auth_token'); // Legacy token
+    try {
+      localStorage.removeItem('sso_access_token');
+      localStorage.removeItem('sso_refresh_token');
+      localStorage.removeItem('sso_user');
+      localStorage.removeItem('auth_token'); // Legacy token
+    } catch (error) {
+      console.error('Error clearing localStorage:', error);
+    }
   }
 
   /**

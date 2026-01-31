@@ -195,11 +195,21 @@ export default function FounderAIChat() {
   )
 }
 
+/**
+ * Safely convert markdown to HTML with XSS protection
+ * Escapes HTML first, then applies markdown formatting
+ */
 function simpleMarkdown(text: string): string {
-  return text
+  // First escape all HTML to prevent XSS
+  const escaped = text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#x27;")
+  
+  // Then apply safe markdown formatting
+  return escaped
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
     .replace(/`(.+?)`/g, "<code class=\"rounded bg-zinc-600 px-1 py-0.5 text-amber-200\">$1</code>")

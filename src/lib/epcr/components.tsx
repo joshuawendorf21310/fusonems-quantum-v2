@@ -272,7 +272,7 @@ const VitalsRowComponent: React.FC<{ value: any; onChange: (v: any) => void }> =
 
       {vitals.map((vital: any, idx: number) => (
         <div
-          key={idx}
+          key={`vital-${vital.timestamp || idx}`}
           style={{
             background: "rgba(10, 10, 10, 0.6)",
             border: "1px solid rgba(255, 107, 53, 0.2)",
@@ -463,7 +463,7 @@ const MedicationRowComponent: React.FC<{ value: any; onChange: (v: any) => void 
 
       {medications.map((med: any, idx: number) => (
         <div
-          key={idx}
+          key={`medication-${med.timestamp || idx}`}
           style={{
             background: "rgba(10, 10, 10, 0.6)",
             border: "1px solid rgba(255, 107, 53, 0.2)",
@@ -609,7 +609,7 @@ const ProcedureRowComponent: React.FC<{ value: any; onChange: (v: any) => void }
 
       {procedures.map((proc: any, idx: number) => (
         <div
-          key={idx}
+          key={`procedure-${proc.timestamp || idx}`}
           style={{
             background: "rgba(10, 10, 10, 0.6)",
             border: "1px solid rgba(255, 107, 53, 0.2)",
@@ -837,7 +837,7 @@ export const ValidationErrorsComponent: React.FC<ValidationErrorsProps> = ({ err
       }}
     >
       {errors.map((err, idx) => (
-        <div key={idx} style={{ fontSize: "12px", color: "#ff6b7a", marginBottom: "4px" }}>
+        <div key={`error-${idx}-${err.slice(0, 20)}`} style={{ fontSize: "12px", color: "#ff6b7a", marginBottom: "4px" }}>
           ⚠ {err}
         </div>
       ))}

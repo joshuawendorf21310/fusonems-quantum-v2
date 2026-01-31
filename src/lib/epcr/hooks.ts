@@ -1,5 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { EpcrRecord, ValidationError } from "./types";
+import {
+  validateEmail,
+  validatePhone,
+  validateDate,
+  validateDateNotFuture,
+  validateRequired,
+} from "../utils/validation";
 
 const AUTO_SAVE_INTERVAL = 30000; // 30 seconds
 
@@ -26,7 +33,7 @@ export const useEpcrForm = (initialData?: Partial<EpcrRecord> & { variant?: stri
         clearTimeout(autoSaveTimerRef.current);
       }
     };
-  }, [formData, isDirty]);
+  }, [isDirty, saveToLocalStorage]);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -41,7 +48,7 @@ export const useEpcrForm = (initialData?: Partial<EpcrRecord> & { variant?: stri
     }
   }, []);
 
-  const updateField = useCallback((field: string, value: any) => {
+  const updateField = useCallback((field: string, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setIsDirty(true);
   }, []);
@@ -49,16 +56,58 @@ export const useEpcrForm = (initialData?: Partial<EpcrRecord> & { variant?: stri
   const validateForm = useCallback(() => {
     const newErrors: ValidationError[] = [];
     
-    const firstName = (formData as { patient?: { first_name?: string }; first_name?: string }).patient?.first_name ?? (formData as { first_name?: string }).first_name;
-    const lastName = (formData as { patient?: { last_name?: string }; last_name?: string }).patient?.last_name ?? (formData as { last_name?: string }).last_name;
-    if (!firstName) {
+    // Required fields
+    const firstName = formData.patient?.first_name || formData.first_name;
+    const lastName = formData.patient?.last_name || formData.last_name;
+    
+    const firstNameValidation = validateRequired(firstName);
+    if (!firstNameValidation.isValid) {
       newErrors.push({ field: "first_name", message: "First name required", severity: "ERROR" });
     }
-    if (!lastName) {
+    
+    const lastNameValidation = validateRequired(lastName);
+    if (!lastNameValidation.isValid) {
       newErrors.push({ field: "last_name", message: "Last name required", severity: "ERROR" });
     }
-    if (!formData.chief_complaint) {
+    
+    const chiefComplaintValidation = validateRequired(formData.chief_complaint);
+    if (!chiefComplaintValidation.isValid) {
       newErrors.push({ field: "chief_complaint", message: "Chief complaint required", severity: "ERROR" });
+    }
+
+    // Email validation
+    if (formData.patient?.email || formData.email) {
+      const email = formData.patient?.email || formData.email;
+      const emailValidation = validateEmail(email as string);
+      if (!emailValidation.isValid) {
+        newErrors.push({ field: "email", message: emailValidation.error || "Invalid email", severity: "ERROR" });
+      }
+    }
+
+    // Phone validation
+    if (formData.patient?.phone || formData.phone) {
+      const phone = formData.patient?.phone || formData.phone;
+      const phoneValidation = validatePhone(phone as string);
+      if (!phoneValidation.isValid) {
+        newErrors.push({ field: "phone", message: phoneValidation.error || "Invalid phone number", severity: "ERROR" });
+      }
+    }
+
+    // Date of birth validation
+    if (formData.patient?.date_of_birth || formData.date_of_birth) {
+      const dob = formData.patient?.date_of_birth || formData.date_of_birth;
+      const dobValidation = validateDateNotFuture(dob as string);
+      if (!dobValidation.isValid) {
+        newErrors.push({ field: "date_of_birth", message: dobValidation.error || "Invalid date of birth", severity: "ERROR" });
+      }
+    }
+
+    // Incident date validation
+    if (formData.incident_date) {
+      const incidentDateValidation = validateDateNotFuture(formData.incident_date as string);
+      if (!incidentDateValidation.isValid) {
+        newErrors.push({ field: "incident_date", message: incidentDateValidation.error || "Invalid incident date", severity: "ERROR" });
+      }
     }
 
     setErrors(newErrors);
@@ -129,28 +178,7 @@ export const useOfflineSync = () => {
   const [isOnline, setIsOnline] = useState(true);
   const [pendingCount, setPendingCount] = useState(0);
 
-  useEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true);
-      syncPendingRecords();
-    };
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-
-    setIsOnline(navigator.onLine);
-    
-    // Check for pending records on mount
-    checkPendingRecords();
-
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
-  }, []);
-
-  const checkPendingRecords = async () => {
+  const checkPendingRecords = useCallback(async () => {
     try {
       const db = await openIndexedDB();
       const tx = db.transaction("epcr_offline", "readonly");
@@ -164,9 +192,9 @@ export const useOfflineSync = () => {
     } catch (err) {
       console.error("Failed to check pending records:", err);
     }
-  };
+  }, []);
 
-  const syncPendingRecords = async () => {
+  const syncPendingRecords = useCallback(async () => {
     try {
       const db = await openIndexedDB();
       const tx = db.transaction("epcr_offline", "readwrite");
@@ -198,7 +226,28 @@ export const useOfflineSync = () => {
     } catch (err) {
       console.error("Failed to sync pending records:", err);
     }
-  };
+  }, [checkPendingRecords]);
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      syncPendingRecords();
+    };
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    setIsOnline(navigator.onLine);
+    
+    // Check for pending records on mount
+    checkPendingRecords();
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [checkPendingRecords, syncPendingRecords]);
 
   return { isOnline, pendingCount, syncPendingRecords };
 };

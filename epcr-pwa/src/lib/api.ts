@@ -13,6 +13,7 @@ import type {
   MedicationAdmin,
   Narrative,
 } from '../types'
+import { queueRequest } from './offline-queue'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
@@ -20,12 +21,43 @@ const api = axios.create({
 })
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('epcr_token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+  try {
+    const token = localStorage.getItem('epcr_token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+  } catch (error) {
+    console.error('Error accessing localStorage:', error)
   }
   return config
 })
+
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config
+    
+    // Queue failed non-GET requests when offline or network error
+    if (
+      originalRequest &&
+      originalRequest.method !== 'get' &&
+      (!navigator.onLine || error.code === 'ERR_NETWORK' || error.message === 'Network Error')
+    ) {
+      try {
+        await queueRequest(
+          originalRequest.url || '',
+          originalRequest.method || 'POST',
+          originalRequest.headers as Record<string, string>,
+          originalRequest.data
+        )
+      } catch (queueError) {
+        console.error('Failed to queue request:', queueError)
+      }
+    }
+    
+    return Promise.reject(error)
+  }
+)
 
 export const auth = {
   login: (credentials: { username: string; password: string; unitId: string }) =>

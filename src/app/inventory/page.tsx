@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { PageShell } from "@/components/PageShell";
 
 interface DashboardStats {
   total_items: number;
@@ -86,13 +87,13 @@ export default function InventoryPage() {
   }, [search, category, showLowStock]);
 
   const getStockStatus = (item: InventoryItem) => {
-    if (item.quantity_on_hand === 0) return { label: "Out", color: "bg-red-100 text-red-800" };
-    if (item.quantity_on_hand <= item.reorder_point) return { label: "Low", color: "bg-yellow-100 text-yellow-800" };
-    return { label: "OK", color: "bg-green-100 text-green-800" };
+    if (item.quantity_on_hand === 0) return { label: "Out", color: "bg-red-600/20 text-red-400 border-red-600/30" };
+    if (item.quantity_on_hand <= item.reorder_point) return { label: "Low", color: "bg-yellow-600/20 text-yellow-400 border-yellow-600/30" };
+    return { label: "OK", color: "bg-green-600/20 text-green-400 border-green-600/30" };
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
+    <PageShell title="Inventory Management" requireAuth={true}>
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -118,74 +119,74 @@ export default function InventoryPage() {
               <div className="text-3xl font-bold text-zinc-100">{stats.total_items}</div>
               <div className="text-sm text-zinc-400">Total Items</div>
             </div>
-            <Link href="/inventory?low_stock=true" className="bg-white rounded-lg shadow p-4 hover:shadow-md">
-              <div className="text-3xl font-bold text-yellow-600">{stats.low_stock_items}</div>
-              <div className="text-sm text-gray-600">Low Stock</div>
+            <Link href="/inventory?low_stock=true" className="bg-zinc-900 rounded-lg border border-zinc-800 p-4 hover:border-zinc-700">
+              <div className="text-3xl font-bold text-yellow-400">{stats.low_stock_items}</div>
+              <div className="text-sm text-zinc-400">Low Stock</div>
             </Link>
-            <Link href="/inventory?low_stock=true" className="bg-white rounded-lg shadow p-4 hover:shadow-md">
-              <div className="text-3xl font-bold text-red-600">{stats.out_of_stock_items}</div>
-              <div className="text-sm text-gray-600">Out of Stock</div>
+            <Link href="/inventory?low_stock=true" className="bg-zinc-900 rounded-lg border border-zinc-800 p-4 hover:border-zinc-700">
+              <div className="text-3xl font-bold text-red-400">{stats.out_of_stock_items}</div>
+              <div className="text-sm text-zinc-400">Out of Stock</div>
             </Link>
-            <Link href="/inventory/expiring" className="bg-white rounded-lg shadow p-4 hover:shadow-md">
-              <div className="text-3xl font-bold text-orange-600">{stats.expiring_30_days}</div>
-              <div className="text-sm text-gray-600">Expiring 30d</div>
+            <Link href="/inventory/expiring" className="bg-zinc-900 rounded-lg border border-zinc-800 p-4 hover:border-zinc-700">
+              <div className="text-3xl font-bold text-orange-400">{stats.expiring_30_days}</div>
+              <div className="text-sm text-zinc-400">Expiring 30d</div>
             </Link>
             <div className="bg-zinc-900 rounded-lg border border-zinc-800 p-4">
-              <div className="text-3xl font-bold text-green-600">${stats.total_inventory_value.toLocaleString()}</div>
-              <div className="text-sm text-gray-600">Total Value</div>
+              <div className="text-3xl font-bold text-green-400">${stats.total_inventory_value.toLocaleString()}</div>
+              <div className="text-sm text-zinc-400">Total Value</div>
             </div>
           </div>
         )}
 
         <div className="grid md:grid-cols-4 gap-4 mb-6">
-          <Link href="/inventory/controlled" className="bg-white rounded-lg shadow p-4 hover:shadow-lg transition-shadow">
+          <Link href="/inventory/controlled" className="bg-zinc-900 rounded-lg border border-zinc-800 p-4 hover:border-zinc-700 transition-all">
             <div className="flex items-center gap-3">
               <div className="text-3xl">🔒</div>
               <div>
-                <h3 className="font-semibold">Controlled Substances</h3>
-                <p className="text-sm text-gray-600">{stats?.controlled_items || 0} items tracked</p>
-                <p className="text-xs text-purple-600 mt-1">{stats?.controlled_transactions_today || 0} transactions today</p>
+                <h3 className="font-semibold text-zinc-100">Controlled Substances</h3>
+                <p className="text-sm text-zinc-400">{stats?.controlled_items || 0} items tracked</p>
+                <p className="text-xs text-purple-400 mt-1">{stats?.controlled_transactions_today || 0} transactions today</p>
               </div>
             </div>
           </Link>
-          <Link href="/inventory/expiring" className="bg-white rounded-lg shadow p-4 hover:shadow-lg transition-shadow">
+          <Link href="/inventory/expiring" className="bg-zinc-900 rounded-lg border border-zinc-800 p-4 hover:border-zinc-700 transition-all">
             <div className="flex items-center gap-3">
               <div className="text-3xl">⏰</div>
               <div>
-                <h3 className="font-semibold">Expiration Tracking</h3>
-                <p className="text-sm text-gray-600">{stats?.expired_lots || 0} expired lots</p>
-                <p className="text-xs text-orange-600 mt-1">{stats?.expiring_90_days || 0} expiring in 90 days</p>
+                <h3 className="font-semibold text-zinc-100">Expiration Tracking</h3>
+                <p className="text-sm text-zinc-400">{stats?.expired_lots || 0} expired lots</p>
+                <p className="text-xs text-orange-400 mt-1">{stats?.expiring_90_days || 0} expiring in 90 days</p>
               </div>
             </div>
           </Link>
-          <Link href="/inventory/reorder" className="bg-white rounded-lg shadow p-4 hover:shadow-lg transition-shadow">
+          <Link href="/inventory/reorder" className="bg-zinc-900 rounded-lg border border-zinc-800 p-4 hover:border-zinc-700 transition-all">
             <div className="flex items-center gap-3">
               <div className="text-3xl">📦</div>
               <div>
-                <h3 className="font-semibold">Reorder Management</h3>
-                <p className="text-sm text-gray-600">Smart suggestions</p>
-                <p className="text-xs text-blue-600 mt-1">Based on usage patterns</p>
+                <h3 className="font-semibold text-zinc-100">Reorder Management</h3>
+                <p className="text-sm text-zinc-400">Smart suggestions</p>
+                <p className="text-xs text-blue-400 mt-1">Based on usage patterns</p>
               </div>
             </div>
           </Link>
-          <Link href="/inventory/kits" className="bg-white rounded-lg shadow p-4 hover:shadow-lg transition-shadow">
+          <Link href="/inventory/kits" className="bg-zinc-900 rounded-lg border border-zinc-800 p-4 hover:border-zinc-700 transition-all">
             <div className="flex items-center gap-3">
               <div className="text-3xl">🎒</div>
               <div>
-                <h3 className="font-semibold">Supply Kits</h3>
-                <p className="text-sm text-gray-600">Kit management</p>
-                <p className="text-xs text-gray-500 mt-1">Trauma, airway, cardiac</p>
+                <h3 className="font-semibold text-zinc-100">Supply Kits</h3>
+                <p className="text-sm text-zinc-400">Kit management</p>
+                <p className="text-xs text-zinc-500 mt-1">Trauma, airway, cardiac</p>
               </div>
             </div>
           </Link>
         </div>
 
         {expiring.length > 0 && (
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+          <div className="bg-orange-900/20 border border-orange-700 rounded-lg p-4 mb-6">
             <div className="flex items-center gap-2 mb-3">
               <span className="text-xl">⚠️</span>
-              <h3 className="font-semibold text-orange-800">Expiring Soon</h3>
-              <Link href="/inventory/expiring" className="ml-auto text-sm text-orange-600 hover:underline">
+              <h3 className="font-semibold text-orange-400">Expiring Soon</h3>
+              <Link href="/inventory/expiring" className="ml-auto text-sm text-orange-400 hover:underline">
                 View All
               </Link>
             </div>
@@ -193,11 +194,11 @@ export default function InventoryPage() {
               {expiring.slice(0, 6).map((lot) => (
                 <div
                   key={lot.id}
-                  className={`p-3 rounded-lg ${lot.is_expired ? "bg-red-100" : "bg-orange-100"}`}
+                  className={`p-3 rounded-lg ${lot.is_expired ? "bg-red-900/20 border border-red-700" : "bg-orange-800/20 border border-orange-700"}`}
                 >
-                  <div className="font-medium text-sm">{lot.item_name}</div>
-                  <div className="text-xs text-gray-600">Lot: {lot.lot_number}</div>
-                  <div className={`text-xs font-medium mt-1 ${lot.is_expired ? "text-red-700" : "text-orange-700"}`}>
+                  <div className="font-medium text-sm text-zinc-100">{lot.item_name}</div>
+                  <div className="text-xs text-zinc-400">Lot: {lot.lot_number}</div>
+                  <div className={`text-xs font-medium mt-1 ${lot.is_expired ? "text-red-400" : "text-orange-400"}`}>
                     {lot.is_expired ? "EXPIRED" : `${lot.days_until_expiration} days left`}
                   </div>
                 </div>
@@ -206,8 +207,8 @@ export default function InventoryPage() {
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-4 border-b">
+        <div className="bg-zinc-900 rounded-lg border border-zinc-800">
+          <div className="p-4 border-b border-zinc-800">
             <div className="flex flex-wrap gap-4 items-center">
               <div className="flex-1 min-w-[200px]">
                 <input
@@ -215,13 +216,13 @@ export default function InventoryPage() {
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search by name, SKU, or barcode..."
-                  className="w-full border rounded-lg px-3 py-2"
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 focus:outline-none focus:border-blue-500"
                 />
               </div>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="border rounded-lg px-3 py-2"
+                className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-zinc-100 focus:outline-none focus:border-blue-500"
               >
                 <option value="">All Categories</option>
                 {CATEGORIES.map((cat) => (
@@ -237,17 +238,17 @@ export default function InventoryPage() {
                   onChange={(e) => setShowLowStock(e.target.checked)}
                   className="w-4 h-4"
                 />
-                <span className="text-sm">Low Stock Only</span>
+                <span className="text-sm text-zinc-100">Low Stock Only</span>
               </label>
             </div>
           </div>
 
           {loading ? (
-            <div className="p-8 text-center text-gray-500">Loading...</div>
+            <div className="p-8 text-center text-zinc-400">Loading...</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 text-left text-sm text-gray-600">
+                <thead className="bg-zinc-800/50 text-left text-sm text-zinc-400">
                   <tr>
                     <th className="px-4 py-3">Item</th>
                     <th className="px-4 py-3">Category</th>
@@ -277,20 +278,20 @@ export default function InventoryPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-sm capitalize">{item.category}</td>
-                        <td className="px-4 py-3 text-sm font-mono text-gray-500">{item.sku}</td>
+                        <td className="px-4 py-3 text-sm capitalize text-zinc-300">{item.category}</td>
+                        <td className="px-4 py-3 text-sm font-mono text-zinc-500">{item.sku}</td>
                         <td className="px-4 py-3 text-center">
-                          <span className={`font-bold ${item.quantity_on_hand === 0 ? "text-red-600" : ""}`}>
+                          <span className={`font-bold ${item.quantity_on_hand === 0 ? "text-red-400" : "text-zinc-100"}`}>
                             {item.quantity_on_hand}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-center text-gray-500">{item.par_level}</td>
+                        <td className="px-4 py-3 text-center text-zinc-400">{item.par_level}</td>
                         <td className="px-4 py-3 text-center">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${status.color}`}>
+                          <span className={`px-2 py-1 rounded text-xs font-medium border ${status.color}`}>
                             {status.label}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-right text-sm">
+                        <td className="px-4 py-3 text-right text-sm text-zinc-100">
                           ${(item.quantity_on_hand * item.unit_cost).toFixed(2)}
                         </td>
                       </tr>
@@ -302,6 +303,6 @@ export default function InventoryPage() {
           )}
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }
