@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showBanner, setShowBanner] = useState(false)
 
   useEffect(() => {
     const storedEmail = localStorage.getItem("remember_email")
@@ -48,6 +49,24 @@ export default function LoginPage() {
       } else {
         localStorage.removeItem("remember_email")
       }
+      
+      // Check if banner acceptance is required (FedRAMP AC-8)
+      // The backend login endpoint checks for banner acceptance and returns 403 if not accepted
+      // If login succeeds, BannerAcceptanceGuard will handle showing banner if needed
+      // But we can also check here to show banner immediately after login
+      try {
+        await apiFetch("/auth/me")
+        // If we get here, user has accepted banner (or banner check passed)
+      } catch (bannerErr: any) {
+        // Check if error is about banner acceptance
+        const bannerDetail = bannerErr.response?.data?.detail
+        if (bannerDetail?.requires_banner_acceptance || bannerDetail?.error === "Banner acceptance required") {
+          setShowBanner(true)
+          return // Show banner modal, don't navigate yet
+        }
+        // Other errors - proceed with normal flow
+      }
+      
       if (response.user?.must_change_password) {
         localStorage.setItem("must_change_password", "true")
         router.push("/change-password")
@@ -56,7 +75,25 @@ export default function LoginPage() {
       const role = response.user?.role
       router.push(role === "founder" ? "/founder" : "/dashboard")
     } catch (err: any) {
-      setError(err.response?.data?.detail || "Login failed. Please try again.")
+      const detail = err.response?.data?.detail
+      
+      // Check if error is about banner acceptance requirement
+      if (detail?.requires_banner_acceptance || detail?.error === "Banner acceptance required") {
+        // User needs to accept banner - show banner modal
+        // Note: Login may have succeeded but banner not accepted
+        setShowBanner(true)
+        return
+      }
+      
+      const message =
+        typeof detail === "string"
+          ? detail
+          : typeof detail === "object" && detail?.message
+            ? detail.message
+            : Array.isArray(detail) && detail[0]?.msg
+              ? detail.map((d: { msg?: string }) => d.msg).filter(Boolean).join(". ")
+              : "Login failed. Please try again."
+      setError(message)
     } finally {
       setLoading(false)
     }
@@ -195,9 +232,13 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
+            <div
+              role="alert"
+              aria-live="assertive"
+              className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl"
+            >
               <div className="flex items-center space-x-3">
-                <svg className="w-5 h-5 text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-5 h-5 text-red-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <p className="text-red-400 text-sm">{error}</p>
@@ -259,8 +300,9 @@ export default function LoginPage() {
             </div>
 
             <div className="flex items-center justify-between">
-              <label className="flex items-center space-x-2 cursor-pointer group">
+              <label htmlFor="remember-me" className="flex items-center space-x-2 cursor-pointer group">
                 <input
+                  id="remember-me"
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
@@ -276,6 +318,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
+              aria-busy={loading}
               className="w-full py-3 px-4 bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-orange-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
             >
               {loading ? (
