@@ -109,19 +109,23 @@ def update_workflow(
     record.last_step = payload.last_step
     record.interruption_reason = payload.interruption_reason
     record.metadata_json = payload.metadata or record.metadata_json
-    db.commit()
-    audit_and_event(
-        db=db,
-        request=request,
-        user=user,
-        action="update",
-        resource="workflow_state",
-        classification=record.classification,
-        before_state=before,
-        after_state=model_snapshot(record),
-        event_type="workflows.updated",
-        event_payload={"workflow_id": record.id},
-    )
+    try:
+        db.commit()
+        audit_and_event(
+            db=db,
+            request=request,
+            user=user,
+            action="update",
+            resource="workflow_state",
+            classification=record.classification,
+            before_state=before,
+            after_state=model_snapshot(record),
+            event_type="workflows.updated",
+            event_payload={"workflow_id": record.id},
+        )
+    except Exception as e:
+        db.rollback()
+        raise
     return {"status": "ok", "workflow_id": record.id}
 
 
@@ -142,17 +146,21 @@ def resume_workflow(
     )
     before = model_snapshot(record)
     record.status = "resumed"
-    db.commit()
-    audit_and_event(
-        db=db,
-        request=request,
-        user=user,
-        action="resume",
-        resource="workflow_state",
-        classification=record.classification,
-        before_state=before,
-        after_state=model_snapshot(record),
-        event_type="workflows.resumed",
-        event_payload={"workflow_id": record.id},
-    )
+    try:
+        db.commit()
+        audit_and_event(
+            db=db,
+            request=request,
+            user=user,
+            action="resume",
+            resource="workflow_state",
+            classification=record.classification,
+            before_state=before,
+            after_state=model_snapshot(record),
+            event_type="workflows.resumed",
+            event_payload={"workflow_id": record.id},
+        )
+    except Exception as e:
+        db.rollback()
+        raise
     return {"status": "ok", "workflow_id": record.id}

@@ -24,6 +24,7 @@ import {
   buildStyles,
 } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
+import { PageShell } from "@/components/PageShell";
 
 interface DashboardStats {
   total_courses: number;
@@ -88,14 +89,16 @@ export default function TrainingDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-zinc-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
+      <PageShell title="Training & Education" requireAuth={true}>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
+    <PageShell title="Training & Education" requireAuth={true}>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <motion.div
@@ -341,6 +344,6 @@ export default function TrainingDashboard() {
           </motion.div>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

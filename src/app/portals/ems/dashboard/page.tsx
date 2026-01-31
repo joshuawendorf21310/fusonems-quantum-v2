@@ -1,6 +1,6 @@
 "use client"
 
-import PortalDashboardShell from "@/components/portal/PortalDashboardShell"
+import { PageShell } from "@/components/PageShell"
 import Link from "next/link"
 
 export default function EmsDashboard() {
@@ -141,6 +141,6 @@ export default function EmsDashboard() {
           </Link>
         </div>
       </div>
-    </PortalDashboardShell>
+    </PageShell>
   )
 }

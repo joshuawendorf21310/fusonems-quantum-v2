@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { ssoAuth } from './auth'
+import { queueRequest } from './offline-queue'
 import type { 
   TripRequest, 
   HEMSFlightRequest, 
@@ -28,9 +29,13 @@ api.interceptors.request.use((config) => {
     config.headers.Authorization = `Bearer ${ssoToken}`
     return config
   }
-  const token = localStorage.getItem('auth_token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+  try {
+    const token = localStorage.getItem('auth_token')
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+  } catch (error) {
+    console.error('Error accessing localStorage:', error)
   }
   return config
 })
@@ -52,6 +57,25 @@ api.interceptors.response.use(
         }
       }
     }
+    
+    // Queue failed non-GET requests when offline or network error
+    if (
+      originalRequest &&
+      originalRequest.method !== 'get' &&
+      (!navigator.onLine || error.code === 'ERR_NETWORK' || error.message === 'Network Error')
+    ) {
+      try {
+        await queueRequest(
+          originalRequest.url || '',
+          originalRequest.method || 'POST',
+          originalRequest.headers as Record<string, string>,
+          originalRequest.data
+        )
+      } catch (queueError) {
+        console.error('Failed to queue request:', queueError)
+      }
+    }
+    
     return Promise.reject(error)
   }
 )

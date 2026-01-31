@@ -3,6 +3,8 @@ import "./globals.css";
 import { AuthProvider } from "../lib/auth-context";
 import GlobalSearch from "../components/GlobalSearch";
 import MustChangePasswordGuard from "../components/MustChangePasswordGuard";
+import BannerAcceptanceGuard from "../components/BannerAcceptanceGuard";
+import { ErrorBoundary } from "../components/ErrorBoundary";
 
 export const metadata: Metadata = {
   title: "FusionEMS Quantum | The Regulated EMS Operating System",
@@ -32,11 +34,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        <AuthProvider>
-          <MustChangePasswordGuard />
-          <GlobalSearch />
-          {children}
-        </AuthProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            <MustChangePasswordGuard />
+            <BannerAcceptanceGuard />
+            <GlobalSearch />
+            {children}
+          </AuthProvider>
+        </ErrorBoundary>
       </body>
     </html>
   )

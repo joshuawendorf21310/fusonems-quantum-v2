@@ -724,6 +724,15 @@ def finalize_record(
     record.finalized_by = user.id
     db.add(validation_entry)
     db.commit()
+    # Service orchestration - ensure all services work together
+    try:
+        from services.integration.orchestrator import ServiceOrchestrator
+        ServiceOrchestrator.on_epcr_finalized(db, record, user.id)
+    except Exception as e:
+        logger.error(f"Orchestrator error during ePCR finalization: {e}", exc_info=True)
+        # Continue even if orchestrator fails - don't block finalization
+    
+    # Legacy service calls (kept for backward compatibility)
     AISuggestions.suggest_protocol(record)
     NEMSISExporter.export_record_to_nemsis(record, db=db)
     OfflineSyncManager.queue_record(db, record)
@@ -743,11 +752,13 @@ def finalize_record(
 @router.get("/records/{record_id}/timeline", response_model=List[TimelineEvent])
 def get_timeline(
     record_id: int,
+    limit: int = 1000,
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.provider)),
 ):
     record = _get_record(db, user, record_id)
-    events = db.query(EpcrTimeline).filter(EpcrTimeline.record_id == record.id).order_by(EpcrTimeline.timestamp.asc()).all()
+    # Limit timeline events to prevent performance issues with records that have many events
+    events = db.query(EpcrTimeline).filter(EpcrTimeline.record_id == record.id).order_by(EpcrTimeline.timestamp.asc()).limit(limit).all()
     return events
 
 

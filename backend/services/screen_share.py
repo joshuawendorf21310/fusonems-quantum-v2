@@ -27,8 +27,7 @@ from models.user import User
 router = APIRouter()
 
 # Use Redis for session persistence
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-r = redis.Redis.from_url(REDIS_URL)
+r = redis.Redis.from_url(settings.REDIS_URL)
 
 class ConnectionManager:
     def __init__(self):

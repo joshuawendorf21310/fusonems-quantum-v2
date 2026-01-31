@@ -328,7 +328,7 @@ def list_files(
 
 
 @router.post("/files", status_code=status.HTTP_201_CREATED)
-def upload_file(
+async def upload_file(
     request: Request,
     file: UploadFile = File(...),
     folder_id: Optional[str] = Form(None),
@@ -340,7 +340,13 @@ def upload_file(
 ):
     file_id = str(uuid4())
     storage_key = build_storage_key(user.org_id, f"{file_id}/{file.filename}")
-    raw = file.file.read()
+    try:
+        raw = await file.read()
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to read file: {str(e)}"
+        )
     digest = hashlib.sha256(raw).hexdigest()
     get_storage_backend().save_bytes(storage_key, raw, file.content_type or "application/octet-stream")
     doc = DocumentFile(

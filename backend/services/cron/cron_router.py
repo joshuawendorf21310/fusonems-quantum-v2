@@ -12,6 +12,15 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/cron", tags=["Cron"])
 
 
+def _require_cron_secret(x_cron_secret: str | None = Header(None, alias="X-Cron-Secret")):
+    """Generic cron secret validator - checks ACCOUNT_LIFECYCLE_CRON_SECRET or falls back to NEMSIS_WATCH_CRON_SECRET"""
+    secret = getattr(settings, "ACCOUNT_LIFECYCLE_CRON_SECRET", None) or getattr(settings, "NEMSIS_WATCH_CRON_SECRET", None)
+    if not secret:
+        raise HTTPException(status_code=501, detail="Cron secret not configured (set ACCOUNT_LIFECYCLE_CRON_SECRET or NEMSIS_WATCH_CRON_SECRET)")
+    if x_cron_secret != secret:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid cron secret")
+
+
 def _require_nemsis_watch_secret(x_cron_secret: str | None = Header(None, alias="X-Cron-Secret")):
     secret = getattr(settings, "NEMSIS_WATCH_CRON_SECRET", None)
     if not secret:
@@ -32,3 +41,24 @@ def cron_nemsis_watch(
     """
     from services.founder.nemsis_watch_service import check_nemsis_version
     return check_nemsis_version(db)
+
+
+@router.post("/account-lifecycle")
+def cron_account_lifecycle(
+    db: Session = Depends(get_db),
+    _: None = Depends(_require_cron_secret),
+):
+    """
+    Account lifecycle management job (FedRAMP AC-2(2), AC-2(3)).
+    Call daily with:
+    curl -X POST -H "X-Cron-Secret: YOUR_SECRET" https://your-api/api/cron/account-lifecycle
+    Set ACCOUNT_LIFECYCLE_CRON_SECRET in .env (or use NEMSIS_WATCH_CRON_SECRET as fallback).
+    
+    This job:
+    - Checks for inactive accounts
+    - Sends deactivation warnings (30, 15, 7 days before)
+    - Disables accounts after 90 days of inactivity
+    - Generates compliance reports
+    """
+    from jobs.account_lifecycle_job import run_account_lifecycle_check
+    return run_account_lifecycle_check()

@@ -29,13 +29,13 @@ class ApplyRequest(BaseModel):
 
 @router.post("/trips/{trip_id}/documents/{doc_type}/extract", response_model=ExtractResponse)
 def extract_doc(trip_id: int, doc_type: str, req: ExtractRequest, db: Session = Depends(get_db), user: User = Depends(require_roles(UserRole.facility_admin, UserRole.facility_user))):
+    from core.config import settings
     trip = get_scoped_record(db, None, TransportTrip, trip_id, user)
     # TODO: fetch file text by file_id (stub: use dummy text)
     text = "DUMMY PDF TEXT for extraction"
     fields, confidence, evidence, warnings = extract_document(doc_type, text)
     # Optionally refine with AI
-    ai_enabled = os.getenv("SUPPORT_AI_ENABLED", "false").lower() == "true"
-    if ai_enabled:
+    if settings.SUPPORT_AI_ENABLED:
         ai_result = ai_refine_extraction(doc_type, fields, text)
         if ai_result:
             fields = ai_result.get('fields', fields)

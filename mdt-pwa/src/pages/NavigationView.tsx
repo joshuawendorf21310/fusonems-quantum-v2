@@ -165,7 +165,7 @@ export default function NavigationView() {
               <div className="text-sm text-gray-400 uppercase tracking-wide mb-2">Then</div>
               <div className="space-y-2">
                 {upcomingSteps.slice(1, 3).map((step, idx) => (
-                  <div key={idx} className="flex items-center gap-3 text-white">
+                  <div key={`upcoming-${idx}-${step.distance}`} className="flex items-center gap-3 text-white">
                     <span className="text-2xl">{getManeuverIcon(step.instruction)}</span>
                     <span className="text-lg">{step.instruction}</span>
                     <span className="text-sm text-gray-500 ml-auto">
@@ -251,7 +251,7 @@ export default function NavigationView() {
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
               {route.steps.map((step, idx) => (
                 <div
-                  key={idx}
+                  key={`step-${idx}-${step.distance}`}
                   className={`p-4 rounded-lg border transition-colors ${
                     idx === navState.currentStep
                       ? 'bg-blue-600/30 border-blue-500'

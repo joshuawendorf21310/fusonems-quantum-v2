@@ -161,6 +161,7 @@ async def handle_transport_completed(data: Dict[str, Any]):
         # Create billing record
         # This is a critical integration point between CAD and Billing
         
+        db = None
         try:
             # Get database session
             db = next(get_db())
@@ -195,6 +196,11 @@ async def handle_transport_completed(data: Dict[str, Any]):
                 
         except Exception as db_error:
             logger.error(f"Database error creating billing record: {db_error}", exc_info=True)
+            if db:
+                db.rollback()
+        finally:
+            if db:
+                db.close()
             
     except Exception as e:
         logger.error(f"Error handling transport completed: {e}", exc_info=True)

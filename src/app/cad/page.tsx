@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { apiFetch } from "@/lib/api";
 import Link from "next/link";
+import { PageShell } from "@/components/PageShell";
 
 interface Incident {
   id: string;
@@ -78,7 +79,7 @@ export default function CADDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-6">
+    <PageShell title="CAD System" requireAuth={true}>
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -321,6 +322,6 @@ export default function CADDashboard() {
           </div>
         )}
       </div>
-    </div>
+    </PageShell>
   );
 }

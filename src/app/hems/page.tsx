@@ -8,6 +8,7 @@ import {
   Plane, Activity, Users, Cloud, AlertTriangle, 
   CheckCircle, Clock, Calendar 
 } from "lucide-react";
+import { PageShell } from "@/components/PageShell";
 
 type HemsDashboardData = {
   aircraft_available: number;
@@ -84,7 +85,7 @@ export default function HEMSDashboard() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <PageShell title="HEMS Operations" requireAuth={true}>
       {/* Header */}
       <div className="relative overflow-hidden bg-gradient-to-r from-sky-950 via-zinc-900 to-blue-950 border-b border-sky-900/30">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
@@ -296,6 +297,6 @@ export default function HEMSDashboard() {
           </p>
         </motion.div>
       </div>
-    </div>
+    </PageShell>
   );
 }

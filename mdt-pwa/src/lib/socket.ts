@@ -26,6 +26,18 @@ export const initSocket = (unitId?: string) => {
     socket.on('connect_error', (error) => {
       console.error('MDT Socket connection error:', error)
     })
+
+    socket.on('reconnect', () => {
+      // Refresh token from localStorage on reconnection
+      const freshToken = localStorage.getItem('auth_token')
+      if (freshToken && socket) {
+        socket.auth = { token: freshToken }
+        console.log('MDT Socket reconnected with refreshed token')
+        if (unitId) {
+          socket.emit('join:unit', unitId)
+        }
+      }
+    })
   }
 
   return socket

@@ -30,6 +30,16 @@ export const initSocket = (unitId: string): Socket => {
     console.error('[Socket] Connection error:', error)
   })
 
+  socket.on('reconnect', () => {
+    // Refresh token from localStorage on reconnection
+    const freshToken = localStorage.getItem('epcr_token')
+    if (freshToken && socket) {
+      socket.auth = { token: freshToken }
+      console.log('[Socket] Reconnected with refreshed token')
+      socket.emit('join:unit', unitId)
+    }
+  })
+
   return socket
 }
 

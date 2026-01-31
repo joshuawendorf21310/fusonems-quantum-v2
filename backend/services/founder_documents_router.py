@@ -51,11 +51,14 @@ def _signed_url(storage_key: str, expires: int = 3600) -> str:
 
 @router.get("/folders", response_model=List[FolderOut])
 def list_folders(
+    limit: int = 1000,
+    offset: int = 0,
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.founder)),
 ):
     org_id = user.org_id
-    rows = db.query(FounderDocumentFolder).filter(FounderDocumentFolder.org_id == org_id).order_by(FounderDocumentFolder.name).all()
+    # Add pagination to prevent performance issues with large folder datasets
+    rows = db.query(FounderDocumentFolder).filter(FounderDocumentFolder.org_id == org_id).order_by(FounderDocumentFolder.name).offset(offset).limit(limit).all()
     return [FolderOut(id=r.id, name=r.name, parentId=r.parent_id) for r in rows]
 
 
@@ -76,11 +79,14 @@ def create_folder(
 
 @router.get("/records", response_model=List[DocumentOut])
 def list_documents(
+    limit: int = 1000,
+    offset: int = 0,
     db: Session = Depends(get_db),
     user: User = Depends(require_roles(UserRole.admin, UserRole.founder)),
 ):
     org_id = user.org_id
-    rows = db.query(FounderDocumentFile).filter(FounderDocumentFile.org_id == org_id).order_by(FounderDocumentFile.created_at.desc()).all()
+    # Add pagination to prevent performance issues with large document datasets
+    rows = db.query(FounderDocumentFile).filter(FounderDocumentFile.org_id == org_id).order_by(FounderDocumentFile.created_at.desc()).offset(offset).limit(limit).all()
     out = []
     for r in rows:
         url = _signed_url(r.storage_key)

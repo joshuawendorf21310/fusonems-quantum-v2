@@ -145,25 +145,29 @@ def create_trip(
     )
     apply_training_mode(trip, request)
     db.add(trip)
-    db.commit()
-    db.refresh(trip)
-    audit_and_event(
-        db=db,
-        request=request,
-        user=user,
-        action="create",
-        resource="transport_trip",
-        classification=trip.classification,
-        after_state=model_snapshot(trip),
-        event_type="transport.trip.created",
-        event_payload={
-            "trip_id": trip.id,
-            "transport_type": trip.transport_type,
-            "call_id": trip.call_id,
-            "dispatch_id": trip.dispatch_id,
-            "unit_id": trip.unit_id,
-        },
-    )
+    try:
+        db.commit()
+        db.refresh(trip)
+        audit_and_event(
+            db=db,
+            request=request,
+            user=user,
+            action="create",
+            resource="transport_trip",
+            classification=trip.classification,
+            after_state=model_snapshot(trip),
+            event_type="transport.trip.created",
+            event_payload={
+                "trip_id": trip.id,
+                "transport_type": trip.transport_type,
+                "call_id": trip.call_id,
+                "dispatch_id": trip.dispatch_id,
+                "unit_id": trip.unit_id,
+            },
+        )
+    except Exception as e:
+        db.rollback()
+        raise
     return trip
 
 
@@ -183,20 +187,24 @@ def update_medical_necessity(
     trip.pcs_provided = payload.pcs_provided
     trip.pcs_reference = payload.pcs_reference
     apply_training_mode(trip, request)
-    db.commit()
-    db.refresh(trip)
-    audit_and_event(
-        db=db,
-        request=request,
-        user=user,
-        action="update",
-        resource="transport_trip",
-        classification=trip.classification,
-        before_state=before_state,
-        after_state=model_snapshot(trip),
-        event_type="transport.trip.medical_necessity.updated",
-        event_payload={"trip_id": trip.id, "status": trip.medical_necessity_status},
-    )
+    try:
+        db.commit()
+        db.refresh(trip)
+        audit_and_event(
+            db=db,
+            request=request,
+            user=user,
+            action="update",
+            resource="transport_trip",
+            classification=trip.classification,
+            before_state=before_state,
+            after_state=model_snapshot(trip),
+            event_type="transport.trip.medical_necessity.updated",
+            event_payload={"trip_id": trip.id, "status": trip.medical_necessity_status},
+        )
+    except Exception as e:
+        db.rollback()
+        raise
     return {"status": "ok"}
 
 
@@ -231,19 +239,23 @@ def create_leg(
     )
     apply_training_mode(leg, request)
     db.add(leg)
-    db.commit()
-    db.refresh(leg)
-    audit_and_event(
-        db=db,
-        request=request,
-        user=user,
-        action="create",
-        resource="transport_leg",
-        classification=leg.classification,
-        after_state=model_snapshot(leg),
-        event_type="transport.leg.created",
-        event_payload={"trip_id": trip.id, "leg_id": leg.id},
-    )
+    try:
+        db.commit()
+        db.refresh(leg)
+        audit_and_event(
+            db=db,
+            request=request,
+            user=user,
+            action="create",
+            resource="transport_leg",
+            classification=leg.classification,
+            after_state=model_snapshot(leg),
+            event_type="transport.leg.created",
+            event_payload={"trip_id": trip.id, "leg_id": leg.id},
+        )
+    except Exception as e:
+        db.rollback()
+        raise
     return leg
 
 
@@ -281,22 +293,26 @@ def complete_trip(
     trip.status = "completed"
     trip.completed_at = payload.completed_at or datetime.utcnow()
     apply_training_mode(trip, request)
-    db.commit()
-    db.refresh(trip)
-    audit_and_event(
-        db=db,
-        request=request,
-        user=user,
-        action="update",
-        resource="transport_trip",
-        classification=trip.classification,
-        before_state=before_state,
-        after_state=model_snapshot(trip),
-        event_type="transport.trip.completed",
-        event_payload={
-            "trip_id": trip.id,
-            "legs": [model_snapshot(leg) for leg in legs],
-            "distance_miles": sum(leg.distance_miles or 0.0 for leg in legs),
-        },
-    )
+    try:
+        db.commit()
+        db.refresh(trip)
+        audit_and_event(
+            db=db,
+            request=request,
+            user=user,
+            action="update",
+            resource="transport_trip",
+            classification=trip.classification,
+            before_state=before_state,
+            after_state=model_snapshot(trip),
+            event_type="transport.trip.completed",
+            event_payload={
+                "trip_id": trip.id,
+                "legs": [model_snapshot(leg) for leg in legs],
+                "distance_miles": sum(leg.distance_miles or 0.0 for leg in legs),
+            },
+        )
+    except Exception as e:
+        db.rollback()
+        raise
     return {"status": "completed", "trip_id": trip.id}

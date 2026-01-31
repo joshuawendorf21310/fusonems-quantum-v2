@@ -1,4 +1,5 @@
 "use client";
+import { PageShell } from "@/components/PageShell";
 import { DashboardRenderer } from "@/lib/dashboards/widgets";
 export default function StationChiefDashboard() {
   const schema = {
@@ -9,5 +10,9 @@ export default function StationChiefDashboard() {
       { id: "roster", type: "table", title: "Crew Roster", dataSource: "/api/dashboards/station-chief/roster", gridSize: { width: 3, height: 2 } },
     ],
   };
-  return <DashboardRenderer schema={schema} title="Station Chief Dashboard" description="Crew performance and operational metrics" />;
+  return (
+    <PageShell title="Station Chief Dashboard" requireAuth={true}>
+      <DashboardRenderer schema={schema} title="Station Chief Dashboard" description="Crew performance and operational metrics" />
+    </PageShell>
+  );
 }

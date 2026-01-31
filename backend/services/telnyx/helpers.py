@@ -80,4 +80,5 @@ def require_telnyx_enabled() -> None:
 
 
 def billing_users(db: Session, org_id: int) -> list[User]:
-    return db.query(User).filter(User.org_id == org_id, User.role == UserRole.billing.value).all()
+    # Limit to prevent performance issues - typically only a few billing users per org
+    return db.query(User).filter(User.org_id == org_id, User.role == UserRole.billing.value).limit(100).all()

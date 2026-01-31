@@ -253,7 +253,9 @@ class CredentialValidationService:
             if definition and definition.required_certifications:
                 required_certs = definition.required_certifications
         
-        personnel_list = db.query(Personnel).all()
+        # Limit to prevent performance issues with large personnel datasets
+        # This query checks all personnel for shift qualification, so we cap at 1000
+        personnel_list = db.query(Personnel).limit(1000).all()
         
         qualified = []
         for person in personnel_list:

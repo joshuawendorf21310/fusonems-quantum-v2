@@ -8,6 +8,7 @@ import {
   Flame, MapPin, ClipboardCheck, FileText, Truck, 
   Shield, AlertTriangle, Calendar, Activity, TrendingUp 
 } from "lucide-react";
+import { PageShell } from "@/components/PageShell";
 
 type FireDashboardData = {
   active_incidents: number;
@@ -296,6 +297,6 @@ export default function FireDashboard() {
           </motion.div>
         )}
       </div>
-    </div>
+    </PageShell>
   );
 }

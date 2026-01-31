@@ -3,9 +3,41 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 
+interface JitsiEventMap {
+  videoConferenceJoined: () => void
+  videoConferenceLeft: () => void
+  readyToClose: () => void
+  errorOccurred: (event: { error?: string; message?: string }) => void
+}
+
+interface JitsiMeetExternalAPI {
+  addEventListener<K extends keyof JitsiEventMap>(
+    event: K,
+    handler: JitsiEventMap[K]
+  ): void
+  removeEventListener<K extends keyof JitsiEventMap>(
+    event: K,
+    handler: JitsiEventMap[K]
+  ): void
+  executeCommand(command: string, ...args: unknown[]): void
+  dispose(): void
+}
+
+interface JitsiConfigOptions {
+  roomName: string
+  jwt?: string
+  parentNode: HTMLElement
+  configOverwrite?: Record<string, unknown>
+  interfaceConfigOverwrite?: Record<string, unknown>
+  userInfo?: {
+    displayName: string
+    email?: string
+  }
+}
+
 declare global {
   interface Window {
-    JitsiMeetExternalAPI: any
+    JitsiMeetExternalAPI: new (domain: string, options: JitsiConfigOptions) => JitsiMeetExternalAPI
   }
 }
 
@@ -13,8 +45,8 @@ interface JitsiConfig {
   domain: string
   roomName: string
   jwt_token: string
-  configOverwrite: Record<string, any>
-  interfaceConfigOverwrite: Record<string, any>
+  configOverwrite: Record<string, unknown>
+  interfaceConfigOverwrite: Record<string, unknown>
   userInfo: {
     displayName: string
     email?: string
@@ -33,7 +65,8 @@ export default function VideoConsultationPage() {
   const [providerInfo, setProviderInfo] = useState<{ name: string; specialty: string } | null>(null)
 
   const jitsiContainerRef = useRef<HTMLDivElement>(null)
-  const jitsiApiRef = useRef<any>(null)
+  const jitsiApiRef = useRef<JitsiMeetExternalAPI | null>(null)
+  const eventHandlersRef = useRef<Array<{ event: keyof JitsiEventMap; handler: (...args: unknown[]) => void }>>([])
 
   useEffect(() => {
     loadJitsiScript()
@@ -131,26 +164,39 @@ export default function VideoConsultationPage() {
         }
       })
 
-      // Event listeners
-      api.addEventListener('videoConferenceJoined', () => {
+      // Event listeners with cleanup tracking
+      const handleVideoConferenceJoined = () => {
         setJoined(true)
         setConnectionStatus('connected')
         setLoading(false)
-      })
+      }
 
-      api.addEventListener('videoConferenceLeft', () => {
+      const handleVideoConferenceLeft = () => {
         handleLeave()
-      })
+      }
 
-      api.addEventListener('readyToClose', () => {
+      const handleReadyToClose = () => {
         handleLeave()
-      })
+      }
 
-      api.addEventListener('errorOccurred', (event: any) => {
+      const handleErrorOccurred: JitsiEventMap['errorOccurred'] = (event) => {
         console.error('Jitsi error:', event)
-        setError('A video conferencing error occurred. Please try rejoining.')
+        setError(event.message || 'A video conferencing error occurred. Please try rejoining.')
         setConnectionStatus('disconnected')
-      })
+      }
+
+      api.addEventListener('videoConferenceJoined', handleVideoConferenceJoined)
+      api.addEventListener('videoConferenceLeft', handleVideoConferenceLeft)
+      api.addEventListener('readyToClose', handleReadyToClose)
+      api.addEventListener('errorOccurred', handleErrorOccurred)
+
+      // Store handlers for cleanup
+      eventHandlersRef.current = [
+        { event: 'videoConferenceJoined', handler: handleVideoConferenceJoined },
+        { event: 'videoConferenceLeft', handler: handleVideoConferenceLeft },
+        { event: 'readyToClose', handler: handleReadyToClose },
+        { event: 'errorOccurred', handler: handleErrorOccurred },
+      ]
 
       jitsiApiRef.current = api
       setLoading(false)
@@ -188,6 +234,16 @@ export default function VideoConsultationPage() {
 
   const cleanup = () => {
     if (jitsiApiRef.current) {
+      // Remove all event listeners before disposing
+      eventHandlersRef.current.forEach(({ event, handler }) => {
+        try {
+          jitsiApiRef.current?.removeEventListener(event, handler)
+        } catch (err) {
+          console.warn(`Failed to remove event listener for ${event}:`, err)
+        }
+      })
+      eventHandlersRef.current = []
+      
       jitsiApiRef.current.dispose()
       jitsiApiRef.current = null
     }

@@ -23,6 +23,7 @@ import {
 import FounderAIChat from "@/components/founder/FounderAIChat"
 import FounderScreenShare from "@/components/founder/FounderScreenShare"
 import { apiFetch } from "@/lib/api"
+import { PageShell } from "@/components/PageShell"
 
 type ModuleHealth = {
   module_key: string
@@ -74,7 +75,7 @@ export default function FounderPage() {
 
   const [activeTab, setActiveTab] = useState('overview');
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <PageShell title="Founder Console" requireAuth={true} allowedRoles={["founder"]}>
       <Sidebar />
       <main className="ml-64">
         <Topbar />
@@ -258,6 +259,6 @@ export default function FounderPage() {
           )}
         </div>
       </main>
-    </div>
+    </PageShell>
   )
 }

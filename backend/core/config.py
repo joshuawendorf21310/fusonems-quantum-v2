@@ -25,9 +25,9 @@ class Settings(BaseSettings):
 
     ENV: str = "development"
     DATABASE_URL: str = "sqlite:///./app.db"
-    JWT_SECRET_KEY: str = "dev-secret"
-    STORAGE_ENCRYPTION_KEY: str = "dev-storage"
-    DOCS_ENCRYPTION_KEY: str = "dev-docs"
+    JWT_SECRET_KEY: str = ""  # REQUIRED in production
+    STORAGE_ENCRYPTION_KEY: str = ""  # REQUIRED in production
+    DOCS_ENCRYPTION_KEY: str = ""  # REQUIRED in production
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     AUTH_RATE_LIMIT_PER_MIN: int = 20
     DB_POOL_SIZE: int = 5
@@ -70,7 +70,7 @@ class Settings(BaseSettings):
     
     # CAD Backend Socket.io Bridge
     CAD_BACKEND_URL: str = "http://localhost:3000"
-    CAD_BACKEND_AUTH_TOKEN: str = "fastapi-bridge-secure-token-change-in-production"
+    CAD_BACKEND_AUTH_TOKEN: str = ""  # REQUIRED: Set secure token in production
     
     # Metriport Configuration
     METRIPORT_ENABLED: bool = False
@@ -137,6 +137,47 @@ class Settings(BaseSettings):
     POSTMARK_ACCOUNT_TOKEN: Optional[str] = None
     POSTMARK_FROM_EMAIL: Optional[str] = None
 
+    # Jitsi Video (Telehealth)
+    JITSI_DOMAIN: str = "jitsi.fusionems.com"
+    JITSI_APP_ID: str = "fusionems_carefusion"
+    JITSI_APP_SECRET: str = ""
+    JITSI_JWT_ALGORITHM: str = "HS256"
+    
+    # Mapbox (Routing)
+    MAPBOX_ACCESS_TOKEN: Optional[str] = None
+    
+    # Redis (Caching, Rate Limiting)
+    REDIS_URL: str = "redis://localhost:6379/0"
+    
+    # AI Support
+    SUPPORT_AI_ENABLED: bool = False
+    OLLAMA_URL: str = "http://localhost:11434"
+    OLLAMA_MODEL: str = "llama2"
+    
+    # FIPS 140-2 Compliance (FedRAMP SC-13)
+    FIPS_MODE_ENABLED: bool = False  # Set to True to enable FIPS mode
+    FIPS_MODE_REQUIRED: bool = False  # Set to True to require FIPS mode (will fail startup if not available)
+    
+    # Password Policy (FedRAMP IA-5)
+    PASSWORD_MIN_LENGTH: int = 14  # Minimum password length
+    PASSWORD_REQUIRE_UPPERCASE: bool = True
+    PASSWORD_REQUIRE_LOWERCASE: bool = True
+    PASSWORD_REQUIRE_DIGITS: bool = True
+    PASSWORD_REQUIRE_SPECIAL: bool = True
+    PASSWORD_MAX_AGE_DAYS: int = 90  # Maximum password age before rotation
+    
+    # Password Hashing
+    PASSWORD_HASH_ALGORITHM: str = "auto"  # "auto", "bcrypt", "pbkdf2", "argon2"
+    PBKDF2_ITERATIONS: int = 100000  # PBKDF2 iterations (minimum recommended: 100000)
+    ARGON2_TIME_COST: int = 2
+    ARGON2_MEMORY_COST: int = 65536  # KB
+    ARGON2_PARALLELISM: int = 4
+    
+    # Key Management (FedRAMP SC-12)
+    KEY_MANAGEMENT_MASTER_KEY: Optional[str] = None  # Master key for encrypting stored keys
+    KEY_ESCROW_LOCATION: Optional[str] = None  # Location for key escrow
+    KEY_ROTATION_INTERVAL_DAYS: int = 90  # Default key rotation interval
+
     model_config = SettingsConfigDict(
         extra="allow",
         env_file=".env",
@@ -149,13 +190,26 @@ def validate_settings_runtime(_settings: Optional[Settings] = None) -> None:
     s = _settings or settings
     if s.ENV == "production":
         missing = []
+        weak = []
         for key in [
             "DATABASE_URL",
             "JWT_SECRET_KEY",
             "STORAGE_ENCRYPTION_KEY",
             "DOCS_ENCRYPTION_KEY",
         ]:
-            if not getattr(s, key, None):
+            value = getattr(s, key, None)
+            if not value:
                 missing.append(key)
+            elif key in ["JWT_SECRET_KEY", "STORAGE_ENCRYPTION_KEY", "DOCS_ENCRYPTION_KEY"]:
+                # Check for weak/default secrets
+                if len(value) < 32 or value in ["dev-secret", "dev-storage", "dev-docs"]:
+                    weak.append(f"{key} (must be at least 32 characters)")
+        
         if missing:
             raise RuntimeError(f"Missing required production settings: {missing}")
+        if weak:
+            raise RuntimeError(f"Weak secrets in production: {weak}. Use strong random values.")
+    
+    # Always validate JWT secret length in any environment
+    if settings.JWT_SECRET_KEY and len(settings.JWT_SECRET_KEY) < 16:
+        raise RuntimeError("JWT_SECRET_KEY must be at least 16 characters")

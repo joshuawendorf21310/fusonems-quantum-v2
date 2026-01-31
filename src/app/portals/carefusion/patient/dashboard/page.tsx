@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { PageShell } from "@/components/PageShell"
 
 interface Appointment {
   id: string
@@ -71,13 +72,9 @@ export default function FusionCarePatientDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      <div className="max-w-7xl mx-auto p-6 md:p-8">
-        {/* Header */}
+    <PageShell title="Patient Portal" requireAuth={true}>
+      <div className="max-w-7xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-cyan-500 to-blue-500 bg-clip-text text-transparent">
-            Patient Portal
-          </h1>
           <p className="text-zinc-400">Welcome to your FusionCare healthcare dashboard</p>
         </div>
 
@@ -300,6 +297,6 @@ export default function FusionCarePatientDashboard() {
           </div>
         </div>
       </div>
-    </div>
+    </PageShell>
   )
 }

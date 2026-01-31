@@ -22,6 +22,7 @@ import {
   CalendarDays,
   GripVertical,
 } from 'lucide-react';
+import { PageShell } from "@/components/PageShell";
 
 interface DashboardStats {
   total_shifts_this_week: number;
@@ -617,6 +618,6 @@ export default function SchedulingDashboard() {
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

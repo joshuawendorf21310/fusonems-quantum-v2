@@ -37,6 +37,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
+import { PageShell } from "@/components/PageShell";
 
 // Mock data for dashboard
 const headcountData = [
@@ -91,18 +92,18 @@ const HRDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8">
+      <PageShell title="Human Resources" requireAuth={true}>
         <div className="max-w-7xl mx-auto space-y-6">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="h-32 bg-zinc-900 rounded-2xl animate-pulse" />
           ))}
         </div>
-      </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8">
+    <PageShell title="Human Resources" requireAuth={true}>
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <motion.div
@@ -133,7 +134,7 @@ const HRDashboard = () => {
               onClick={handleRefresh}
               className="px-4 py-2 bg-zinc-900 border border-zinc-800 rounded-xl hover:border-blue-400 transition-colors"
             >
-              <RefreshCw className={`w-5 h-5 text-slate-600 ${refreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-5 h-5 text-zinc-400 ${refreshing ? 'animate-spin' : ''}`} />
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -207,7 +208,7 @@ const HRDashboard = () => {
                     >
                       {kpi.change}
                     </span>
-                    <span className="text-xs text-slate-500 ml-1">vs last period</span>
+                    <span className="text-xs text-zinc-400 ml-1">vs last period</span>
                   </div>
                 </div>
                 <div
@@ -282,8 +283,8 @@ const HRDashboard = () => {
           >
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-bold text-slate-900">Department Distribution</h3>
-                <p className="text-sm text-slate-600 mt-1">Personnel by department</p>
+                <h3 className="text-lg font-bold text-zinc-100">Department Distribution</h3>
+                <p className="text-sm text-zinc-400 mt-1">Personnel by department</p>
               </div>
               <BarChart3 className="w-5 h-5 text-green-500" />
             </div>
@@ -317,8 +318,8 @@ const HRDashboard = () => {
           >
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-bold text-slate-900">Certification Status</h3>
-                <p className="text-sm text-slate-600 mt-1">Compliance tracking</p>
+                <h3 className="text-lg font-bold text-zinc-100">Certification Status</h3>
+                <p className="text-sm text-zinc-400 mt-1">Compliance tracking</p>
               </div>
               <Award className="w-5 h-5 text-orange-500" />
             </div>
@@ -353,8 +354,8 @@ const HRDashboard = () => {
           >
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h3 className="text-lg font-bold text-slate-900">Payroll Trend</h3>
-                <p className="text-sm text-slate-600 mt-1">Cost analysis by period</p>
+                <h3 className="text-lg font-bold text-zinc-100">Payroll Trend</h3>
+                <p className="text-sm text-zinc-400 mt-1">Cost analysis by period</p>
               </div>
               <DollarSign className="w-5 h-5 text-purple-500" />
             </div>
@@ -412,7 +413,7 @@ const HRDashboard = () => {
           </div>
         </motion.div>
       </div>
-    </div>
+    </PageShell>
   );
 };
 

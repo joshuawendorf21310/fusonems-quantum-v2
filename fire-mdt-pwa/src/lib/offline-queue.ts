@@ -54,6 +54,7 @@ export const getQueueSize = async (): Promise<number> => {
 export const replayQueue = async (
   onReplay: (item: OfflineQueueItem) => Promise<boolean>
 ): Promise<void> => {
+  if (!db) await initOfflineQueue();
   const items = await getQueuedItems();
   
   for (const item of items) {
@@ -68,6 +69,7 @@ export const replayQueue = async (
           // Remove after 5 failed attempts
           await removeQueuedItem(item.id);
         } else {
+          if (!db) await initOfflineQueue();
           await db!.put('offlineQueue', item);
         }
       }

@@ -441,7 +441,9 @@ class WisconsinBillingService:
         # Statement delivery health
         statements_generated = self.db.query(func.count(PatientStatement.id)).scalar() or 0
         
-        deliveries = self.db.query(StatementDeliveryLog).all()
+        # Limit delivery logs to prevent performance issues when calculating health metrics
+        # Recent deliveries are most relevant for health snapshot calculations
+        deliveries = self.db.query(StatementDeliveryLog).order_by(StatementDeliveryLog.delivered_at.desc()).limit(1000).all()
         emails_delivered = sum(1 for d in deliveries if d.delivery_format == DeliveryFormat.EMAIL and d.success)
         emails_bounced = sum(1 for d in deliveries if d.delivery_format == DeliveryFormat.EMAIL and not d.success)
         mail_sent = sum(1 for d in deliveries if d.delivery_format == DeliveryFormat.LOB_PHYSICAL)
@@ -461,8 +463,9 @@ class WisconsinBillingService:
             CollectionsEscalationRecord.resolved == False
         ).scalar() or 0
         
-        # Tax metrics
-        tax_records = self.db.query(TaxExemptionRecord).all()
+        # Tax metrics - limit to prevent performance issues with large tax record datasets
+        # Recent tax records are most relevant for health snapshot calculations
+        tax_records = self.db.query(TaxExemptionRecord).order_by(TaxExemptionRecord.created_at.desc()).limit(1000).all()
         tax_collected = sum(r.tax_amount for r in tax_records)
         revenue_exempt = sum(r.revenue_amount for r in tax_records if r.exempt)
         

@@ -1,0 +1,24 @@
+# FedRAMP Compliance Additional Dependencies
+# Add to main requirements.txt
+
+# Multi-Factor Authentication (IA-2)
+pyotp==2.9.0  # TOTP implementation
+qrcode==7.4.2  # QR code generation
+Pillow==10.4.0  # Image processing for QR codes
+
+# Time Synchronization (AU-8)
+ntplib==0.4.0  # NTP client for time sync
+
+# Cryptography (FIPS 140-2 preparation)
+cryptography==42.0.0  # FIPS-capable crypto library
+
+# Security Monitoring
+python-jose[cryptography]==3.3.0  # Already in requirements
+passlib[bcrypt]==1.7.4  # Already in requirements
+
+# Audit & Logging
+python-json-logger==2.0.7  # Structured logging for SIEM
+
+# Additional Security
+pydantic==2.9.2  # Already in requirements
+redis==5.0.1  # Already in requirements
