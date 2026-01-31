@@ -298,7 +298,7 @@ export default function SchedulingDashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <PageShell title="Scheduling" requireAuth={true}>
       <div className="max-w-[1800px] mx-auto p-6 space-y-6">
         <header className="flex items-center justify-between">
           <div>
