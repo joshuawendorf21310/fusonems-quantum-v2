@@ -1213,7 +1213,7 @@ export const hemsSchema: EpcrSchema = {
     ...emsSchema.sections.slice(-2), // Narrative and signatures sections
   ],
   shortcuts: [
-    ...(emsSchema.shortcuts ?? []),
+    ...emsSchema.shortcuts,
     {
       label: "RSI Protocol",
       action: "add_procedure",

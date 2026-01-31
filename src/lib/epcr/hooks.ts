@@ -18,6 +18,17 @@ export const useEpcrForm = (initialData?: Partial<EpcrRecord> & { variant?: stri
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Save to localStorage function (must be defined before useEffect)
+  const saveToLocalStorage = useCallback(() => {
+    try {
+      localStorage.setItem("epcr_draft", JSON.stringify(formData));
+      setLastSaved(new Date());
+      console.log("Auto-saved to local storage");
+    } catch (err) {
+      console.error("Failed to save to localStorage:", err);
+    }
+  }, [formData]);
+
   // Auto-save effect
   useEffect(() => {
     if (isDirty) {
@@ -114,16 +125,6 @@ export const useEpcrForm = (initialData?: Partial<EpcrRecord> & { variant?: stri
     return newErrors.length === 0;
   }, [formData]);
 
-  const saveToLocalStorage = useCallback(() => {
-    try {
-      localStorage.setItem("epcr_draft", JSON.stringify(formData));
-      setLastSaved(new Date());
-      console.log("Auto-saved to local storage");
-    } catch (err) {
-      console.error("Failed to save to localStorage:", err);
-    }
-  }, [formData]);
-
   const saveForm = useCallback(async () => {
     if (!validateForm()) return false;
     
@@ -183,11 +184,7 @@ export const useOfflineSync = () => {
       const db = await openIndexedDB();
       const tx = db.transaction("epcr_offline", "readonly");
       const store = tx.objectStore("epcr_offline");
-      const count = await new Promise<number>((resolve, reject) => {
-        const req = store.count();
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      });
+      const count = await store.count();
       setPendingCount(count);
     } catch (err) {
       console.error("Failed to check pending records:", err);
@@ -199,11 +196,7 @@ export const useOfflineSync = () => {
       const db = await openIndexedDB();
       const tx = db.transaction("epcr_offline", "readwrite");
       const store = tx.objectStore("epcr_offline");
-      const records = await new Promise<{ id: number; data: unknown }[]>((resolve, reject) => {
-        const req = store.getAll();
-        req.onsuccess = () => resolve(req.result as { id: number; data: unknown }[]);
-        req.onerror = () => reject(req.error);
-      });
+      const records = await store.getAll();
 
       for (const record of records) {
         try {
