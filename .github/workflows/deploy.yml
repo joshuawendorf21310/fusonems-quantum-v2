@@ -30,11 +30,21 @@ jobs:
       - name: Setup SSH key
         env:
           DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+          DEPLOY_HOST_FINGERPRINT: ${{ secrets.DEPLOY_HOST_FINGERPRINT }}
         run: |
           mkdir -p ~/.ssh
           printf '%s\n' "$DEPLOY_KEY" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} > ~/.ssh/known_hosts.scan 2>/dev/null || true
+          if [ -n "$DEPLOY_HOST_FINGERPRINT" ]; then
+            got=$(ssh-keygen -lf ~/.ssh/known_hosts.scan 2>/dev/null | head -1 | awk '{print $2}')
+            want="$DEPLOY_HOST_FINGERPRINT"
+            if [ "$got" != "$want" ]; then
+              echo "::error::Host key fingerprint mismatch. Got: $got Expected: $want"
+              exit 1
+            fi
+          fi
+          cat ~/.ssh/known_hosts.scan >> ~/.ssh/known_hosts
 
       - name: Sync code to Droplet
         run: |

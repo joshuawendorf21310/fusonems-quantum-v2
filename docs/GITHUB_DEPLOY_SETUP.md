@@ -18,6 +18,7 @@ All four secrets are required. If `DEPLOY_HOST` is missing you’ll see: `Could 
 | `DEPLOY_USER` | `deploy` |
 | `DEPLOY_KEY` | Full private SSH key. Paste the **entire** key including `-----BEGIN...` and `-----END...`. No extra spaces or CRLF. |
 | `DEPLOY_PATH` | `/var/www/fusionems` |
+| `DEPLOY_HOST_FINGERPRINT` | (optional) Host key fingerprint, e.g. `SHA256:xD8Uav7MSfHrCUo7EFVAnYgnQ2CKMD6gEM00aCstr/g` – verifies you connect to the right server |
 
 ## 2. Droplet Setup (one-time)
 
