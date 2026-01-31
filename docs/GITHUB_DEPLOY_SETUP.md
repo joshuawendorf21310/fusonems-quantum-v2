@@ -36,7 +36,7 @@ sudo chown -R deploy:deploy /var/www/fusionems
 
 # SSH key for GitHub Actions → Droplet
 sudo mkdir -p /home/deploy/.ssh
-sudo nano /home/deploy/.ssh/authorized_keys  # paste the *public* key (pair of DEPLOY_KEY)
+sudo nano /home/deploy/.ssh/authorized_keys  # paste the *public* key (pair of DEPLOY_KEY; format: ssh-ed25519 AAAA... or ssh-rsa AAAA...)
 sudo chown -R deploy:deploy /home/deploy/.ssh
 sudo chmod 700 /home/deploy/.ssh
 sudo chmod 600 /home/deploy/.ssh/authorized_keys
