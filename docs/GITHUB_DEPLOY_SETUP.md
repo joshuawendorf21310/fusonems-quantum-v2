@@ -54,4 +54,4 @@ Check **Actions** in GitHub to see the deploy run. Code is synced via rsync (no 
 
 ## Troubleshooting
 
-- **`error in libcrypto` / `Permission denied (publickey)`** – `DEPLOY_KEY` format issue. Re-add the secret: copy the full private key (from `-----BEGIN` to `-----END` inclusive), paste into a plain text editor, ensure no extra spaces or Windows line endings, then paste into GitHub. Use the **private** key; the **public** key goes in `authorized_keys` on the Droplet.
+- **`error in libcrypto` / `Permission denied (publickey)`** – Usually: (1) wrong key—you pasted the **public** key into DEPLOY_KEY (use the **private** key; public goes in `authorized_keys` on the Droplet), or (2) key has a passphrase (use a key with no passphrase). Generate a fresh deploy key: `ssh-keygen -t ed25519 -f deploy_key -N ""` – put `deploy_key` in DEPLOY_KEY, `deploy_key.pub` in the Droplet's `authorized_keys`.

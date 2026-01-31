@@ -16,6 +16,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Validate secrets
+        env:
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
         run: |
           missing=""
           [ -z "${{ secrets.DEPLOY_HOST }}" ] && missing="$missing DEPLOY_HOST"
@@ -24,6 +26,14 @@ jobs:
           [ -z "${{ secrets.DEPLOY_PATH }}" ] && missing="$missing DEPLOY_PATH"
           if [ -n "$missing" ]; then
             echo "::error::Missing GitHub secrets:$missing. Add them in Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          if echo "$DEPLOY_KEY" | grep -qE '^ssh-(ed25519|rsa|ecdsa) '; then
+            echo "::error::DEPLOY_KEY looks like a PUBLIC key. Use the PRIVATE key (id_ed25519 or id_rsa file). Public key goes in authorized_keys on the server."
+            exit 1
+          fi
+          if ! echo "$DEPLOY_KEY" | grep -q '-----BEGIN'; then
+            echo "::error::DEPLOY_KEY should be a private key (starts with -----BEGIN OPENSSH PRIVATE KEY----- or -----BEGIN RSA PRIVATE KEY-----)."
             exit 1
           fi
 
@@ -35,6 +45,10 @@ jobs:
           mkdir -p ~/.ssh
           printf '%s\n' "$DEPLOY_KEY" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
+          if ! ssh-keygen -y -f ~/.ssh/deploy_key >/dev/null 2>&1; then
+            echo "::error::DEPLOY_KEY is invalid (corrupted, passphrase-protected, or wrong format). Use a non-encrypted private key. Run: ssh-keygen -t ed25519 -f deploy_key -N ''"
+            exit 1
+          fi
           ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} > ~/.ssh/known_hosts.scan 2>/dev/null || true
           if [ -n "$DEPLOY_HOST_FINGERPRINT" ]; then
             got=$(ssh-keygen -lf ~/.ssh/known_hosts.scan 2>/dev/null | head -1 | awk '{print $2}')
